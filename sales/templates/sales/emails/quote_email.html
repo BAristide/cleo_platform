@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devis {{ quote.number }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .container {
+            padding: 20px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .content {
+            margin-bottom: 30px;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #dddddd;
+            font-size: 12px;
+            color: #777777;
+            text-align: center;
+        }
+        .company-details {
+            margin-top: 20px;
+            font-size: 12px;
+        }
+        .document-details {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .document-number {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .highlight {
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        .button {
+            display: inline-block;
+            background-color: #2c3e50;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">ECINTELLIGENCE</div>
+            <div>Experts Computing Intelligence</div>
+        </div>
+        
+        <div class="content">
+            <p>Bonjour {{ contact.first_name }} {{ contact.last_name }},</p>
+            
+            <p>Veuillez trouver ci-joint le devis <span class="document-number">{{ quote.number }}</span> pour {{ company.name }}.</p>
+            
+            <div class="document-details">
+                <p><strong>Devis n°:</strong> {{ quote.number }}</p>
+                <p><strong>Date:</strong> {{ quote.issue_date|date:"d/m/Y" }}</p>
+                <p><strong>Validité jusqu'au:</strong> {{ quote.expiration_date|date:"d/m/Y" }}</p>
+                <p><strong>Montant total:</strong> {{ quote.total }} {{ quote.currency.code }}</p>
+            </div>
+            
+            <p>Ce devis détaille les produits et services que nous proposons conformément à votre demande.</p>
+            
+            <p>Pour toute question concernant ce devis, n'hésitez pas à me contacter directement en répondant à cet email ou par téléphone.</p>
+            
+            <p>Dans l'attente de votre retour, je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées.</p>
+        </div>
+        
+        <div class="footer">
+            <p>Cordialement,</p>
+            <p class="highlight">L'équipe ECINTELLIGENCE</p>
+            
+            <div class="company-details">
+                <p>La Marina Casablanca | Tour Oceanes 3 Bureau 03 Rez-De-Jardin - Casablanca - Maroc</p>
+                <p>Email: infos@ecintelligence.ma | Tél: +(212) 5220 48-727 / 0666 366 018</p>
+                <p>RC 393329 - IF 25018675 - Patente 350424929 - ICE 00203009000092</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

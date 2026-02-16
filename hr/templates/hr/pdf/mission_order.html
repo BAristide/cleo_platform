@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Ordre de Mission</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .company-info {
+            font-size: 10px;
+            margin-bottom: 5px;
+        }
+        .document-title {
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            margin: 30px 0;
+            text-transform: uppercase;
+            border-bottom: 1px solid #333;
+            padding-bottom: 5px;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 3px;
+        }
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .info-table td {
+            padding: 5px;
+            border: 1px solid #ddd;
+        }
+        .info-table .label {
+            font-weight: bold;
+            width: 30%;
+            background-color: #f9f9f9;
+        }
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 10px;
+        }
+        .signatures {
+            margin-top: 50px;
+            width: 100%;
+        }
+        .signature-block {
+            float: left;
+            width: 45%;
+            margin-right: 5%;
+            height: 100px;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+        .signature-title {
+            font-weight: bold;
+            margin-bottom: 50px;
+        }
+        .clearfix {
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="company-name">{{ company.name }}</div>
+        <div class="company-info">{{ company.address }}</div>
+        <div class="company-info">{{ company.city }}, {{ company.country }}</div>
+        <div class="company-info">{{ company.contact }}</div>
+        <div class="company-info">{{ company.fiscal_info }}</div>
+    </div>
+
+    <div class="document-title">Ordre de Mission</div>
+
+    <div class="section">
+        <div class="section-title">Informations de l'employé</div>
+        <table class="info-table">
+            <tr>
+                <td class="label">Nom complet</td>
+                <td>{{ employee.full_name }}</td>
+            </tr>
+            <tr>
+                <td class="label">ID Employé</td>
+                <td>{{ employee.employee_id }}</td>
+            </tr>
+            <tr>
+                <td class="label">Poste</td>
+                <td>{{ employee.job_title.name }}</td>
+            </tr>
+            <tr>
+                <td class="label">Département</td>
+                <td>{{ employee.department.name }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Détails de la mission</div>
+        <table class="info-table">
+            <tr>
+                <td class="label">Référence</td>
+                <td>OM-{{ mission.id }}-{{ mission.start_date|date:"Ymd" }}</td>
+            </tr>
+            <tr>
+                <td class="label">Titre</td>
+                <td>{{ mission.title }}</td>
+            </tr>
+            <tr>
+                <td class="label">Lieu</td>
+                <td>{{ mission.location }}</td>
+            </tr>
+            <tr>
+                <td class="label">Période</td>
+                <td>Du {{ mission.start_date|date:"d/m/Y" }} au {{ mission.end_date|date:"d/m/Y" }}</td>
+            </tr>
+            <tr>
+                <td class="label">Statut</td>
+                <td>{{ mission.get_status_display }}</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Description de la mission</div>
+        <p>{{ mission.description }}</p>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Approbations</div>
+        <table class="info-table">
+            <tr>
+                <td class="label">Manager</td>
+                <td>
+                    {% if mission.approved_by_manager %}
+                        Approuvé
+                    {% else %}
+                        En attente
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="label">RH</td>
+                <td>
+                    {% if mission.approved_by_hr %}
+                        Approuvé
+                    {% else %}
+                        En attente
+                    {% endif %}
+                </td>
+            </tr>
+            <tr>
+                <td class="label">Finance</td>
+                <td>
+                    {% if mission.approved_by_finance %}
+                        Approuvé
+                    {% else %}
+                        En attente
+                    {% endif %}
+                </td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="signatures">
+        <div class="signature-block">
+            <div class="signature-title">Employé</div>
+            {{ employee.full_name }}
+        </div>
+        <div class="signature-block">
+            <div class="signature-title">Direction</div>
+            _______________________
+        </div>
+        <div class="clearfix"></div>
+    </div>
+
+    <div class="footer">
+        Document généré le {{ generated_date|date:"d/m/Y" }} par le système Cleo ERP
+    </div>
+</body>
+</html>

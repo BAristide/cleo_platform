@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Bilan" %}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center">{% trans "Bilan" %}</h1>
+            <h4 class="text-center">{% trans "Au" %} {{ date|date:date_format }}</h4>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-6">
+            <h3 class="text-center">{% trans "ACTIF" %}</h3>
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Code" %}</th>
+                            <th>{% trans "Compte" %}</th>
+                            <th class="text-right">{% trans "Montant" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in assets %}
+                        <tr>
+                            <td>{{ item.account.code }}</td>
+                            <td>{{ item.account.name }}</td>
+                            <td class="text-right">{{ item.balance|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="font-weight-bold">
+                            <td></td>
+                            <td>{% trans "Total Actif" %}</td>
+                            <td class="text-right">{{ total_assets|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="col-6">
+            <h3 class="text-center">{% trans "PASSIF" %}</h3>
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Code" %}</th>
+                            <th>{% trans "Compte" %}</th>
+                            <th class="text-right">{% trans "Montant" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in liabilities %}
+                        <tr>
+                            <td>{{ item.account.code }}</td>
+                            <td>{{ item.account.name }}</td>
+                            <td class="text-right">{{ item.balance|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="font-weight-bold">
+                            <td></td>
+                            <td>{% trans "Total Passif" %}</td>
+                            <td class="text-right">{{ total_liabilities|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            <h4>{% trans "Différence" %}: {{ difference|floatformat:2 }}</h4>
+        </div>
+    </div>
+</div>
+{% endblock %}

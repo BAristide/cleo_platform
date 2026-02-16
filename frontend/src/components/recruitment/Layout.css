@@ -1,0 +1,29 @@
+/* src/components/recruitment/Layout.css */
+.site-layout-header {
+  background: #fff;
+  padding: 0;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+}
+
+.site-layout-content {
+  background: #fff;
+  padding: 24px;
+  min-height: 360px;
+  border-radius: 4px;
+}
+
+.logo {
+  height: 32px;
+  margin: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.ant-layout-sider-collapsed .logo h4 {
+  display: none;
+}
+
+.ant-layout-sider-collapsed .logo h4::first-letter {
+  display: inline-block;
+}

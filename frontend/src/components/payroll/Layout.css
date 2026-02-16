@@ -1,0 +1,30 @@
+/* src/components/payroll/Layout.css */
+.logo {
+  height: 64px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+
+.site-layout .site-layout-background {
+  background: #fff;
+}
+
+.site-layout-background {
+  background: #fff;
+}
+
+.ant-layout-sider-trigger {
+  background: #001529;
+}
+
+.ant-menu-item a {
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+}
+
+.ant-menu-item-selected a,
+.ant-menu-item:hover a {
+  color: #fff;
+}

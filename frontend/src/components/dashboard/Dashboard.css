@@ -1,0 +1,38 @@
+/* src/components/dashboard/Dashboard.css */
+.main-dashboard {
+  min-height: 100vh;
+}
+
+.dashboard-header {
+  background: #fff;
+  padding: 0 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  display: flex;
+  align-items: center;
+}
+
+.dashboard-content {
+  padding: 24px;
+}
+
+.module-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.module-card .icon-container {
+  font-size: 32px;
+  margin-bottom: 16px;
+  color: #1890ff;
+}
+
+.module-card .stats-container {
+  margin-top: 16px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.quick-actions-card .ant-btn {
+  margin-bottom: 8px;
+}

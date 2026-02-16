@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Notification de plan de formation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.5;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .header {
+            background-color: #f5f5f5;
+            padding: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .section {
+            margin-bottom: 20px;
+        }
+        .label {
+            font-weight: bold;
+        }
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .status-draft {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
+        .status-submitted {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        .status-approved {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-rejected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .status-completed {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 10px;
+            border-top: 1px solid #ddd;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+            font-size: 14px;
+        }
+        th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">Notification de plan de formation</div>
+        </div>
+
+        <div class="section">
+            <p>Bonjour,</p>
+            <p>Vous recevez cette notification concernant le plan de formation suivant :</p>
+        </div>
+
+        <div class="section">
+            <p class="label">Employé concerné :</p>
+            <p>{{ employee.full_name }}</p>
+
+            <p class="label">Année :</p>
+            <p>{{ training_plan.year }}</p>
+
+            <p class="label">Statut :</p>
+            <p>
+                <span class="status status-{{ training_plan.status }}">
+                    {{ training_plan.get_status_display }}
+                </span>
+            </p>
+
+            <p class="label">Objectifs :</p>
+            <p>{{ training_plan.objectives }}</p>
+        </div>
+
+        <div class="section">
+            <p class="label">Formations prévues :</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Formation</th>
+                        <th>Trimestre</th>
+                        <th>Priorité</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.training_course.title }}</td>
+                        <td>Q{{ item.planned_quarter }}</td>
+                        <td>{{ item.get_priority_display }}</td>
+                        <td>{{ item.get_status_display }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="section">
+            <p>Pour plus de détails, veuillez vous connecter à Cleo ERP.</p>
+        </div>
+
+        <div class="footer">
+            <p>Ce message a été envoyé automatiquement, merci de ne pas y répondre.</p>
+            <p>© {{ training_plan.year }} ECINTELLIGENCE - Cleo ERP</p>
+        </div>
+    </div>
+</body>
+</html>

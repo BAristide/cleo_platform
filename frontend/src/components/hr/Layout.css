@@ -1,0 +1,78 @@
+/* src/components/hr/Layout.css */
+.logo {
+  height: 64px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+}
+
+.site-layout .site-layout-background {
+  background: #fff;
+}
+
+.site-layout-background {
+  background: #fff;
+}
+
+.ant-layout-sider-trigger {
+  background: #001529;
+}
+
+.ant-menu-item a {
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+}
+
+.ant-menu-item-selected a,
+.ant-menu-item:hover a {
+  color: #fff;
+}
+
+/* Styles spécifiques au module HR */
+.status-tag {
+  margin-right: 8px;
+  text-align: center;
+}
+
+.approval-status {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.skill-level {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+
+.skill-level-1 {
+  background-color: #ffc107;
+}
+
+.skill-level-2 {
+  background-color: #2196f3;
+}
+
+.skill-level-3 {
+  background-color: #4caf50;
+}
+
+.skill-level-4 {
+  background-color: #9c27b0;
+}
+
+.skill-level-5 {
+  background-color: #f44336;
+}
+
+.employee-info-card {
+  margin-bottom: 16px;
+}
+
+.department-tree {
+  margin-top: 16px;
+}

@@ -1,0 +1,60 @@
+/* src/components/accounting/Layout.css */
+.accounting-layout {
+  min-height: 100vh;
+}
+
+.accounting-layout .ant-layout-header {
+  background: #fff;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  z-index: 1;
+}
+
+.accounting-layout .logo {
+  height: 32px;
+  margin: 16px;
+  display: flex;
+  align-items: center;
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+}
+
+.accounting-layout .logo .icon {
+  margin-right: 8px;
+}
+
+.accounting-layout .site-layout-background {
+  background: #fff;
+}
+
+.accounting-layout .ant-layout-content {
+  margin: 24px 16px;
+  padding: 24px;
+  background: #fff;
+  min-height: calc(100vh - 112px);
+}
+
+.accounting-layout .ant-menu-item .anticon,
+.accounting-layout .ant-menu-submenu-title .anticon {
+  font-size: 16px;
+  margin-right: 10px;
+}
+
+/* Style pour les sous-menus */
+.accounting-layout .ant-menu-submenu-popup {
+  max-width: 200px;
+}
+
+/* Style pour le footer */
+.accounting-layout .ant-layout-footer {
+  text-align: center;
+  padding: 12px 50px;
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 14px;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+}

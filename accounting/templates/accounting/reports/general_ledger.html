@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Grand Livre" %}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center">{% trans "Grand Livre" %}</h1>
+            <h4 class="text-center">{% trans "Période du" %} {{ start_date|date:date_format }} {% trans "au" %} {{ end_date|date:date_format }}</h4>
+        </div>
+    </div>
+
+    {% for account_data in ledger %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <h5>{{ account_data.account.code }} - {{ account_data.account.name }}</h5>
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Solde initial" %}</th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th class="text-right">{{ account_data.initial_balance|floatformat:2 }}</th>
+                        </tr>
+                        <tr>
+                            <th>{% trans "Date" %}</th>
+                            <th>{% trans "Journal" %}</th>
+                            <th>{% trans "Pièce" %}</th>
+                            <th>{% trans "Référence" %}</th>
+                            <th>{% trans "Partenaire" %}</th>
+                            <th>{% trans "Libellé" %}</th>
+                            <th class="text-right">{% trans "Débit" %}</th>
+                            <th class="text-right">{% trans "Crédit" %}</th>
+                            <th class="text-right">{% trans "Solde" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in account_data.entries %}
+                        <tr>
+                            <td>{{ entry.date|date:date_format }}</td>
+                            <td>{{ entry.journal }}</td>
+                            <td>{{ entry.entry }}</td>
+                            <td>{{ entry.reference }}</td>
+                            <td>{{ entry.partner }}</td>
+                            <td>{{ entry.label }}</td>
+                            <td class="text-right">{{ entry.debit|floatformat:2 }}</td>
+                            <td class="text-right">{{ entry.credit|floatformat:2 }}</td>
+                            <td class="text-right">{{ entry.balance|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr>
+                            <th>{% trans "Solde final" %}</th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th class="text-right">{{ account_data.final_balance|floatformat:2 }}</th>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

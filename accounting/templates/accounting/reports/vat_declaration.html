@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% trans "Déclaration de TVA" %}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="text-center">{% trans "Déclaration de TVA" %}</h1>
+            <h4 class="text-center">{% trans "Période" %}: {{ period.name }}</h4>
+            <h5 class="text-center">{% trans "Du" %} {{ period.start_date|date:date_format }} {% trans "au" %} {{ period.end_date|date:date_format }}</h5>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <h3>{% trans "TVA COLLECTÉE" %}</h3>
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Taux" %}</th>
+                            <th>{% trans "Désignation" %}</th>
+                            <th class="text-right">{% trans "Montant" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in vat_collected.details %}
+                        <tr>
+                            <td>{% if item.tax.rate %}{{ item.tax.rate }}%{% endif %}</td>
+                            <td>{{ item.tax.name }}</td>
+                            <td class="text-right">{{ item.amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="font-weight-bold">
+                            <td></td>
+                            <td>{% trans "Total TVA collectée" %}</td>
+                            <td class="text-right">{{ vat_collected.total|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <h3>{% trans "TVA DÉDUCTIBLE" %}</h3>
+            <div class="table-responsive">
+                <table class="table table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Taux" %}</th>
+                            <th>{% trans "Désignation" %}</th>
+                            <th class="text-right">{% trans "Montant" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in vat_deductible.details %}
+                        <tr>
+                            <td>{% if item.tax.rate %}{{ item.tax.rate }}%{% endif %}</td>
+                            <td>{{ item.tax.name }}</td>
+                            <td class="text-right">{{ item.amount|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="font-weight-bold">
+                            <td></td>
+                            <td>{% trans "Total TVA déductible" %}</td>
+                            <td class="text-right">{{ vat_deductible.total|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-12 text-center">
+            {% if is_credit %}
+                <h4>{% trans "Crédit de TVA" %}: {{ absolute_vat_due|floatformat:2 }}</h4>
+            {% else %}
+                <h4>{% trans "TVA à payer" %}: {{ absolute_vat_due|floatformat:2 }}</h4>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

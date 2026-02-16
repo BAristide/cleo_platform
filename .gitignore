@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+*.egg-info/
+
+# Environment
+.env
+.env.*
+*.env.local
+
+# Database dumps
+*.sql
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Node / Frontend
+frontend/node_modules/
+frontend/build/
+frontend/.env.local
+
+# Static collectés
+static/
+data/static/
+data/media/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Fichiers de backup (résidus)
+*.bak
+*.back
+*.saved
+*.py.back
+*.py.bak
+*.py.saved
+*.js.bak
+*.js.back
+*.js.saved
+
+# Fichiers datés (ancienne convention)
+*.py.[0-9]*
+*.py.3*
+*.py.0*

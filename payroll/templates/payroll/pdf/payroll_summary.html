@@ -1,0 +1,91 @@
+<!-- templates/payroll/pdf/payroll_summary.html --> <!DOCTYPE html> <html> <head> <meta charset="UTF-8"> 
+    <title>Récapitulatif de Paie - {{ payroll_run.name }}</title> <style>
+        body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.3;
+        }
+        .header { margin-bottom: 20px;
+        }
+        .company-info { float: left; width: 60%;
+        }
+        .summary-info { float: right; width: 40%; text-align: right;
+        }
+        .clearfix::after { content: ""; display: table; clear: both;
+        }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px;
+        }
+        th, td { border: 1px solid #333; padding: 5px;
+        }
+        th { background-color: #f0f0f0;
+        }
+        .no-border { border: none;
+        }
+        .text-right { text-align: right;
+        }
+        .text-center { text-align: center;
+        }
+        .text-bold { font-weight: bold;
+        }
+        .total-row { background-color: #f0f0f0; font-weight: bold;
+        }
+        .footer { margin-top: 30px; font-size: 9pt; text-align: center;
+        }
+    </style> </head> <body> <div class="header clearfix"> <div class="company-info"> <h1>{{ company.name 
+            }}</h1>
+            <p>{{ company.address }}</p> <p>{{ company.city }} - {{ company.country }}</p> <p>RC : {{ 
+            company.rc }} | IF : {{ company.tax_id }}</p> <p>ICE : {{ company.ice }}</p>
+        </div> <div class="summary-info"> <h2>RÉCAPITULATIF DE PAIE</h2> <p>{{ payroll_run.name }}</p> 
+            <p>Période : {{ period.name }}</p> <p>Date : {{ generation_date|date:"d/m/Y" }}</p> <p>Statut : {{ 
+            payroll_run.get_status_display }}</p>
+        </div> </div>
+    
+    <h3>Liste des bulletins de paie</h3> <table> <thead> <tr> <th>N° Bulletin</th> <th>Employé</th> 
+                <th>Département</th> <th>Salaire Brut</th> <th>Cotisations</th> <th>IR</th> <th>Salaire 
+                Net</th> <th>Statut</th>
+            </tr> </thead> <tbody> {% for payslip in payslips %} <tr> <td>{{ payslip.number }}</td> <td>{{ 
+                    payslip.employee.first_name }} {{ payslip.employee.last_name }}</td> <td>{% if 
+                    payslip.employee.department %}{{ payslip.employee.department.name }}{% endif %}</td> <td 
+                    class="text-right">{{ payslip.gross_salary }}</td> <td class="text-right">{{ 
+                    payslip.cnss_employee|add:payslip.amo_employee }}</td> <td class="text-right">{{ 
+                    payslip.income_tax }}</td> <td class="text-right">{{ payslip.net_salary }}</td> <td>{{ 
+                    payslip.get_status_display }}</td>
+                </tr> {% endfor %} </tbody> <tfoot> <tr class="total-row"> <td colspan="3" 
+                class="text-right">Total</td> <td class="text-right">{{ summary.total_gross }}</td> <td 
+                class="text-right">{{ summary.total_cnss_employee|add:summary.total_amo_employee }}</td> <td 
+                class="text-right">{{ summary.total_income_tax }}</td> <td class="text-right">{{ 
+                summary.total_net }}</td> <td></td>
+            </tr> </tfoot> </table>
+    
+    <h3>Récapitulatif des cotisations</h3> <table> <thead> <tr> <th>Organisme</th> <th>Base</th> <th>Part 
+                Salariale</th> <th>Part Patronale</th> <th>Total</th>
+            </tr> </thead> <tbody> <tr> <td>CNSS</td> <td class="text-right">(Plafonné)</td> <td 
+                class="text-right">{{ summary.total_cnss_employee }}</td> <td class="text-right">{{ 
+                summary.total_cnss_employer }}</td> <td class="text-right">{{ 
+                summary.total_cnss_employee|add:summary.total_cnss_employer }}</td>
+            </tr> <tr> <td>AMO</td> <td class="text-right">{{ summary.total_gross }}</td> <td 
+                class="text-right">{{ summary.total_amo_employee }}</td> <td class="text-right">{{ 
+                summary.total_amo_employer }}</td> <td class="text-right">{{ 
+                summary.total_amo_employee|add:summary.total_amo_employer }}</td>
+            </tr> <tr> <td>IR (Impôt sur le Revenu)</td> <td class="text-right">(Voir détail)</td> <td 
+                class="text-right">{{ summary.total_income_tax }}</td> <td class="text-right">-</td> <td 
+                class="text-right">{{ summary.total_income_tax }}</td>
+            </tr> </tbody> <tfoot> <tr class="total-row"> <td colspan="2" class="text-right">Total des 
+                charges</td> <td class="text-right">{{ 
+                summary.total_cnss_employee|add:summary.total_amo_employee|add:summary.total_income_tax 
+                }}</td>
+                <td class="text-right">{{ summary.total_cnss_employer|add:summary.total_amo_employer }}</td> 
+                <td class="text-right">{{ 
+                summary.total_cnss_employee|add:summary.total_amo_employee|add:summary.total_income_tax|add:summary.total_cnss_employer|add:summary.total_amo_employer 
+                }}</td>
+            </tr> </tfoot> </table>
+    
+    <h3>Récapitulatif par statut</h3> <table> <thead> <tr> <th>Statut</th> <th>Nombre de bulletins</th> </tr> 
+        </thead> <tbody>
+            {% for status, count in summary.status_counts.items %} <tr> <td>{{ status }}</td> <td 
+                    class="text-center">{{ count }}</td>
+                </tr> {% endfor %} </tbody> <tfoot> <tr class="total-row"> <td class="text-right">Total</td> 
+                <td class="text-center">{{ payslips|length }}</td>
+            </tr> </tfoot> </table>
+    
+    <div class="footer"> <p>Document à conserver sans limitation de durée.</p> <p>Généré par Cleo ERP le {{ 
+        generation_date|date:"d/m/Y à H:i" }}</p>
+    </div> </body>
+</html>

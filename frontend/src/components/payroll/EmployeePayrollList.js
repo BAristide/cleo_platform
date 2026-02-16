@@ -8,7 +8,7 @@ import {
   PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined 
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
 
 const { Title } = Typography;
 const { Option } = Select;

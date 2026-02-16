@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Row, Col, Card, Statistic, Table, Typography, Spin, Divider, Alert } from 'antd';
 import { ShoppingCartOutlined, FileTextOutlined, BankOutlined, DollarOutlined } from '@ant-design/icons';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 
 const { Title } = Typography;

@@ -14,7 +14,7 @@ import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, 
   Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
 } from 'recharts';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;

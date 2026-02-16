@@ -9,7 +9,7 @@ import {
   CheckCircleOutlined, CloseCircleOutlined, SearchOutlined 
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 
 const { Title } = Typography;

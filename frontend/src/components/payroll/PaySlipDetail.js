@@ -10,7 +10,7 @@ import {
   ArrowLeftOutlined, EyeOutlined
 } from '@ant-design/icons';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 
 const { Title, Text } = Typography;

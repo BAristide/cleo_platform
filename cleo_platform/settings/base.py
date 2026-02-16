@@ -141,9 +141,7 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # =========================
 OPENEXCHANGE_API_KEY = config('OPENEXCHANGE_API_KEY', default='')
 
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+
 
 # =========================
 # Email (Étape 0.6)

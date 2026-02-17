@@ -1,0 +1,9 @@
+[lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[lint.per-file-ignores]
+"*/migrations/*" = ["E", "F", "W", "I"]
+
+[format]
+quote-style = "single"

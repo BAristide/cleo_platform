@@ -1,5 +1,6 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from . import views
 
 # Créer un routeur pour les vues REST
@@ -13,7 +14,6 @@ app_name = 'users'
 urlpatterns = [
     # Routes API automatiques
     path('', include(router.urls)),
-    
     # Route pour la création manuelle de logs
     path('log-activity/', views.log_activity, name='log_activity'),
 ]

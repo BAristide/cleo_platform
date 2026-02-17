@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -17,12 +16,42 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Skill',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=100, verbose_name='Nom')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
-                ('category', models.CharField(choices=[('technical', 'Technique'), ('soft', 'Compétences douces'), ('language', 'Langue'), ('certification', 'Certification'), ('other', 'Autre')], max_length=20, verbose_name='Catégorie')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
+                (
+                    'category',
+                    models.CharField(
+                        choices=[
+                            ('technical', 'Technique'),
+                            ('soft', 'Compétences douces'),
+                            ('language', 'Langue'),
+                            ('certification', 'Certification'),
+                            ('other', 'Autre'),
+                        ],
+                        max_length=20,
+                        verbose_name='Catégorie',
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
             ],
             options={
                 'verbose_name': 'Compétence',
@@ -33,18 +62,75 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TrainingCourse',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('title', models.CharField(max_length=200, verbose_name='Titre')),
                 ('description', models.TextField(verbose_name='Description')),
-                ('category', models.CharField(choices=[('technical', 'Technique'), ('soft_skills', 'Compétences douces'), ('language', 'Langue'), ('certification', 'Certification'), ('other', 'Autre')], max_length=20, verbose_name='Catégorie')),
-                ('duration_hours', models.PositiveIntegerField(verbose_name='Durée (heures)')),
-                ('provider', models.CharField(blank=True, max_length=200, verbose_name='Prestataire')),
-                ('location', models.CharField(blank=True, max_length=200, verbose_name='Lieu')),
-                ('is_internal', models.BooleanField(default=False, verbose_name='Formation interne')),
-                ('is_online', models.BooleanField(default=False, verbose_name='Formation en ligne')),
-                ('cost', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Coût')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
+                (
+                    'category',
+                    models.CharField(
+                        choices=[
+                            ('technical', 'Technique'),
+                            ('soft_skills', 'Compétences douces'),
+                            ('language', 'Langue'),
+                            ('certification', 'Certification'),
+                            ('other', 'Autre'),
+                        ],
+                        max_length=20,
+                        verbose_name='Catégorie',
+                    ),
+                ),
+                (
+                    'duration_hours',
+                    models.PositiveIntegerField(verbose_name='Durée (heures)'),
+                ),
+                (
+                    'provider',
+                    models.CharField(
+                        blank=True, max_length=200, verbose_name='Prestataire'
+                    ),
+                ),
+                (
+                    'location',
+                    models.CharField(blank=True, max_length=200, verbose_name='Lieu'),
+                ),
+                (
+                    'is_internal',
+                    models.BooleanField(
+                        default=False, verbose_name='Formation interne'
+                    ),
+                ),
+                (
+                    'is_online',
+                    models.BooleanField(
+                        default=False, verbose_name='Formation en ligne'
+                    ),
+                ),
+                (
+                    'cost',
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=10,
+                        null=True,
+                        verbose_name='Coût',
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
             ],
             options={
                 'verbose_name': 'Formation',
@@ -55,13 +141,43 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Department',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=100, verbose_name='Nom')),
-                ('code', models.CharField(blank=True, max_length=20, verbose_name='Code')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('parent', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='child_departments', to='hr.department', verbose_name='Département parent')),
+                (
+                    'code',
+                    models.CharField(blank=True, max_length=20, verbose_name='Code'),
+                ),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'parent',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='child_departments',
+                        to='hr.department',
+                        verbose_name='Département parent',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Département',
@@ -72,24 +188,110 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Employee',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('first_name', models.CharField(max_length=50, verbose_name='Prénom')),
                 ('last_name', models.CharField(max_length=50, verbose_name='Nom')),
-                ('email', models.EmailField(max_length=254, unique=True, verbose_name='Email')),
-                ('phone', models.CharField(blank=True, max_length=20, verbose_name='Téléphone')),
+                (
+                    'email',
+                    models.EmailField(
+                        max_length=254, unique=True, verbose_name='Email'
+                    ),
+                ),
+                (
+                    'phone',
+                    models.CharField(
+                        blank=True, max_length=20, verbose_name='Téléphone'
+                    ),
+                ),
                 ('address', models.TextField(blank=True, verbose_name='Adresse')),
-                ('birth_date', models.DateField(blank=True, null=True, verbose_name='Date de naissance')),
-                ('employee_id', models.CharField(max_length=20, unique=True, verbose_name='Identifiant employé')),
+                (
+                    'birth_date',
+                    models.DateField(
+                        blank=True, null=True, verbose_name='Date de naissance'
+                    ),
+                ),
+                (
+                    'employee_id',
+                    models.CharField(
+                        max_length=20, unique=True, verbose_name='Identifiant employé'
+                    ),
+                ),
                 ('hire_date', models.DateField(verbose_name="Date d'embauche")),
                 ('is_active', models.BooleanField(default=True, verbose_name='Actif')),
-                ('is_hr', models.BooleanField(default=False, help_text="L'employé a un rôle RH", verbose_name='RH')),
-                ('is_finance', models.BooleanField(default=False, help_text="L'employé a un rôle finance", verbose_name='Finance')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('department', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='employees', to='hr.department', verbose_name='Département')),
-                ('manager', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='subordinates', to='hr.employee', verbose_name='Responsable hiérarchique (N+1)')),
-                ('second_manager', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='second_level_subordinates', to='hr.employee', verbose_name='N+2')),
-                ('user', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='employee', to=settings.AUTH_USER_MODEL, verbose_name='Utilisateur')),
+                (
+                    'is_hr',
+                    models.BooleanField(
+                        default=False,
+                        help_text="L'employé a un rôle RH",
+                        verbose_name='RH',
+                    ),
+                ),
+                (
+                    'is_finance',
+                    models.BooleanField(
+                        default=False,
+                        help_text="L'employé a un rôle finance",
+                        verbose_name='Finance',
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'department',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name='employees',
+                        to='hr.department',
+                        verbose_name='Département',
+                    ),
+                ),
+                (
+                    'manager',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='subordinates',
+                        to='hr.employee',
+                        verbose_name='Responsable hiérarchique (N+1)',
+                    ),
+                ),
+                (
+                    'second_manager',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='second_level_subordinates',
+                        to='hr.employee',
+                        verbose_name='N+2',
+                    ),
+                ),
+                (
+                    'user',
+                    models.OneToOneField(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='employee',
+                        to=settings.AUTH_USER_MODEL,
+                        verbose_name='Utilisateur',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Employé',
@@ -100,20 +302,85 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Availability',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('status', models.CharField(choices=[('requested', 'Demandée'), ('approved', 'Approuvée'), ('rejected', 'Rejetée'), ('cancelled', 'Annulée')], default='requested', max_length=20, verbose_name='Statut')),
-                ('type', models.CharField(choices=[('leave_of_absence', 'Congé sans solde'), ('sabbatical', 'Congé sabbatique'), ('parental', 'Congé parental'), ('other', 'Autre')], max_length=20, verbose_name='Type')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('requested', 'Demandée'),
+                            ('approved', 'Approuvée'),
+                            ('rejected', 'Rejetée'),
+                            ('cancelled', 'Annulée'),
+                        ],
+                        default='requested',
+                        max_length=20,
+                        verbose_name='Statut',
+                    ),
+                ),
+                (
+                    'type',
+                    models.CharField(
+                        choices=[
+                            ('leave_of_absence', 'Congé sans solde'),
+                            ('sabbatical', 'Congé sabbatique'),
+                            ('parental', 'Congé parental'),
+                            ('other', 'Autre'),
+                        ],
+                        max_length=20,
+                        verbose_name='Type',
+                    ),
+                ),
                 ('start_date', models.DateField(verbose_name='Date de début')),
                 ('end_date', models.DateField(verbose_name='Date de fin')),
                 ('reason', models.TextField(verbose_name='Motif')),
-                ('approved_by_manager', models.BooleanField(default=False, verbose_name='Approuvé par N+1')),
-                ('approved_by_hr', models.BooleanField(default=False, verbose_name='Approuvé par RH')),
-                ('manager_notes', models.TextField(blank=True, verbose_name='Notes du manager')),
+                (
+                    'approved_by_manager',
+                    models.BooleanField(default=False, verbose_name='Approuvé par N+1'),
+                ),
+                (
+                    'approved_by_hr',
+                    models.BooleanField(default=False, verbose_name='Approuvé par RH'),
+                ),
+                (
+                    'manager_notes',
+                    models.TextField(blank=True, verbose_name='Notes du manager'),
+                ),
                 ('hr_notes', models.TextField(blank=True, verbose_name='Notes RH')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='availabilities', to='hr.employee', verbose_name='Employé')),
-                ('requested_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='requested_availabilities', to='hr.employee', verbose_name='Demandé par')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'employee',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='availabilities',
+                        to='hr.employee',
+                        verbose_name='Employé',
+                    ),
+                ),
+                (
+                    'requested_by',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='requested_availabilities',
+                        to='hr.employee',
+                        verbose_name='Demandé par',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Mise en disponibilité',
@@ -124,13 +391,46 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='JobTitle',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, verbose_name='Intitulé du poste')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
-                ('is_management', models.BooleanField(default=False, verbose_name='Poste de management')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('department', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='job_titles', to='hr.department', verbose_name='Département')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'name',
+                    models.CharField(max_length=100, verbose_name='Intitulé du poste'),
+                ),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
+                (
+                    'is_management',
+                    models.BooleanField(
+                        default=False, verbose_name='Poste de management'
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'department',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='job_titles',
+                        to='hr.department',
+                        verbose_name='Département',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Poste',
@@ -141,32 +441,121 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='employee',
             name='job_title',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='employees', to='hr.jobtitle', verbose_name='Poste'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name='employees',
+                to='hr.jobtitle',
+                verbose_name='Poste',
+            ),
         ),
         migrations.CreateModel(
             name='Mission',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('title', models.CharField(max_length=200, verbose_name='Titre')),
                 ('description', models.TextField(verbose_name='Description')),
                 ('location', models.CharField(max_length=200, verbose_name='Lieu')),
                 ('start_date', models.DateField(verbose_name='Date de début')),
                 ('end_date', models.DateField(verbose_name='Date de fin')),
-                ('status', models.CharField(choices=[('draft', 'Brouillon'), ('submitted', 'Soumise'), ('approved_manager', 'Approuvée par N+1'), ('approved_hr', 'Approuvée par RH'), ('approved_finance', 'Approuvée par Finance'), ('rejected', 'Rejetée'), ('cancelled', 'Annulée'), ('completed', 'Terminée')], default='draft', max_length=20, verbose_name='Statut')),
-                ('approved_by_manager', models.BooleanField(default=False, verbose_name='Approuvé par N+1')),
-                ('approved_by_hr', models.BooleanField(default=False, verbose_name='Approuvé par RH')),
-                ('approved_by_finance', models.BooleanField(default=False, verbose_name='Approuvé par Finance')),
-                ('manager_notes', models.TextField(blank=True, verbose_name='Notes du manager')),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('draft', 'Brouillon'),
+                            ('submitted', 'Soumise'),
+                            ('approved_manager', 'Approuvée par N+1'),
+                            ('approved_hr', 'Approuvée par RH'),
+                            ('approved_finance', 'Approuvée par Finance'),
+                            ('rejected', 'Rejetée'),
+                            ('cancelled', 'Annulée'),
+                            ('completed', 'Terminée'),
+                        ],
+                        default='draft',
+                        max_length=20,
+                        verbose_name='Statut',
+                    ),
+                ),
+                (
+                    'approved_by_manager',
+                    models.BooleanField(default=False, verbose_name='Approuvé par N+1'),
+                ),
+                (
+                    'approved_by_hr',
+                    models.BooleanField(default=False, verbose_name='Approuvé par RH'),
+                ),
+                (
+                    'approved_by_finance',
+                    models.BooleanField(
+                        default=False, verbose_name='Approuvé par Finance'
+                    ),
+                ),
+                (
+                    'manager_notes',
+                    models.TextField(blank=True, verbose_name='Notes du manager'),
+                ),
                 ('hr_notes', models.TextField(blank=True, verbose_name='Notes RH')),
-                ('finance_notes', models.TextField(blank=True, verbose_name='Notes Finance')),
-                ('report', models.TextField(blank=True, verbose_name='Rapport de mission')),
-                ('report_submitted', models.BooleanField(default=False, verbose_name='Rapport soumis')),
-                ('report_date', models.DateField(blank=True, null=True, verbose_name='Date du rapport')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('order_pdf', models.CharField(blank=True, max_length=255, null=True, verbose_name='Ordre de mission PDF')),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='missions', to='hr.employee', verbose_name='Employé')),
-                ('requested_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='requested_missions', to='hr.employee', verbose_name='Demandé par')),
+                (
+                    'finance_notes',
+                    models.TextField(blank=True, verbose_name='Notes Finance'),
+                ),
+                (
+                    'report',
+                    models.TextField(blank=True, verbose_name='Rapport de mission'),
+                ),
+                (
+                    'report_submitted',
+                    models.BooleanField(default=False, verbose_name='Rapport soumis'),
+                ),
+                (
+                    'report_date',
+                    models.DateField(
+                        blank=True, null=True, verbose_name='Date du rapport'
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'order_pdf',
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        null=True,
+                        verbose_name='Ordre de mission PDF',
+                    ),
+                ),
+                (
+                    'employee',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='missions',
+                        to='hr.employee',
+                        verbose_name='Employé',
+                    ),
+                ),
+                (
+                    'requested_by',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='requested_missions',
+                        to='hr.employee',
+                        verbose_name='Demandé par',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Mission',
@@ -177,19 +566,79 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TrainingPlan',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('year', models.PositiveSmallIntegerField(verbose_name='Année')),
-                ('status', models.CharField(choices=[('draft', 'Brouillon'), ('submitted', 'Soumis'), ('approved_manager', 'Approuvé par N+1'), ('approved_hr', 'Approuvé par RH'), ('approved_finance', 'Approuvé par Finance'), ('rejected', 'Rejeté'), ('completed', 'Terminé')], default='draft', max_length=20, verbose_name='Statut')),
-                ('objectives', models.TextField(blank=True, verbose_name='Objectifs de développement')),
-                ('approved_by_manager', models.BooleanField(default=False, verbose_name='Approuvé par N+1')),
-                ('approved_by_hr', models.BooleanField(default=False, verbose_name='Approuvé par RH')),
-                ('approved_by_finance', models.BooleanField(default=False, verbose_name='Approuvé par Finance')),
-                ('manager_notes', models.TextField(blank=True, verbose_name='Notes du manager')),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('draft', 'Brouillon'),
+                            ('submitted', 'Soumis'),
+                            ('approved_manager', 'Approuvé par N+1'),
+                            ('approved_hr', 'Approuvé par RH'),
+                            ('approved_finance', 'Approuvé par Finance'),
+                            ('rejected', 'Rejeté'),
+                            ('completed', 'Terminé'),
+                        ],
+                        default='draft',
+                        max_length=20,
+                        verbose_name='Statut',
+                    ),
+                ),
+                (
+                    'objectives',
+                    models.TextField(
+                        blank=True, verbose_name='Objectifs de développement'
+                    ),
+                ),
+                (
+                    'approved_by_manager',
+                    models.BooleanField(default=False, verbose_name='Approuvé par N+1'),
+                ),
+                (
+                    'approved_by_hr',
+                    models.BooleanField(default=False, verbose_name='Approuvé par RH'),
+                ),
+                (
+                    'approved_by_finance',
+                    models.BooleanField(
+                        default=False, verbose_name='Approuvé par Finance'
+                    ),
+                ),
+                (
+                    'manager_notes',
+                    models.TextField(blank=True, verbose_name='Notes du manager'),
+                ),
                 ('hr_notes', models.TextField(blank=True, verbose_name='Notes RH')),
-                ('finance_notes', models.TextField(blank=True, verbose_name='Notes Finance')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='training_plans', to='hr.employee', verbose_name='Employé')),
+                (
+                    'finance_notes',
+                    models.TextField(blank=True, verbose_name='Notes Finance'),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'employee',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='training_plans',
+                        to='hr.employee',
+                        verbose_name='Employé',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Plan de formation',
@@ -201,20 +650,123 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TrainingPlanItem',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('planned_quarter', models.PositiveSmallIntegerField(choices=[(1, 'Q1'), (2, 'Q2'), (3, 'Q3'), (4, 'Q4')], verbose_name='Trimestre prévu')),
-                ('priority', models.PositiveSmallIntegerField(choices=[(1, 'Basse'), (2, 'Moyenne'), (3, 'Haute')], default=2, verbose_name='Priorité')),
-                ('status', models.CharField(choices=[('planned', 'Planifiée'), ('scheduled', 'Programmée'), ('in_progress', 'En cours'), ('completed', 'Terminée'), ('cancelled', 'Annulée')], default='planned', max_length=20, verbose_name='Statut')),
-                ('scheduled_date', models.DateField(blank=True, null=True, verbose_name='Date programmée')),
-                ('completion_date', models.DateField(blank=True, null=True, verbose_name='Date de fin')),
-                ('employee_rating', models.PositiveSmallIntegerField(blank=True, choices=[(1, 'Très insatisfait'), (2, 'Insatisfait'), (3, 'Neutre'), (4, 'Satisfait'), (5, 'Très satisfait')], null=True, verbose_name="Évaluation par l'employé")),
-                ('manager_rating', models.PositiveSmallIntegerField(blank=True, choices=[(1, 'Très insatisfait'), (2, 'Insatisfait'), (3, 'Neutre'), (4, 'Satisfait'), (5, 'Très satisfait')], null=True, verbose_name='Évaluation par le manager')),
-                ('employee_comments', models.TextField(blank=True, verbose_name="Commentaires de l'employé")),
-                ('manager_comments', models.TextField(blank=True, verbose_name='Commentaires du manager')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('training_course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='plan_items', to='hr.trainingcourse', verbose_name='Formation')),
-                ('training_plan', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='training_items', to='hr.trainingplan', verbose_name='Plan de formation')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'planned_quarter',
+                    models.PositiveSmallIntegerField(
+                        choices=[(1, 'Q1'), (2, 'Q2'), (3, 'Q3'), (4, 'Q4')],
+                        verbose_name='Trimestre prévu',
+                    ),
+                ),
+                (
+                    'priority',
+                    models.PositiveSmallIntegerField(
+                        choices=[(1, 'Basse'), (2, 'Moyenne'), (3, 'Haute')],
+                        default=2,
+                        verbose_name='Priorité',
+                    ),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('planned', 'Planifiée'),
+                            ('scheduled', 'Programmée'),
+                            ('in_progress', 'En cours'),
+                            ('completed', 'Terminée'),
+                            ('cancelled', 'Annulée'),
+                        ],
+                        default='planned',
+                        max_length=20,
+                        verbose_name='Statut',
+                    ),
+                ),
+                (
+                    'scheduled_date',
+                    models.DateField(
+                        blank=True, null=True, verbose_name='Date programmée'
+                    ),
+                ),
+                (
+                    'completion_date',
+                    models.DateField(blank=True, null=True, verbose_name='Date de fin'),
+                ),
+                (
+                    'employee_rating',
+                    models.PositiveSmallIntegerField(
+                        blank=True,
+                        choices=[
+                            (1, 'Très insatisfait'),
+                            (2, 'Insatisfait'),
+                            (3, 'Neutre'),
+                            (4, 'Satisfait'),
+                            (5, 'Très satisfait'),
+                        ],
+                        null=True,
+                        verbose_name="Évaluation par l'employé",
+                    ),
+                ),
+                (
+                    'manager_rating',
+                    models.PositiveSmallIntegerField(
+                        blank=True,
+                        choices=[
+                            (1, 'Très insatisfait'),
+                            (2, 'Insatisfait'),
+                            (3, 'Neutre'),
+                            (4, 'Satisfait'),
+                            (5, 'Très satisfait'),
+                        ],
+                        null=True,
+                        verbose_name='Évaluation par le manager',
+                    ),
+                ),
+                (
+                    'employee_comments',
+                    models.TextField(
+                        blank=True, verbose_name="Commentaires de l'employé"
+                    ),
+                ),
+                (
+                    'manager_comments',
+                    models.TextField(
+                        blank=True, verbose_name='Commentaires du manager'
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'training_course',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='plan_items',
+                        to='hr.trainingcourse',
+                        verbose_name='Formation',
+                    ),
+                ),
+                (
+                    'training_plan',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='training_items',
+                        to='hr.trainingplan',
+                        verbose_name='Plan de formation',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Formation dans le plan',
@@ -225,12 +777,54 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TrainingSkill',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('level_provided', models.PositiveSmallIntegerField(choices=[(1, 'Débutant'), (2, 'Intermédiaire'), (3, 'Avancé'), (4, 'Expert'), (5, 'Maître')], verbose_name='Niveau fourni')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('skill', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='skill_trainings', to='hr.skill', verbose_name='Compétence')),
-                ('training_course', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='training_skills', to='hr.trainingcourse', verbose_name='Formation')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'level_provided',
+                    models.PositiveSmallIntegerField(
+                        choices=[
+                            (1, 'Débutant'),
+                            (2, 'Intermédiaire'),
+                            (3, 'Avancé'),
+                            (4, 'Expert'),
+                            (5, 'Maître'),
+                        ],
+                        verbose_name='Niveau fourni',
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'skill',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='skill_trainings',
+                        to='hr.skill',
+                        verbose_name='Compétence',
+                    ),
+                ),
+                (
+                    'training_course',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='training_skills',
+                        to='hr.trainingcourse',
+                        verbose_name='Formation',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Compétence développée par formation',
@@ -241,19 +835,79 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='trainingcourse',
             name='skills',
-            field=models.ManyToManyField(related_name='training_courses', through='hr.TrainingSkill', to='hr.skill', verbose_name='Compétences'),
+            field=models.ManyToManyField(
+                related_name='training_courses',
+                through='hr.TrainingSkill',
+                to='hr.skill',
+                verbose_name='Compétences',
+            ),
         ),
         migrations.CreateModel(
             name='JobSkillRequirement',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('required_level', models.PositiveSmallIntegerField(choices=[(1, 'Notions'), (2, 'Intermédiaire'), (3, 'Avancé'), (4, 'Expert'), (5, 'Maître')], verbose_name='Niveau requis')),
-                ('importance', models.CharField(choices=[('optional', 'Optionnelle'), ('preferred', 'Préférée'), ('required', 'Requise'), ('critical', 'Critique')], default='required', max_length=20, verbose_name='Importance')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'required_level',
+                    models.PositiveSmallIntegerField(
+                        choices=[
+                            (1, 'Notions'),
+                            (2, 'Intermédiaire'),
+                            (3, 'Avancé'),
+                            (4, 'Expert'),
+                            (5, 'Maître'),
+                        ],
+                        verbose_name='Niveau requis',
+                    ),
+                ),
+                (
+                    'importance',
+                    models.CharField(
+                        choices=[
+                            ('optional', 'Optionnelle'),
+                            ('preferred', 'Préférée'),
+                            ('required', 'Requise'),
+                            ('critical', 'Critique'),
+                        ],
+                        default='required',
+                        max_length=20,
+                        verbose_name='Importance',
+                    ),
+                ),
                 ('notes', models.TextField(blank=True, verbose_name='Notes')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('job_title', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='skill_requirements', to='hr.jobtitle', verbose_name='Poste')),
-                ('skill', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='job_requirements', to='hr.skill', verbose_name='Compétence')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'job_title',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='skill_requirements',
+                        to='hr.jobtitle',
+                        verbose_name='Poste',
+                    ),
+                ),
+                (
+                    'skill',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='job_requirements',
+                        to='hr.skill',
+                        verbose_name='Compétence',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Compétence requise pour un poste',
@@ -265,15 +919,67 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='EmployeeSkill',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('level', models.PositiveSmallIntegerField(choices=[(1, 'Débutant'), (2, 'Intermédiaire'), (3, 'Avancé'), (4, 'Expert'), (5, 'Maître')], verbose_name='Niveau')),
-                ('certification', models.CharField(blank=True, max_length=200, verbose_name='Certification')),
-                ('certification_date', models.DateField(blank=True, null=True, verbose_name='Date de certification')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'level',
+                    models.PositiveSmallIntegerField(
+                        choices=[
+                            (1, 'Débutant'),
+                            (2, 'Intermédiaire'),
+                            (3, 'Avancé'),
+                            (4, 'Expert'),
+                            (5, 'Maître'),
+                        ],
+                        verbose_name='Niveau',
+                    ),
+                ),
+                (
+                    'certification',
+                    models.CharField(
+                        blank=True, max_length=200, verbose_name='Certification'
+                    ),
+                ),
+                (
+                    'certification_date',
+                    models.DateField(
+                        blank=True, null=True, verbose_name='Date de certification'
+                    ),
+                ),
                 ('notes', models.TextField(blank=True, verbose_name='Notes')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='skills', to='hr.employee', verbose_name='Employé')),
-                ('skill', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='employee_skills', to='hr.skill', verbose_name='Compétence')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'employee',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='skills',
+                        to='hr.employee',
+                        verbose_name='Employé',
+                    ),
+                ),
+                (
+                    'skill',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='employee_skills',
+                        to='hr.skill',
+                        verbose_name='Compétence',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': "Compétence d'employé",

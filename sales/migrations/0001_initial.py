@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -17,14 +16,50 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='BankAccount',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=100, verbose_name='Nom')),
-                ('bank_name', models.CharField(max_length=100, verbose_name='Nom de la banque')),
+                (
+                    'bank_name',
+                    models.CharField(max_length=100, verbose_name='Nom de la banque'),
+                ),
                 ('rib', models.CharField(max_length=30, verbose_name='RIB')),
-                ('iban', models.CharField(blank=True, max_length=34, null=True, verbose_name='IBAN')),
-                ('swift', models.CharField(blank=True, max_length=11, null=True, verbose_name='Code SWIFT/BIC')),
-                ('is_default', models.BooleanField(default=False, verbose_name='Compte par défaut')),
-                ('currency', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.currency', verbose_name='Devise')),
+                (
+                    'iban',
+                    models.CharField(
+                        blank=True, max_length=34, null=True, verbose_name='IBAN'
+                    ),
+                ),
+                (
+                    'swift',
+                    models.CharField(
+                        blank=True,
+                        max_length=11,
+                        null=True,
+                        verbose_name='Code SWIFT/BIC',
+                    ),
+                ),
+                (
+                    'is_default',
+                    models.BooleanField(
+                        default=False, verbose_name='Compte par défaut'
+                    ),
+                ),
+                (
+                    'currency',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='core.currency',
+                        verbose_name='Devise',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Compte bancaire',
@@ -34,29 +69,171 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Order',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('number', models.CharField(max_length=20, unique=True, verbose_name='Numéro')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'number',
+                    models.CharField(max_length=20, unique=True, verbose_name='Numéro'),
+                ),
                 ('date', models.DateField(verbose_name="Date d'émission")),
-                ('subtotal', models.DecimalField(decimal_places=2, default=0, max_digits=15, verbose_name='Sous-total HT')),
-                ('tax_amount', models.DecimalField(decimal_places=2, default=0, max_digits=15, verbose_name='Montant TVA')),
-                ('total', models.DecimalField(decimal_places=2, default=0, max_digits=15, verbose_name='Total TTC')),
-                ('exchange_rate', models.DecimalField(decimal_places=4, default=1.0, max_digits=10, verbose_name='Taux de change')),
-                ('payment_terms', models.CharField(choices=[('immediate', 'Paiement immédiat'), ('30_days', '30 jours'), ('60_days', '60 jours')], default='30_days', max_length=20, verbose_name='Conditions de paiement')),
-                ('notes', models.TextField(blank=True, null=True, verbose_name='Notes')),
-                ('terms', models.TextField(blank=True, null=True, verbose_name='Conditions')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('pdf_file', models.CharField(blank=True, max_length=255, null=True, verbose_name='Fichier PDF')),
-                ('email_sent', models.BooleanField(default=False, verbose_name='Email envoyé')),
-                ('email_sent_date', models.DateTimeField(blank=True, null=True, verbose_name="Date d'envoi de l'email")),
-                ('status', models.CharField(choices=[('draft', 'Brouillon'), ('confirmed', 'Confirmée'), ('in_progress', 'En cours'), ('delivered', 'Livrée'), ('cancelled', 'Annulée')], default='draft', max_length=20, verbose_name='Statut')),
-                ('converted_to_invoice', models.BooleanField(default=False, verbose_name='Converti en facture')),
-                ('delivery_date', models.DateField(blank=True, null=True, verbose_name='Date de livraison')),
-                ('delivery_address', models.TextField(blank=True, null=True, verbose_name='Adresse de livraison')),
-                ('bank_account', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='sales.bankaccount', verbose_name='Compte bancaire')),
-                ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='crm.company', verbose_name='Entreprise')),
-                ('contact', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='crm.contact', verbose_name='Contact')),
-                ('currency', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.currency', verbose_name='Devise')),
+                (
+                    'subtotal',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=15,
+                        verbose_name='Sous-total HT',
+                    ),
+                ),
+                (
+                    'tax_amount',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=15,
+                        verbose_name='Montant TVA',
+                    ),
+                ),
+                (
+                    'total',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=15,
+                        verbose_name='Total TTC',
+                    ),
+                ),
+                (
+                    'exchange_rate',
+                    models.DecimalField(
+                        decimal_places=4,
+                        default=1.0,
+                        max_digits=10,
+                        verbose_name='Taux de change',
+                    ),
+                ),
+                (
+                    'payment_terms',
+                    models.CharField(
+                        choices=[
+                            ('immediate', 'Paiement immédiat'),
+                            ('30_days', '30 jours'),
+                            ('60_days', '60 jours'),
+                        ],
+                        default='30_days',
+                        max_length=20,
+                        verbose_name='Conditions de paiement',
+                    ),
+                ),
+                (
+                    'notes',
+                    models.TextField(blank=True, null=True, verbose_name='Notes'),
+                ),
+                (
+                    'terms',
+                    models.TextField(blank=True, null=True, verbose_name='Conditions'),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'pdf_file',
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        null=True,
+                        verbose_name='Fichier PDF',
+                    ),
+                ),
+                (
+                    'email_sent',
+                    models.BooleanField(default=False, verbose_name='Email envoyé'),
+                ),
+                (
+                    'email_sent_date',
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="Date d'envoi de l'email"
+                    ),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('draft', 'Brouillon'),
+                            ('confirmed', 'Confirmée'),
+                            ('in_progress', 'En cours'),
+                            ('delivered', 'Livrée'),
+                            ('cancelled', 'Annulée'),
+                        ],
+                        default='draft',
+                        max_length=20,
+                        verbose_name='Statut',
+                    ),
+                ),
+                (
+                    'converted_to_invoice',
+                    models.BooleanField(
+                        default=False, verbose_name='Converti en facture'
+                    ),
+                ),
+                (
+                    'delivery_date',
+                    models.DateField(
+                        blank=True, null=True, verbose_name='Date de livraison'
+                    ),
+                ),
+                (
+                    'delivery_address',
+                    models.TextField(
+                        blank=True, null=True, verbose_name='Adresse de livraison'
+                    ),
+                ),
+                (
+                    'bank_account',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='sales.bankaccount',
+                        verbose_name='Compte bancaire',
+                    ),
+                ),
+                (
+                    'company',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='crm.company',
+                        verbose_name='Entreprise',
+                    ),
+                ),
+                (
+                    'contact',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='crm.contact',
+                        verbose_name='Contact',
+                    ),
+                ),
+                (
+                    'currency',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='core.currency',
+                        verbose_name='Devise',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Commande',
@@ -67,30 +244,187 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Invoice',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('number', models.CharField(max_length=20, unique=True, verbose_name='Numéro')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'number',
+                    models.CharField(max_length=20, unique=True, verbose_name='Numéro'),
+                ),
                 ('date', models.DateField(verbose_name="Date d'émission")),
-                ('subtotal', models.DecimalField(decimal_places=2, default=0, max_digits=15, verbose_name='Sous-total HT')),
-                ('tax_amount', models.DecimalField(decimal_places=2, default=0, max_digits=15, verbose_name='Montant TVA')),
-                ('total', models.DecimalField(decimal_places=2, default=0, max_digits=15, verbose_name='Total TTC')),
-                ('exchange_rate', models.DecimalField(decimal_places=4, default=1.0, max_digits=10, verbose_name='Taux de change')),
-                ('payment_terms', models.CharField(choices=[('immediate', 'Paiement immédiat'), ('30_days', '30 jours'), ('60_days', '60 jours')], default='30_days', max_length=20, verbose_name='Conditions de paiement')),
-                ('notes', models.TextField(blank=True, null=True, verbose_name='Notes')),
-                ('terms', models.TextField(blank=True, null=True, verbose_name='Conditions')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('pdf_file', models.CharField(blank=True, max_length=255, null=True, verbose_name='Fichier PDF')),
-                ('email_sent', models.BooleanField(default=False, verbose_name='Email envoyé')),
-                ('email_sent_date', models.DateTimeField(blank=True, null=True, verbose_name="Date d'envoi de l'email")),
-                ('due_date', models.DateField(blank=True, null=True, verbose_name="Date d'échéance")),
-                ('payment_status', models.CharField(choices=[('unpaid', 'Non payée'), ('partial', 'Partiellement payée'), ('paid', 'Payée'), ('overdue', 'En retard'), ('cancelled', 'Annulée')], default='unpaid', max_length=20, verbose_name='Statut de paiement')),
-                ('amount_paid', models.DecimalField(decimal_places=2, default=0, max_digits=15, verbose_name='Montant payé')),
-                ('amount_due', models.DecimalField(decimal_places=2, default=0, max_digits=15, verbose_name='Montant dû')),
-                ('bank_account', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='sales.bankaccount', verbose_name='Compte bancaire')),
-                ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='crm.company', verbose_name='Entreprise')),
-                ('contact', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='crm.contact', verbose_name='Contact')),
-                ('currency', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.currency', verbose_name='Devise')),
-                ('order', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sales.order', verbose_name="Commande d'origine")),
+                (
+                    'subtotal',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=15,
+                        verbose_name='Sous-total HT',
+                    ),
+                ),
+                (
+                    'tax_amount',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=15,
+                        verbose_name='Montant TVA',
+                    ),
+                ),
+                (
+                    'total',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=15,
+                        verbose_name='Total TTC',
+                    ),
+                ),
+                (
+                    'exchange_rate',
+                    models.DecimalField(
+                        decimal_places=4,
+                        default=1.0,
+                        max_digits=10,
+                        verbose_name='Taux de change',
+                    ),
+                ),
+                (
+                    'payment_terms',
+                    models.CharField(
+                        choices=[
+                            ('immediate', 'Paiement immédiat'),
+                            ('30_days', '30 jours'),
+                            ('60_days', '60 jours'),
+                        ],
+                        default='30_days',
+                        max_length=20,
+                        verbose_name='Conditions de paiement',
+                    ),
+                ),
+                (
+                    'notes',
+                    models.TextField(blank=True, null=True, verbose_name='Notes'),
+                ),
+                (
+                    'terms',
+                    models.TextField(blank=True, null=True, verbose_name='Conditions'),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'pdf_file',
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        null=True,
+                        verbose_name='Fichier PDF',
+                    ),
+                ),
+                (
+                    'email_sent',
+                    models.BooleanField(default=False, verbose_name='Email envoyé'),
+                ),
+                (
+                    'email_sent_date',
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="Date d'envoi de l'email"
+                    ),
+                ),
+                (
+                    'due_date',
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Date d'échéance"
+                    ),
+                ),
+                (
+                    'payment_status',
+                    models.CharField(
+                        choices=[
+                            ('unpaid', 'Non payée'),
+                            ('partial', 'Partiellement payée'),
+                            ('paid', 'Payée'),
+                            ('overdue', 'En retard'),
+                            ('cancelled', 'Annulée'),
+                        ],
+                        default='unpaid',
+                        max_length=20,
+                        verbose_name='Statut de paiement',
+                    ),
+                ),
+                (
+                    'amount_paid',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=15,
+                        verbose_name='Montant payé',
+                    ),
+                ),
+                (
+                    'amount_due',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=15,
+                        verbose_name='Montant dû',
+                    ),
+                ),
+                (
+                    'bank_account',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='sales.bankaccount',
+                        verbose_name='Compte bancaire',
+                    ),
+                ),
+                (
+                    'company',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='crm.company',
+                        verbose_name='Entreprise',
+                    ),
+                ),
+                (
+                    'contact',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='crm.contact',
+                        verbose_name='Contact',
+                    ),
+                ),
+                (
+                    'currency',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='core.currency',
+                        verbose_name='Devise',
+                    ),
+                ),
+                (
+                    'order',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to='sales.order',
+                        verbose_name="Commande d'origine",
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Facture',
@@ -101,13 +435,55 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Payment',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('date', models.DateField(verbose_name='Date de paiement')),
-                ('amount', models.DecimalField(decimal_places=2, max_digits=15, verbose_name='Montant')),
-                ('method', models.CharField(choices=[('bank_transfer', 'Virement bancaire'), ('check', 'Chèque'), ('cash', 'Espèces'), ('credit_card', 'Carte de crédit'), ('other', 'Autre')], default='bank_transfer', max_length=20, verbose_name='Méthode de paiement')),
-                ('reference', models.CharField(blank=True, max_length=100, null=True, verbose_name='Référence')),
-                ('notes', models.TextField(blank=True, null=True, verbose_name='Notes')),
-                ('invoice', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='sales.invoice', verbose_name='Facture')),
+                (
+                    'amount',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=15, verbose_name='Montant'
+                    ),
+                ),
+                (
+                    'method',
+                    models.CharField(
+                        choices=[
+                            ('bank_transfer', 'Virement bancaire'),
+                            ('check', 'Chèque'),
+                            ('cash', 'Espèces'),
+                            ('credit_card', 'Carte de crédit'),
+                            ('other', 'Autre'),
+                        ],
+                        default='bank_transfer',
+                        max_length=20,
+                        verbose_name='Méthode de paiement',
+                    ),
+                ),
+                (
+                    'reference',
+                    models.CharField(
+                        blank=True, max_length=100, null=True, verbose_name='Référence'
+                    ),
+                ),
+                (
+                    'notes',
+                    models.TextField(blank=True, null=True, verbose_name='Notes'),
+                ),
+                (
+                    'invoice',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='sales.invoice',
+                        verbose_name='Facture',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Paiement',
@@ -118,14 +494,50 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Product',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=200, verbose_name='Nom')),
-                ('reference', models.CharField(max_length=30, unique=True, verbose_name='Référence')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
-                ('unit_price', models.DecimalField(decimal_places=2, max_digits=15, verbose_name='Prix unitaire')),
-                ('tax_rate', models.DecimalField(decimal_places=2, default=20.0, max_digits=5, verbose_name='Taux de TVA (%)')),
+                (
+                    'reference',
+                    models.CharField(
+                        max_length=30, unique=True, verbose_name='Référence'
+                    ),
+                ),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
+                (
+                    'unit_price',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=15, verbose_name='Prix unitaire'
+                    ),
+                ),
+                (
+                    'tax_rate',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=20.0,
+                        max_digits=5,
+                        verbose_name='Taux de TVA (%)',
+                    ),
+                ),
                 ('is_active', models.BooleanField(default=True, verbose_name='Actif')),
-                ('currency', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.currency', verbose_name='Devise')),
+                (
+                    'currency',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='core.currency',
+                        verbose_name='Devise',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Produit',
@@ -135,13 +547,59 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='OrderItem',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
-                ('quantity', models.DecimalField(decimal_places=2, default=1, max_digits=10, verbose_name='Quantité')),
-                ('unit_price', models.DecimalField(decimal_places=2, max_digits=15, verbose_name='Prix unitaire')),
-                ('tax_rate', models.DecimalField(decimal_places=2, default=20.0, max_digits=5, verbose_name='Taux de TVA (%)')),
-                ('order', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='sales.order', verbose_name='Commande')),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='sales.product', verbose_name='Produit')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
+                (
+                    'quantity',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=1,
+                        max_digits=10,
+                        verbose_name='Quantité',
+                    ),
+                ),
+                (
+                    'unit_price',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=15, verbose_name='Prix unitaire'
+                    ),
+                ),
+                (
+                    'tax_rate',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=20.0,
+                        max_digits=5,
+                        verbose_name='Taux de TVA (%)',
+                    ),
+                ),
+                (
+                    'order',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='sales.order',
+                        verbose_name='Commande',
+                    ),
+                ),
+                (
+                    'product',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='sales.product',
+                        verbose_name='Produit',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Ligne de commande',
@@ -151,13 +609,59 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='InvoiceItem',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
-                ('quantity', models.DecimalField(decimal_places=2, default=1, max_digits=10, verbose_name='Quantité')),
-                ('unit_price', models.DecimalField(decimal_places=2, max_digits=15, verbose_name='Prix unitaire')),
-                ('tax_rate', models.DecimalField(decimal_places=2, default=20.0, max_digits=5, verbose_name='Taux de TVA (%)')),
-                ('invoice', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='sales.invoice', verbose_name='Facture')),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='sales.product', verbose_name='Produit')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
+                (
+                    'quantity',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=1,
+                        max_digits=10,
+                        verbose_name='Quantité',
+                    ),
+                ),
+                (
+                    'unit_price',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=15, verbose_name='Prix unitaire'
+                    ),
+                ),
+                (
+                    'tax_rate',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=20.0,
+                        max_digits=5,
+                        verbose_name='Taux de TVA (%)',
+                    ),
+                ),
+                (
+                    'invoice',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='sales.invoice',
+                        verbose_name='Facture',
+                    ),
+                ),
+                (
+                    'product',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='sales.product',
+                        verbose_name='Produit',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Ligne de facture',
@@ -167,31 +671,188 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Quote',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('number', models.CharField(max_length=20, unique=True, verbose_name='Numéro')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'number',
+                    models.CharField(max_length=20, unique=True, verbose_name='Numéro'),
+                ),
                 ('date', models.DateField(verbose_name="Date d'émission")),
-                ('subtotal', models.DecimalField(decimal_places=2, default=0, max_digits=15, verbose_name='Sous-total HT')),
-                ('tax_amount', models.DecimalField(decimal_places=2, default=0, max_digits=15, verbose_name='Montant TVA')),
-                ('total', models.DecimalField(decimal_places=2, default=0, max_digits=15, verbose_name='Total TTC')),
-                ('exchange_rate', models.DecimalField(decimal_places=4, default=1.0, max_digits=10, verbose_name='Taux de change')),
-                ('payment_terms', models.CharField(choices=[('immediate', 'Paiement immédiat'), ('30_days', '30 jours'), ('60_days', '60 jours')], default='30_days', max_length=20, verbose_name='Conditions de paiement')),
-                ('notes', models.TextField(blank=True, null=True, verbose_name='Notes')),
-                ('terms', models.TextField(blank=True, null=True, verbose_name='Conditions')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('pdf_file', models.CharField(blank=True, max_length=255, null=True, verbose_name='Fichier PDF')),
-                ('email_sent', models.BooleanField(default=False, verbose_name='Email envoyé')),
-                ('email_sent_date', models.DateTimeField(blank=True, null=True, verbose_name="Date d'envoi de l'email")),
-                ('status', models.CharField(choices=[('draft', 'Brouillon'), ('sent', 'Envoyé'), ('accepted', 'Accepté'), ('rejected', 'Refusé'), ('expired', 'Expiré'), ('cancelled', 'Annulé')], default='draft', max_length=20, verbose_name='Statut')),
-                ('validity_period', models.PositiveIntegerField(default=20, verbose_name='Période de validité (jours)')),
-                ('expiration_date', models.DateField(blank=True, null=True, verbose_name="Date d'expiration")),
-                ('converted_to_order', models.BooleanField(default=False, verbose_name='Converti en commande')),
-                ('converted_to_invoice', models.BooleanField(default=False, verbose_name='Converti en facture')),
-                ('bank_account', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='sales.bankaccount', verbose_name='Compte bancaire')),
-                ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='crm.company', verbose_name='Entreprise')),
-                ('contact', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='crm.contact', verbose_name='Contact')),
-                ('currency', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='core.currency', verbose_name='Devise')),
-                ('opportunity', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, to='crm.opportunity', verbose_name='Opportunité')),
+                (
+                    'subtotal',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=15,
+                        verbose_name='Sous-total HT',
+                    ),
+                ),
+                (
+                    'tax_amount',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=15,
+                        verbose_name='Montant TVA',
+                    ),
+                ),
+                (
+                    'total',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=15,
+                        verbose_name='Total TTC',
+                    ),
+                ),
+                (
+                    'exchange_rate',
+                    models.DecimalField(
+                        decimal_places=4,
+                        default=1.0,
+                        max_digits=10,
+                        verbose_name='Taux de change',
+                    ),
+                ),
+                (
+                    'payment_terms',
+                    models.CharField(
+                        choices=[
+                            ('immediate', 'Paiement immédiat'),
+                            ('30_days', '30 jours'),
+                            ('60_days', '60 jours'),
+                        ],
+                        default='30_days',
+                        max_length=20,
+                        verbose_name='Conditions de paiement',
+                    ),
+                ),
+                (
+                    'notes',
+                    models.TextField(blank=True, null=True, verbose_name='Notes'),
+                ),
+                (
+                    'terms',
+                    models.TextField(blank=True, null=True, verbose_name='Conditions'),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'pdf_file',
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        null=True,
+                        verbose_name='Fichier PDF',
+                    ),
+                ),
+                (
+                    'email_sent',
+                    models.BooleanField(default=False, verbose_name='Email envoyé'),
+                ),
+                (
+                    'email_sent_date',
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="Date d'envoi de l'email"
+                    ),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('draft', 'Brouillon'),
+                            ('sent', 'Envoyé'),
+                            ('accepted', 'Accepté'),
+                            ('rejected', 'Refusé'),
+                            ('expired', 'Expiré'),
+                            ('cancelled', 'Annulé'),
+                        ],
+                        default='draft',
+                        max_length=20,
+                        verbose_name='Statut',
+                    ),
+                ),
+                (
+                    'validity_period',
+                    models.PositiveIntegerField(
+                        default=20, verbose_name='Période de validité (jours)'
+                    ),
+                ),
+                (
+                    'expiration_date',
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Date d'expiration"
+                    ),
+                ),
+                (
+                    'converted_to_order',
+                    models.BooleanField(
+                        default=False, verbose_name='Converti en commande'
+                    ),
+                ),
+                (
+                    'converted_to_invoice',
+                    models.BooleanField(
+                        default=False, verbose_name='Converti en facture'
+                    ),
+                ),
+                (
+                    'bank_account',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='sales.bankaccount',
+                        verbose_name='Compte bancaire',
+                    ),
+                ),
+                (
+                    'company',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='crm.company',
+                        verbose_name='Entreprise',
+                    ),
+                ),
+                (
+                    'contact',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='crm.contact',
+                        verbose_name='Contact',
+                    ),
+                ),
+                (
+                    'currency',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='core.currency',
+                        verbose_name='Devise',
+                    ),
+                ),
+                (
+                    'opportunity',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='crm.opportunity',
+                        verbose_name='Opportunité',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Devis',
@@ -202,23 +863,81 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='order',
             name='quote',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sales.quote', verbose_name="Devis d'origine"),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to='sales.quote',
+                verbose_name="Devis d'origine",
+            ),
         ),
         migrations.AddField(
             model_name='invoice',
             name='quote',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='sales.quote', verbose_name="Devis d'origine"),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                to='sales.quote',
+                verbose_name="Devis d'origine",
+            ),
         ),
         migrations.CreateModel(
             name='QuoteItem',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
-                ('quantity', models.DecimalField(decimal_places=2, default=1, max_digits=10, verbose_name='Quantité')),
-                ('unit_price', models.DecimalField(decimal_places=2, max_digits=15, verbose_name='Prix unitaire')),
-                ('tax_rate', models.DecimalField(decimal_places=2, default=20.0, max_digits=5, verbose_name='Taux de TVA (%)')),
-                ('product', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='sales.product', verbose_name='Produit')),
-                ('quote', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='sales.quote', verbose_name='Devis')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
+                (
+                    'quantity',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=1,
+                        max_digits=10,
+                        verbose_name='Quantité',
+                    ),
+                ),
+                (
+                    'unit_price',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=15, verbose_name='Prix unitaire'
+                    ),
+                ),
+                (
+                    'tax_rate',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=20.0,
+                        max_digits=5,
+                        verbose_name='Taux de TVA (%)',
+                    ),
+                ),
+                (
+                    'product',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='sales.product',
+                        verbose_name='Produit',
+                    ),
+                ),
+                (
+                    'quote',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        to='sales.quote',
+                        verbose_name='Devis',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Ligne de devis',

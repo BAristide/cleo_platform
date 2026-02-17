@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -17,18 +16,62 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Candidate',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('first_name', models.CharField(max_length=100, verbose_name='Prénom')),
                 ('last_name', models.CharField(max_length=100, verbose_name='Nom')),
-                ('email', models.EmailField(max_length=254, unique=True, verbose_name='Email')),
-                ('phone', models.CharField(blank=True, max_length=20, verbose_name='Téléphone')),
+                (
+                    'email',
+                    models.EmailField(
+                        max_length=254, unique=True, verbose_name='Email'
+                    ),
+                ),
+                (
+                    'phone',
+                    models.CharField(
+                        blank=True, max_length=20, verbose_name='Téléphone'
+                    ),
+                ),
                 ('address', models.TextField(blank=True, verbose_name='Adresse')),
-                ('current_position', models.CharField(blank=True, max_length=200, verbose_name='Poste actuel')),
-                ('current_company', models.CharField(blank=True, max_length=200, verbose_name='Entreprise actuelle')),
-                ('years_of_experience', models.PositiveSmallIntegerField(default=0, verbose_name="Années d'expérience")),
-                ('highest_degree', models.CharField(blank=True, max_length=200, verbose_name='Diplôme le plus élevé')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
+                (
+                    'current_position',
+                    models.CharField(
+                        blank=True, max_length=200, verbose_name='Poste actuel'
+                    ),
+                ),
+                (
+                    'current_company',
+                    models.CharField(
+                        blank=True, max_length=200, verbose_name='Entreprise actuelle'
+                    ),
+                ),
+                (
+                    'years_of_experience',
+                    models.PositiveSmallIntegerField(
+                        default=0, verbose_name="Années d'expérience"
+                    ),
+                ),
+                (
+                    'highest_degree',
+                    models.CharField(
+                        blank=True, max_length=200, verbose_name='Diplôme le plus élevé'
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
             ],
             options={
                 'verbose_name': 'Candidat',
@@ -39,14 +82,52 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='EvaluationCriterion',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=200, verbose_name='Nom')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
-                ('category', models.CharField(choices=[('technical', 'Expertises Techniques'), ('personal', 'Compétences personnelles'), ('motivation', 'Motivations et intérêt')], max_length=20, verbose_name='Catégorie')),
-                ('weight', models.PositiveSmallIntegerField(default=1, verbose_name='Pondération')),
-                ('display_order', models.PositiveSmallIntegerField(default=1, verbose_name="Ordre d'affichage")),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
+                (
+                    'category',
+                    models.CharField(
+                        choices=[
+                            ('technical', 'Expertises Techniques'),
+                            ('personal', 'Compétences personnelles'),
+                            ('motivation', 'Motivations et intérêt'),
+                        ],
+                        max_length=20,
+                        verbose_name='Catégorie',
+                    ),
+                ),
+                (
+                    'weight',
+                    models.PositiveSmallIntegerField(
+                        default=1, verbose_name='Pondération'
+                    ),
+                ),
+                (
+                    'display_order',
+                    models.PositiveSmallIntegerField(
+                        default=1, verbose_name="Ordre d'affichage"
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
             ],
             options={
                 'verbose_name': "Critère d'évaluation",
@@ -57,20 +138,93 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='RecruitmentStats',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('period_start', models.DateField(verbose_name='Début de période')),
                 ('period_end', models.DateField(verbose_name='Fin de période')),
-                ('total_job_openings', models.PositiveIntegerField(default=0, verbose_name="Total des offres d'emploi")),
-                ('total_applications', models.PositiveIntegerField(default=0, verbose_name='Total des candidatures')),
-                ('applications_per_opening', models.DecimalField(decimal_places=2, default=0, max_digits=5, verbose_name='Candidatures par offre')),
-                ('preselected_applications', models.PositiveIntegerField(default=0, verbose_name='Candidatures présélectionnées')),
-                ('interviewed_candidates', models.PositiveIntegerField(default=0, verbose_name='Candidats interviewés')),
-                ('hired_candidates', models.PositiveIntegerField(default=0, verbose_name='Candidats embauchés')),
-                ('preselection_rate', models.DecimalField(decimal_places=2, default=0, max_digits=5, verbose_name='Taux de présélection (%)')),
-                ('interview_rate', models.DecimalField(decimal_places=2, default=0, max_digits=5, verbose_name="Taux d'entretien (%)")),
-                ('hiring_rate', models.DecimalField(decimal_places=2, default=0, max_digits=5, verbose_name="Taux d'embauche (%)")),
-                ('avg_time_to_hire', models.PositiveIntegerField(default=0, verbose_name="Temps moyen d'embauche (jours)")),
-                ('generated_at', models.DateTimeField(auto_now_add=True, verbose_name='Généré le')),
+                (
+                    'total_job_openings',
+                    models.PositiveIntegerField(
+                        default=0, verbose_name="Total des offres d'emploi"
+                    ),
+                ),
+                (
+                    'total_applications',
+                    models.PositiveIntegerField(
+                        default=0, verbose_name='Total des candidatures'
+                    ),
+                ),
+                (
+                    'applications_per_opening',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=5,
+                        verbose_name='Candidatures par offre',
+                    ),
+                ),
+                (
+                    'preselected_applications',
+                    models.PositiveIntegerField(
+                        default=0, verbose_name='Candidatures présélectionnées'
+                    ),
+                ),
+                (
+                    'interviewed_candidates',
+                    models.PositiveIntegerField(
+                        default=0, verbose_name='Candidats interviewés'
+                    ),
+                ),
+                (
+                    'hired_candidates',
+                    models.PositiveIntegerField(
+                        default=0, verbose_name='Candidats embauchés'
+                    ),
+                ),
+                (
+                    'preselection_rate',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=5,
+                        verbose_name='Taux de présélection (%)',
+                    ),
+                ),
+                (
+                    'interview_rate',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=5,
+                        verbose_name="Taux d'entretien (%)",
+                    ),
+                ),
+                (
+                    'hiring_rate',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=5,
+                        verbose_name="Taux d'embauche (%)",
+                    ),
+                ),
+                (
+                    'avg_time_to_hire',
+                    models.PositiveIntegerField(
+                        default=0, verbose_name="Temps moyen d'embauche (jours)"
+                    ),
+                ),
+                (
+                    'generated_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Généré le'),
+                ),
             ],
             options={
                 'verbose_name': 'Statistique de recrutement',
@@ -81,17 +235,87 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Application',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('resume', models.FileField(upload_to='recruitment/resumes/%Y/%m/', verbose_name='CV')),
-                ('cover_letter', models.FileField(blank=True, null=True, upload_to='recruitment/cover_letters/%Y/%m/', verbose_name='Lettre de motivation')),
-                ('application_date', models.DateTimeField(auto_now_add=True, verbose_name='Date de candidature')),
-                ('status', models.CharField(choices=[('received', 'Reçue'), ('preselected', 'Présélectionnée'), ('rejected_screening', 'Rejetée (présélection)'), ('analysis', 'En analyse'), ('selected_for_interview', 'Sélectionnée pour entretien'), ('rejected_analysis', 'Rejetée (analyse)'), ('interviewed', 'Entretien effectué'), ('rejected_interview', 'Rejetée (après entretien)'), ('selected', 'Sélectionnée'), ('hired', 'Embauché'), ('withdrawn', 'Retirée par le candidat')], default='received', max_length=30, verbose_name='Statut')),
-                ('interview_date', models.DateTimeField(blank=True, null=True, verbose_name="Date d'entretien")),
-                ('interview_location', models.CharField(blank=True, max_length=200, verbose_name="Lieu d'entretien")),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'resume',
+                    models.FileField(
+                        upload_to='recruitment/resumes/%Y/%m/', verbose_name='CV'
+                    ),
+                ),
+                (
+                    'cover_letter',
+                    models.FileField(
+                        blank=True,
+                        null=True,
+                        upload_to='recruitment/cover_letters/%Y/%m/',
+                        verbose_name='Lettre de motivation',
+                    ),
+                ),
+                (
+                    'application_date',
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name='Date de candidature'
+                    ),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('received', 'Reçue'),
+                            ('preselected', 'Présélectionnée'),
+                            ('rejected_screening', 'Rejetée (présélection)'),
+                            ('analysis', 'En analyse'),
+                            ('selected_for_interview', 'Sélectionnée pour entretien'),
+                            ('rejected_analysis', 'Rejetée (analyse)'),
+                            ('interviewed', 'Entretien effectué'),
+                            ('rejected_interview', 'Rejetée (après entretien)'),
+                            ('selected', 'Sélectionnée'),
+                            ('hired', 'Embauché'),
+                            ('withdrawn', 'Retirée par le candidat'),
+                        ],
+                        default='received',
+                        max_length=30,
+                        verbose_name='Statut',
+                    ),
+                ),
+                (
+                    'interview_date',
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name="Date d'entretien"
+                    ),
+                ),
+                (
+                    'interview_location',
+                    models.CharField(
+                        blank=True, max_length=200, verbose_name="Lieu d'entretien"
+                    ),
+                ),
                 ('notes', models.TextField(blank=True, verbose_name='Notes générales')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('candidate', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='applications', to='recruitment.candidate', verbose_name='Candidat')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'candidate',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='applications',
+                        to='recruitment.candidate',
+                        verbose_name='Candidat',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Candidature',
@@ -102,9 +326,30 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Interviewer',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('role', models.CharField(blank=True, max_length=100, verbose_name="Rôle dans l'entretien")),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='interview_participations', to='hr.employee', verbose_name='Employé')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'role',
+                    models.CharField(
+                        blank=True, max_length=100, verbose_name="Rôle dans l'entretien"
+                    ),
+                ),
+                (
+                    'employee',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='interview_participations',
+                        to='hr.employee',
+                        verbose_name='Employé',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Évaluateur',
@@ -114,17 +359,87 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CandidateEvaluation',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('general_impression', models.PositiveSmallIntegerField(choices=[(1, 'Défavorable'), (2, 'Réservé'), (3, 'Favorable'), (4, 'Très favorable')], verbose_name='Impression générale')),
-                ('english_level', models.PositiveSmallIntegerField(blank=True, null=True, verbose_name="Niveau d'anglais")),
-                ('strengths', models.TextField(blank=True, verbose_name="Qualités pour exercer l'activité")),
-                ('weaknesses', models.TextField(blank=True, verbose_name="Limites à exercer l'activité")),
-                ('evaluation_date', models.DateField(default=django.utils.timezone.now, verbose_name="Date d'évaluation")),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('evaluation_form', models.FileField(blank=True, null=True, upload_to='recruitment/evaluations/%Y/%m/', verbose_name="Fiche d'évaluation")),
-                ('application', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='evaluations', to='recruitment.application', verbose_name='Candidature')),
-                ('interviewer', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='candidate_evaluations', to='recruitment.interviewer', verbose_name='Évaluateur')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'general_impression',
+                    models.PositiveSmallIntegerField(
+                        choices=[
+                            (1, 'Défavorable'),
+                            (2, 'Réservé'),
+                            (3, 'Favorable'),
+                            (4, 'Très favorable'),
+                        ],
+                        verbose_name='Impression générale',
+                    ),
+                ),
+                (
+                    'english_level',
+                    models.PositiveSmallIntegerField(
+                        blank=True, null=True, verbose_name="Niveau d'anglais"
+                    ),
+                ),
+                (
+                    'strengths',
+                    models.TextField(
+                        blank=True, verbose_name="Qualités pour exercer l'activité"
+                    ),
+                ),
+                (
+                    'weaknesses',
+                    models.TextField(
+                        blank=True, verbose_name="Limites à exercer l'activité"
+                    ),
+                ),
+                (
+                    'evaluation_date',
+                    models.DateField(
+                        default=django.utils.timezone.now,
+                        verbose_name="Date d'évaluation",
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'evaluation_form',
+                    models.FileField(
+                        blank=True,
+                        null=True,
+                        upload_to='recruitment/evaluations/%Y/%m/',
+                        verbose_name="Fiche d'évaluation",
+                    ),
+                ),
+                (
+                    'application',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='evaluations',
+                        to='recruitment.application',
+                        verbose_name='Candidature',
+                    ),
+                ),
+                (
+                    'interviewer',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='candidate_evaluations',
+                        to='recruitment.interviewer',
+                        verbose_name='Évaluateur',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Évaluation de candidat',
@@ -135,11 +450,34 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='InterviewPanel',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=200, verbose_name='Nom du panel')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_panels', to='hr.employee', verbose_name='Créé par')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'created_by',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='created_panels',
+                        to='hr.employee',
+                        verbose_name='Créé par',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': "Panel d'entretien",
@@ -149,30 +487,123 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='interviewer',
             name='panel',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='interviewers', to='recruitment.interviewpanel', verbose_name='Panel'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='interviewers',
+                to='recruitment.interviewpanel',
+                verbose_name='Panel',
+            ),
         ),
         migrations.CreateModel(
             name='JobOpening',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('reference', models.CharField(max_length=50, unique=True, verbose_name='Référence')),
-                ('title', models.CharField(max_length=200, verbose_name='Titre du poste')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'reference',
+                    models.CharField(
+                        max_length=50, unique=True, verbose_name='Référence'
+                    ),
+                ),
+                (
+                    'title',
+                    models.CharField(max_length=200, verbose_name='Titre du poste'),
+                ),
                 ('description', models.TextField(verbose_name='Description du poste')),
-                ('requirements', models.TextField(verbose_name='Exigences/Qualifications')),
+                (
+                    'requirements',
+                    models.TextField(verbose_name='Exigences/Qualifications'),
+                ),
                 ('responsibilities', models.TextField(verbose_name='Responsabilités')),
                 ('location', models.CharField(max_length=100, verbose_name='Lieu')),
-                ('contract_type', models.CharField(max_length=50, verbose_name='Type de contrat')),
-                ('is_remote', models.BooleanField(default=False, verbose_name='Télétravail possible')),
-                ('salary_range', models.CharField(blank=True, max_length=100, verbose_name='Fourchette de salaire')),
+                (
+                    'contract_type',
+                    models.CharField(max_length=50, verbose_name='Type de contrat'),
+                ),
+                (
+                    'is_remote',
+                    models.BooleanField(
+                        default=False, verbose_name='Télétravail possible'
+                    ),
+                ),
+                (
+                    'salary_range',
+                    models.CharField(
+                        blank=True, max_length=100, verbose_name='Fourchette de salaire'
+                    ),
+                ),
                 ('opening_date', models.DateField(verbose_name="Date d'ouverture")),
-                ('closing_date', models.DateField(blank=True, null=True, verbose_name='Date de clôture')),
-                ('status', models.CharField(choices=[('draft', 'Brouillon'), ('published', 'Publié'), ('in_progress', 'En cours'), ('interviewing', 'Entretiens en cours'), ('closed', 'Clôturé'), ('cancelled', 'Annulé')], default='draft', max_length=20, verbose_name='Statut')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('application_url', models.CharField(blank=True, max_length=255, verbose_name='URL de candidature')),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_job_openings', to='hr.employee', verbose_name='Créé par')),
-                ('department', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='job_openings', to='hr.department', verbose_name='Département')),
-                ('job_title', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='job_openings', to='hr.jobtitle', verbose_name='Poste')),
+                (
+                    'closing_date',
+                    models.DateField(
+                        blank=True, null=True, verbose_name='Date de clôture'
+                    ),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('draft', 'Brouillon'),
+                            ('published', 'Publié'),
+                            ('in_progress', 'En cours'),
+                            ('interviewing', 'Entretiens en cours'),
+                            ('closed', 'Clôturé'),
+                            ('cancelled', 'Annulé'),
+                        ],
+                        default='draft',
+                        max_length=20,
+                        verbose_name='Statut',
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'application_url',
+                    models.CharField(
+                        blank=True, max_length=255, verbose_name='URL de candidature'
+                    ),
+                ),
+                (
+                    'created_by',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='created_job_openings',
+                        to='hr.employee',
+                        verbose_name='Créé par',
+                    ),
+                ),
+                (
+                    'department',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='job_openings',
+                        to='hr.department',
+                        verbose_name='Département',
+                    ),
+                ),
+                (
+                    'job_title',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='job_openings',
+                        to='hr.jobtitle',
+                        verbose_name='Poste',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': "Offre d'emploi",
@@ -183,25 +614,77 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='interviewpanel',
             name='job_opening',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='interview_panels', to='recruitment.jobopening', verbose_name="Offre d'emploi"),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='interview_panels',
+                to='recruitment.jobopening',
+                verbose_name="Offre d'emploi",
+            ),
         ),
         migrations.AddField(
             model_name='application',
             name='job_opening',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='applications', to='recruitment.jobopening', verbose_name="Offre d'emploi"),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name='applications',
+                to='recruitment.jobopening',
+                verbose_name="Offre d'emploi",
+            ),
         ),
         migrations.CreateModel(
             name='RecruitmentNotification',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('title', models.CharField(max_length=255, verbose_name='Titre')),
                 ('message', models.TextField(verbose_name='Message')),
                 ('is_read', models.BooleanField(default=False, verbose_name='Lu')),
-                ('type', models.CharField(choices=[('job_opening', "Nouvelle offre d'emploi"), ('application', 'Nouvelle candidature'), ('interview', 'Entretien planifié'), ('evaluation', 'Évaluation requise'), ('hiring', 'Embauche finalisée')], max_length=20, verbose_name='Type')),
-                ('job_opening_id', models.PositiveIntegerField(blank=True, null=True, verbose_name="ID Offre d'emploi")),
-                ('application_id', models.PositiveIntegerField(blank=True, null=True, verbose_name='ID Candidature')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('recipient', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='recruitment_notifications', to='hr.employee', verbose_name='Destinataire')),
+                (
+                    'type',
+                    models.CharField(
+                        choices=[
+                            ('job_opening', "Nouvelle offre d'emploi"),
+                            ('application', 'Nouvelle candidature'),
+                            ('interview', 'Entretien planifié'),
+                            ('evaluation', 'Évaluation requise'),
+                            ('hiring', 'Embauche finalisée'),
+                        ],
+                        max_length=20,
+                        verbose_name='Type',
+                    ),
+                ),
+                (
+                    'job_opening_id',
+                    models.PositiveIntegerField(
+                        blank=True, null=True, verbose_name="ID Offre d'emploi"
+                    ),
+                ),
+                (
+                    'application_id',
+                    models.PositiveIntegerField(
+                        blank=True, null=True, verbose_name='ID Candidature'
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'recipient',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='recruitment_notifications',
+                        to='hr.employee',
+                        verbose_name='Destinataire',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Notification de recrutement',
@@ -212,11 +695,40 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CriterionScore',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('score', models.DecimalField(decimal_places=1, max_digits=4, verbose_name='Score')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'score',
+                    models.DecimalField(
+                        decimal_places=1, max_digits=4, verbose_name='Score'
+                    ),
+                ),
                 ('comment', models.TextField(blank=True, verbose_name='Commentaire')),
-                ('evaluation', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='criterion_scores', to='recruitment.candidateevaluation', verbose_name='Évaluation')),
-                ('criterion', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='scores', to='recruitment.evaluationcriterion', verbose_name='Critère')),
+                (
+                    'evaluation',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='criterion_scores',
+                        to='recruitment.candidateevaluation',
+                        verbose_name='Évaluation',
+                    ),
+                ),
+                (
+                    'criterion',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='scores',
+                        to='recruitment.evaluationcriterion',
+                        verbose_name='Critère',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Score de critère',

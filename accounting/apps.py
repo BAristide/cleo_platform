@@ -9,4 +9,4 @@ class AccountingConfig(AppConfig):
 
     def ready(self):
         # Importer les signaux pour les enregistrer
-        import accounting.signals
+        pass

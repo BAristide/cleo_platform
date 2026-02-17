@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('sales', '0004_add_invoice_type'),
     ]
@@ -14,21 +13,45 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='invoice',
             name='credit_note_reason',
-            field=models.TextField(blank=True, null=True, verbose_name="Motif de l'avoir"),
+            field=models.TextField(
+                blank=True, null=True, verbose_name="Motif de l'avoir"
+            ),
         ),
         migrations.AddField(
             model_name='invoice',
             name='deposit_percentage',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True, verbose_name="Pourcentage d'acompte"),
+            field=models.DecimalField(
+                blank=True,
+                decimal_places=2,
+                max_digits=5,
+                null=True,
+                verbose_name="Pourcentage d'acompte",
+            ),
         ),
         migrations.AddField(
             model_name='invoice',
             name='parent_invoice',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='child_invoices', to='sales.invoice', verbose_name="Facture d'origine"),
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='child_invoices',
+                to='sales.invoice',
+                verbose_name="Facture d'origine",
+            ),
         ),
         migrations.AlterField(
             model_name='invoice',
             name='type',
-            field=models.CharField(choices=[('standard', 'Facture standard'), ('deposit', "Facture d'acompte"), ('credit_note', 'Avoir')], default='standard', max_length=20, verbose_name='Type de facture'),
+            field=models.CharField(
+                choices=[
+                    ('standard', 'Facture standard'),
+                    ('deposit', "Facture d'acompte"),
+                    ('credit_note', 'Avoir'),
+                ],
+                default='standard',
+                max_length=20,
+                verbose_name='Type de facture',
+            ),
         ),
     ]

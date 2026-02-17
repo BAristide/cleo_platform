@@ -1,6 +1,7 @@
-from decouple import config, Csv
-from pathlib import Path
 import os
+from pathlib import Path
+
+from decouple import Csv, config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -140,7 +141,6 @@ DEBUG = config('DEBUG', default=False, cast=bool)
 # API (Étape 0.6)
 # =========================
 OPENEXCHANGE_API_KEY = config('OPENEXCHANGE_API_KEY', default='')
-
 
 
 # =========================

@@ -1,15 +1,24 @@
-from rest_framework import serializers
 from django.contrib.auth.models import User
-from crm.models import Company, Contact, Opportunity
+from rest_framework import serializers
+
 from core.models import Currency  # Importation de Currency depuis core.models
+
 from .models import (
-    BankAccount, Product, Quote, QuoteItem,
-    Order, OrderItem, Invoice, InvoiceItem, Payment
+    BankAccount,
+    Invoice,
+    InvoiceItem,
+    Order,
+    OrderItem,
+    Payment,
+    Product,
+    Quote,
+    QuoteItem,
 )
 
 
 class UserSerializer(serializers.ModelSerializer):
     """Serializer pour les utilisateurs."""
+
     full_name = serializers.SerializerMethodField()
 
     class Meta:
@@ -17,11 +26,16 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'full_name']
 
     def get_full_name(self, obj):
-        return f"{obj.first_name} {obj.last_name}" if obj.first_name or obj.last_name else obj.username
+        return (
+            f'{obj.first_name} {obj.last_name}'
+            if obj.first_name or obj.last_name
+            else obj.username
+        )
 
 
 class CurrencySerializer(serializers.ModelSerializer):
     """Serializer pour les devises."""
+
     class Meta:
         model = Currency
         fields = ['id', 'code', 'name', 'is_default']
@@ -29,11 +43,22 @@ class CurrencySerializer(serializers.ModelSerializer):
 
 class BankAccountSerializer(serializers.ModelSerializer):
     """Serializer pour les comptes bancaires."""
+
     currency_display = serializers.SerializerMethodField()
 
     class Meta:
         model = BankAccount
-        fields = ['id', 'name', 'bank_name', 'rib', 'iban', 'swift', 'currency', 'currency_display', 'is_default']
+        fields = [
+            'id',
+            'name',
+            'bank_name',
+            'rib',
+            'iban',
+            'swift',
+            'currency',
+            'currency_display',
+            'is_default',
+        ]
 
     def get_currency_display(self, obj):
         return obj.currency.code if obj.currency else None
@@ -41,12 +66,22 @@ class BankAccountSerializer(serializers.ModelSerializer):
 
 class ProductSerializer(serializers.ModelSerializer):
     """Serializer pour les produits."""
+
     currency_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'reference', 'description', 'unit_price', 'currency', 'currency_display',
-                  'tax_rate', 'is_active']
+        fields = [
+            'id',
+            'name',
+            'reference',
+            'description',
+            'unit_price',
+            'currency',
+            'currency_display',
+            'tax_rate',
+            'is_active',
+        ]
 
     def get_currency_display(self, obj):
         return obj.currency.code if obj.currency else None
@@ -54,13 +89,26 @@ class ProductSerializer(serializers.ModelSerializer):
 
 class QuoteItemSerializer(serializers.ModelSerializer):
     """Serializer pour les lignes de devis."""
+
     product_name = serializers.SerializerMethodField()
     product_reference = serializers.SerializerMethodField()
 
     class Meta:
         model = QuoteItem
-        fields = ['id', 'quote', 'product', 'product_name', 'product_reference', 'description',
-                  'quantity', 'unit_price', 'tax_rate', 'subtotal', 'tax_amount', 'total']
+        fields = [
+            'id',
+            'quote',
+            'product',
+            'product_name',
+            'product_reference',
+            'description',
+            'quantity',
+            'unit_price',
+            'tax_rate',
+            'subtotal',
+            'tax_amount',
+            'total',
+        ]
 
     def get_product_name(self, obj):
         return obj.product.name if obj.product else None
@@ -71,6 +119,7 @@ class QuoteItemSerializer(serializers.ModelSerializer):
 
 class QuoteSerializer(serializers.ModelSerializer):
     """Serializer pour la liste des devis."""
+
     company_name = serializers.SerializerMethodField()
     contact_name = serializers.SerializerMethodField()
     currency_code = serializers.SerializerMethodField()
@@ -81,19 +130,42 @@ class QuoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Quote
-        fields = ['id', 'number', 'company', 'company_name', 'contact', 'contact_name',
-                  'date', 'expiration_date', 'currency', 'currency_code',
-                  'discount_percentage', 'discount_amount', 'subtotal_after_discount',
-                  'subtotal', 'tax_amount', 'total', 'status', 'status_display',
-                  'converted_to_order', 'converted_to_invoice', 'is_expired',
-                  'is_tax_exempt', 'tax_exemption_reason',
-                  'pdf_file', 'email_sent', 'email_sent_date']
+        fields = [
+            'id',
+            'number',
+            'company',
+            'company_name',
+            'contact',
+            'contact_name',
+            'date',
+            'expiration_date',
+            'currency',
+            'currency_code',
+            'discount_percentage',
+            'discount_amount',
+            'subtotal_after_discount',
+            'subtotal',
+            'tax_amount',
+            'total',
+            'status',
+            'status_display',
+            'converted_to_order',
+            'converted_to_invoice',
+            'is_expired',
+            'is_tax_exempt',
+            'tax_exemption_reason',
+            'pdf_file',
+            'email_sent',
+            'email_sent_date',
+        ]
 
     def get_company_name(self, obj):
         return obj.company.name if obj.company else None
 
     def get_contact_name(self, obj):
-        return f"{obj.contact.first_name} {obj.contact.last_name}" if obj.contact else None
+        return (
+            f'{obj.contact.first_name} {obj.contact.last_name}' if obj.contact else None
+        )
 
     def get_currency_code(self, obj):
         return obj.currency.code if obj.currency else None
@@ -111,7 +183,12 @@ class QuoteSerializer(serializers.ModelSerializer):
 
     def get_is_expired(self, obj):
         from django.utils import timezone
-        return obj.expiration_date < timezone.now().date() if obj.expiration_date else False
+
+        return (
+            obj.expiration_date < timezone.now().date()
+            if obj.expiration_date
+            else False
+        )
 
     def get_discount_amount(self, obj):
         return obj.discount_amount
@@ -122,6 +199,7 @@ class QuoteSerializer(serializers.ModelSerializer):
 
 class QuoteDetailSerializer(serializers.ModelSerializer):
     """Serializer détaillé pour les devis."""
+
     items = QuoteItemSerializer(many=True, read_only=True)
     status_display = serializers.SerializerMethodField()
     discount_amount = serializers.SerializerMethodField()
@@ -129,17 +207,49 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Quote
-        fields = ['id', 'number', 'company', 'contact', 'opportunity',
-                  'date', 'expiration_date', 'validity_period',
-                  'currency', 'exchange_rate', 'bank_account', 'payment_terms',
-                  'discount_percentage', 'discount_amount', 'subtotal_after_discount',
-                  'is_tax_exempt', 'tax_exemption_reason',
-                  'subtotal', 'tax_amount', 'total', 'status', 'status_display',
-                  'notes', 'terms', 'created_at',
-                  'updated_at', 'items', 'converted_to_order', 'converted_to_invoice',
-                  'pdf_file', 'email_sent', 'email_sent_date']
-        read_only_fields = ['created_at', 'updated_at', 'converted_to_order', 'converted_to_invoice',
-                          'pdf_file', 'email_sent', 'email_sent_date']
+        fields = [
+            'id',
+            'number',
+            'company',
+            'contact',
+            'opportunity',
+            'date',
+            'expiration_date',
+            'validity_period',
+            'currency',
+            'exchange_rate',
+            'bank_account',
+            'payment_terms',
+            'discount_percentage',
+            'discount_amount',
+            'subtotal_after_discount',
+            'is_tax_exempt',
+            'tax_exemption_reason',
+            'subtotal',
+            'tax_amount',
+            'total',
+            'status',
+            'status_display',
+            'notes',
+            'terms',
+            'created_at',
+            'updated_at',
+            'items',
+            'converted_to_order',
+            'converted_to_invoice',
+            'pdf_file',
+            'email_sent',
+            'email_sent_date',
+        ]
+        read_only_fields = [
+            'created_at',
+            'updated_at',
+            'converted_to_order',
+            'converted_to_invoice',
+            'pdf_file',
+            'email_sent',
+            'email_sent_date',
+        ]
 
     def get_status_display(self, obj):
         status_map = {
@@ -161,13 +271,26 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
 
 class OrderItemSerializer(serializers.ModelSerializer):
     """Serializer pour les lignes de commande."""
+
     product_name = serializers.SerializerMethodField()
     product_reference = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
-        fields = ['id', 'order', 'product', 'product_name', 'product_reference', 'description',
-                  'quantity', 'unit_price', 'tax_rate', 'subtotal', 'tax_amount', 'total']
+        fields = [
+            'id',
+            'order',
+            'product',
+            'product_name',
+            'product_reference',
+            'description',
+            'quantity',
+            'unit_price',
+            'tax_rate',
+            'subtotal',
+            'tax_amount',
+            'total',
+        ]
 
     def get_product_name(self, obj):
         return obj.product.name if obj.product else None
@@ -178,6 +301,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     """Serializer pour la liste des commandes."""
+
     company_name = serializers.SerializerMethodField()
     contact_name = serializers.SerializerMethodField()
     currency_code = serializers.SerializerMethodField()
@@ -192,20 +316,46 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'number', 'company', 'company_name', 'contact', 'contact_name',
-                  'quote', 'quote_number', 'date', 'delivery_date', 'currency', 'currency_code',
-                  'discount_percentage', 'discount_amount', 'subtotal_after_discount',
-                  'subtotal', 'tax_amount', 'total', 'status', 'status_display',
-                  'is_tax_exempt', 'tax_exemption_reason',
-                  'converted_to_invoice', 'has_deposit_invoice', 'has_final_invoice',
-                  'deposit_total', 'remaining_amount',
-                  'pdf_file', 'email_sent', 'email_sent_date']
+        fields = [
+            'id',
+            'number',
+            'company',
+            'company_name',
+            'contact',
+            'contact_name',
+            'quote',
+            'quote_number',
+            'date',
+            'delivery_date',
+            'currency',
+            'currency_code',
+            'discount_percentage',
+            'discount_amount',
+            'subtotal_after_discount',
+            'subtotal',
+            'tax_amount',
+            'total',
+            'status',
+            'status_display',
+            'is_tax_exempt',
+            'tax_exemption_reason',
+            'converted_to_invoice',
+            'has_deposit_invoice',
+            'has_final_invoice',
+            'deposit_total',
+            'remaining_amount',
+            'pdf_file',
+            'email_sent',
+            'email_sent_date',
+        ]
 
     def get_company_name(self, obj):
         return obj.company.name if obj.company else None
 
     def get_contact_name(self, obj):
-        return f"{obj.contact.first_name} {obj.contact.last_name}" if obj.contact else None
+        return (
+            f'{obj.contact.first_name} {obj.contact.last_name}' if obj.contact else None
+        )
 
     def get_currency_code(self, obj):
         return obj.currency.code if obj.currency else None
@@ -238,6 +388,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
 class OrderDetailSerializer(serializers.ModelSerializer):
     """Serializer détaillé pour les commandes."""
+
     items = OrderItemSerializer(many=True, read_only=True)
     status_display = serializers.SerializerMethodField()
     discount_amount = serializers.SerializerMethodField()
@@ -250,21 +401,59 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ['id', 'number', 'company', 'contact', 'opportunity', 'quote',
-                  'date', 'delivery_date', 'delivery_address',
-                  'currency', 'exchange_rate', 'bank_account', 'payment_terms',
-                  'discount_percentage', 'discount_amount', 'subtotal_after_discount',
-                  'is_tax_exempt', 'tax_exemption_reason',
-                  'subtotal', 'tax_amount', 'total', 'status', 'status_display',
-                  'notes', 'terms', 'created_by', 'created_at',
-                  'updated_at', 'items', 'converted_to_invoice',
-                  'has_deposit_invoice', 'has_final_invoice',
-                  'deposit_invoices', 'deposit_total', 'remaining_amount',
-                  'can_create_deposit_invoice', 'can_create_final_invoice',
-                  'pdf_file', 'email_sent', 'email_sent_date']
-        read_only_fields = ['created_by', 'created_at', 'updated_at', 'converted_to_invoice',
-                          'has_deposit_invoice', 'has_final_invoice',
-                          'pdf_file', 'email_sent', 'email_sent_date']
+        fields = [
+            'id',
+            'number',
+            'company',
+            'contact',
+            'opportunity',
+            'quote',
+            'date',
+            'delivery_date',
+            'delivery_address',
+            'currency',
+            'exchange_rate',
+            'bank_account',
+            'payment_terms',
+            'discount_percentage',
+            'discount_amount',
+            'subtotal_after_discount',
+            'is_tax_exempt',
+            'tax_exemption_reason',
+            'subtotal',
+            'tax_amount',
+            'total',
+            'status',
+            'status_display',
+            'notes',
+            'terms',
+            'created_by',
+            'created_at',
+            'updated_at',
+            'items',
+            'converted_to_invoice',
+            'has_deposit_invoice',
+            'has_final_invoice',
+            'deposit_invoices',
+            'deposit_total',
+            'remaining_amount',
+            'can_create_deposit_invoice',
+            'can_create_final_invoice',
+            'pdf_file',
+            'email_sent',
+            'email_sent_date',
+        ]
+        read_only_fields = [
+            'created_by',
+            'created_at',
+            'updated_at',
+            'converted_to_invoice',
+            'has_deposit_invoice',
+            'has_final_invoice',
+            'pdf_file',
+            'email_sent',
+            'email_sent_date',
+        ]
 
     def get_status_display(self, obj):
         status_map = {
@@ -303,13 +492,26 @@ class OrderDetailSerializer(serializers.ModelSerializer):
 
 class InvoiceItemSerializer(serializers.ModelSerializer):
     """Serializer pour les lignes de facture."""
+
     product_name = serializers.SerializerMethodField()
     product_reference = serializers.SerializerMethodField()
 
     class Meta:
         model = InvoiceItem
-        fields = ['id', 'invoice', 'product', 'product_name', 'product_reference', 'description',
-                  'quantity', 'unit_price', 'tax_rate', 'subtotal', 'tax_amount', 'total']
+        fields = [
+            'id',
+            'invoice',
+            'product',
+            'product_name',
+            'product_reference',
+            'description',
+            'quantity',
+            'unit_price',
+            'tax_rate',
+            'subtotal',
+            'tax_amount',
+            'total',
+        ]
 
     def get_product_name(self, obj):
         return obj.product.name if obj.product else None
@@ -320,12 +522,21 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
 
 class PaymentSerializer(serializers.ModelSerializer):
     """Serializer pour les paiements."""
+
     method_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Payment
-        fields = ['id', 'invoice', 'amount', 'date', 'method', 'method_display',
-                  'reference', 'notes']
+        fields = [
+            'id',
+            'invoice',
+            'amount',
+            'date',
+            'method',
+            'method_display',
+            'reference',
+            'notes',
+        ]
         read_only_fields = []
 
     def get_method_display(self, obj):
@@ -341,6 +552,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
 class InvoiceSerializer(serializers.ModelSerializer):
     """Serializer pour la liste des factures."""
+
     company_name = serializers.SerializerMethodField()
     contact_name = serializers.SerializerMethodField()
     currency_code = serializers.SerializerMethodField()
@@ -357,25 +569,55 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invoice
-        fields = ['id', 'number', 'type', 'type_display',
-                  'company', 'company_name', 'contact', 'contact_name',
-                  'quote', 'quote_number', 'order', 'order_number',
-                  'parent_invoice', 'parent_invoice_number',
-                  'date', 'due_date', 'currency', 'currency_code',
-                  'payment_terms', 'payment_terms_display',
-                  'discount_percentage', 'discount_amount', 'subtotal_after_discount',
-                  'subtotal', 'tax_amount', 'total', 'amount_paid', 'amount_due',
-                  'is_tax_exempt', 'tax_exemption_reason',
-                  'payment_status', 'payment_status_display',
-                  'deposit_percentage', 'credit_note_reason',
-                  'deposit_invoices', 'remaining_amount',
-                  'pdf_file', 'email_sent', 'email_sent_date']
+        fields = [
+            'id',
+            'number',
+            'type',
+            'type_display',
+            'company',
+            'company_name',
+            'contact',
+            'contact_name',
+            'quote',
+            'quote_number',
+            'order',
+            'order_number',
+            'parent_invoice',
+            'parent_invoice_number',
+            'date',
+            'due_date',
+            'currency',
+            'currency_code',
+            'payment_terms',
+            'payment_terms_display',
+            'discount_percentage',
+            'discount_amount',
+            'subtotal_after_discount',
+            'subtotal',
+            'tax_amount',
+            'total',
+            'amount_paid',
+            'amount_due',
+            'is_tax_exempt',
+            'tax_exemption_reason',
+            'payment_status',
+            'payment_status_display',
+            'deposit_percentage',
+            'credit_note_reason',
+            'deposit_invoices',
+            'remaining_amount',
+            'pdf_file',
+            'email_sent',
+            'email_sent_date',
+        ]
 
     def get_company_name(self, obj):
         return obj.company.name if obj.company else None
 
     def get_contact_name(self, obj):
-        return f"{obj.contact.first_name} {obj.contact.last_name}" if obj.contact else None
+        return (
+            f'{obj.contact.first_name} {obj.contact.last_name}' if obj.contact else None
+        )
 
     def get_currency_code(self, obj):
         return obj.currency.code if obj.currency else None
@@ -383,7 +625,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def get_type_display(self, obj):
         type_map = {
             'standard': 'Facture standard',
-            'deposit': 'Facture d\'acompte',
+            'deposit': "Facture d'acompte",
             'credit_note': 'Avoir',
         }
         return type_map.get(obj.type, obj.type)
@@ -437,6 +679,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
 class InvoiceDetailSerializer(serializers.ModelSerializer):
     """Serializer détaillé pour les factures."""
+
     items = InvoiceItemSerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
     payment_status_display = serializers.SerializerMethodField()
@@ -452,27 +695,67 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Invoice
-        fields = ['id', 'number', 'type', 'type_display',
-                  'company', 'contact', 'opportunity', 'quote', 'order',
-                  'parent_invoice', 'parent_invoice_details', 'child_invoices',
-                  'date', 'due_date', 'currency', 'exchange_rate',
-                  'bank_account', 'payment_terms', 'payment_terms_display',
-                  'discount_percentage', 'discount_amount', 'subtotal_after_discount',
-                  'is_tax_exempt', 'tax_exemption_reason',
-                  'subtotal', 'tax_amount', 'total', 'amount_paid', 'amount_due',
-                  'payment_status', 'payment_status_display',
-                  'deposit_percentage', 'credit_note_reason',
-                  'deposit_invoices', 'remaining_amount',
-                  'notes', 'terms', 'created_by',
-                  'created_at', 'updated_at', 'items', 'payments',
-                  'pdf_file', 'email_sent', 'email_sent_date']
-        read_only_fields = ['created_by', 'created_at', 'updated_at', 'amount_paid',
-                          'pdf_file', 'email_sent', 'email_sent_date']
+        fields = [
+            'id',
+            'number',
+            'type',
+            'type_display',
+            'company',
+            'contact',
+            'opportunity',
+            'quote',
+            'order',
+            'parent_invoice',
+            'parent_invoice_details',
+            'child_invoices',
+            'date',
+            'due_date',
+            'currency',
+            'exchange_rate',
+            'bank_account',
+            'payment_terms',
+            'payment_terms_display',
+            'discount_percentage',
+            'discount_amount',
+            'subtotal_after_discount',
+            'is_tax_exempt',
+            'tax_exemption_reason',
+            'subtotal',
+            'tax_amount',
+            'total',
+            'amount_paid',
+            'amount_due',
+            'payment_status',
+            'payment_status_display',
+            'deposit_percentage',
+            'credit_note_reason',
+            'deposit_invoices',
+            'remaining_amount',
+            'notes',
+            'terms',
+            'created_by',
+            'created_at',
+            'updated_at',
+            'items',
+            'payments',
+            'pdf_file',
+            'email_sent',
+            'email_sent_date',
+        ]
+        read_only_fields = [
+            'created_by',
+            'created_at',
+            'updated_at',
+            'amount_paid',
+            'pdf_file',
+            'email_sent',
+            'email_sent_date',
+        ]
 
     def get_type_display(self, obj):
         type_map = {
             'standard': 'Facture standard',
-            'deposit': 'Facture d\'acompte',
+            'deposit': "Facture d'acompte",
             'credit_note': 'Avoir',
         }
         return type_map.get(obj.type, obj.type)
@@ -507,7 +790,12 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
     def get_deposit_invoices(self, obj):
         if obj.order:
             return [
-                {'id': inv.id, 'number': inv.number, 'total': inv.total, 'date': inv.date}
+                {
+                    'id': inv.id,
+                    'number': inv.number,
+                    'total': inv.total,
+                    'date': inv.date,
+                }
                 for inv in obj.order.get_deposit_invoices()
             ]
         return []

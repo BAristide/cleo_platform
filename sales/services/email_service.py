@@ -1,10 +1,11 @@
 import os
-from datetime import datetime
+
 from django.conf import settings
 from django.core.mail import EmailMessage
-from django.utils import timezone
 from django.template.loader import render_to_string
+
 from .pdf_generator import PDFGenerator
+
 
 class EmailService:
     """Service pour envoyer des emails avec pièces jointes"""
@@ -14,7 +15,7 @@ class EmailService:
         """Envoie un devis par email"""
         # Si le sujet n'est pas spécifié, utiliser un sujet par défaut
         if not subject:
-            subject = f"Devis {quote.number} - ECINTELLIGENCE"
+            subject = f'Devis {quote.number} - ECINTELLIGENCE'
 
         # Préparer le contexte pour le template d'email
         context = {
@@ -27,8 +28,8 @@ class EmailService:
                 'city': 'Casablanca',
                 'country': 'Maroc',
                 'email': 'infos@ecintelligence.ma',
-                'phone': '+(212) 5220 48-727/0666 366 018'
-            }
+                'phone': '+(212) 5220 48-727/0666 366 018',
+            },
         }
 
         # Générer le contenu de l'email à partir du template
@@ -47,13 +48,13 @@ class EmailService:
             body=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[recipient_email],
-            reply_to=[settings.DEFAULT_FROM_EMAIL]
+            reply_to=[settings.DEFAULT_FROM_EMAIL],
         )
-        email.content_subtype = "html"  # Pour interpréter le HTML
+        email.content_subtype = 'html'  # Pour interpréter le HTML
 
         # Ajouter la pièce jointe
         with open(pdf_path, 'rb') as f:
-            email.attach(f"Devis_{quote.number}.pdf", f.read(), 'application/pdf')
+            email.attach(f'Devis_{quote.number}.pdf', f.read(), 'application/pdf')
 
         # Envoyer l'email
         try:
@@ -68,7 +69,7 @@ class EmailService:
         """Envoie un bon de commande par email"""
         # Si le sujet n'est pas spécifié, utiliser un sujet par défaut
         if not subject:
-            subject = f"Commande {order.number} - ECINTELLIGENCE"
+            subject = f'Commande {order.number} - ECINTELLIGENCE'
 
         # Préparer le contexte pour le template d'email
         context = {
@@ -81,8 +82,8 @@ class EmailService:
                 'city': 'Casablanca',
                 'country': 'Maroc',
                 'email': 'infos@ecintelligence.ma',
-                'phone': '+(212) 5220 48-727/0666 366 018'
-            }
+                'phone': '+(212) 5220 48-727/0666 366 018',
+            },
         }
 
         # Générer le contenu de l'email à partir du template
@@ -101,13 +102,13 @@ class EmailService:
             body=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[recipient_email],
-            reply_to=[settings.DEFAULT_FROM_EMAIL]
+            reply_to=[settings.DEFAULT_FROM_EMAIL],
         )
-        email.content_subtype = "html"  # Pour interpréter le HTML
+        email.content_subtype = 'html'  # Pour interpréter le HTML
 
         # Ajouter la pièce jointe
         with open(pdf_path, 'rb') as f:
-            email.attach(f"Commande_{order.number}.pdf", f.read(), 'application/pdf')
+            email.attach(f'Commande_{order.number}.pdf', f.read(), 'application/pdf')
 
         # Envoyer l'email
         try:
@@ -122,7 +123,7 @@ class EmailService:
         """Envoie une facture par email"""
         # Si le sujet n'est pas spécifié, utiliser un sujet par défaut
         if not subject:
-            subject = f"Facture {invoice.number} - ECINTELLIGENCE"
+            subject = f'Facture {invoice.number} - ECINTELLIGENCE'
 
         # Préparer le contexte pour le template d'email
         context = {
@@ -135,8 +136,8 @@ class EmailService:
                 'city': 'Casablanca',
                 'country': 'Maroc',
                 'email': 'infos@ecintelligence.ma',
-                'phone': '+(212) 5220 48-727/0666 366 018'
-            }
+                'phone': '+(212) 5220 48-727/0666 366 018',
+            },
         }
 
         # Générer le contenu de l'email à partir du template
@@ -155,13 +156,13 @@ class EmailService:
             body=message,
             from_email=settings.DEFAULT_FROM_EMAIL,
             to=[recipient_email],
-            reply_to=[settings.DEFAULT_FROM_EMAIL]
+            reply_to=[settings.DEFAULT_FROM_EMAIL],
         )
-        email.content_subtype = "html"  # Pour interpréter le HTML
+        email.content_subtype = 'html'  # Pour interpréter le HTML
 
         # Ajouter la pièce jointe
         with open(pdf_path, 'rb') as f:
-            email.attach(f"Facture_{invoice.number}.pdf", f.read(), 'application/pdf')
+            email.attach(f'Facture_{invoice.number}.pdf', f.read(), 'application/pdf')
 
         # Envoyer l'email
         try:

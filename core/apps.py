@@ -1,6 +1,7 @@
 from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
+
 class CoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'core'
@@ -11,6 +12,6 @@ class CoreConfig(AppConfig):
         Import des signaux au démarrage de l'application.
         """
         try:
-            import core.signals
+            import core.signals  # noqa: F401
         except ImportError:
             pass

@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('sales', '0002_add_opportunity_field'),
     ]
@@ -13,7 +12,9 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='invoice',
             name='discount_percentage',
-            field=models.DecimalField(decimal_places=2, default=0.0, max_digits=5, verbose_name='Remise (%)'),
+            field=models.DecimalField(
+                decimal_places=2, default=0.0, max_digits=5, verbose_name='Remise (%)'
+            ),
         ),
         migrations.AddField(
             model_name='invoice',
@@ -23,22 +24,33 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='invoice',
             name='tax_exemption_reason',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name="Raison d'exonération"),
+            field=models.CharField(
+                blank=True,
+                max_length=255,
+                null=True,
+                verbose_name="Raison d'exonération",
+            ),
         ),
         migrations.AddField(
             model_name='order',
             name='discount_percentage',
-            field=models.DecimalField(decimal_places=2, default=0.0, max_digits=5, verbose_name='Remise (%)'),
+            field=models.DecimalField(
+                decimal_places=2, default=0.0, max_digits=5, verbose_name='Remise (%)'
+            ),
         ),
         migrations.AddField(
             model_name='order',
             name='has_deposit_invoice',
-            field=models.BooleanField(default=False, verbose_name="A une facture d'acompte"),
+            field=models.BooleanField(
+                default=False, verbose_name="A une facture d'acompte"
+            ),
         ),
         migrations.AddField(
             model_name='order',
             name='has_final_invoice',
-            field=models.BooleanField(default=False, verbose_name='A une facture finale'),
+            field=models.BooleanField(
+                default=False, verbose_name='A une facture finale'
+            ),
         ),
         migrations.AddField(
             model_name='order',
@@ -48,12 +60,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='order',
             name='tax_exemption_reason',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name="Raison d'exonération"),
+            field=models.CharField(
+                blank=True,
+                max_length=255,
+                null=True,
+                verbose_name="Raison d'exonération",
+            ),
         ),
         migrations.AddField(
             model_name='quote',
             name='discount_percentage',
-            field=models.DecimalField(decimal_places=2, default=0.0, max_digits=5, verbose_name='Remise (%)'),
+            field=models.DecimalField(
+                decimal_places=2, default=0.0, max_digits=5, verbose_name='Remise (%)'
+            ),
         ),
         migrations.AddField(
             model_name='quote',
@@ -63,6 +82,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='quote',
             name='tax_exemption_reason',
-            field=models.CharField(blank=True, max_length=255, null=True, verbose_name="Raison d'exonération"),
+            field=models.CharField(
+                blank=True,
+                max_length=255,
+                null=True,
+                verbose_name="Raison d'exonération",
+            ),
         ),
     ]

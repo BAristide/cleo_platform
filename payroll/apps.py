@@ -1,6 +1,7 @@
 # payroll/apps.py
 from django.apps import AppConfig
 
+
 class PayrollConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'payroll'
@@ -8,4 +9,4 @@ class PayrollConfig(AppConfig):
 
     def ready(self):
         # Importer les signaux
-        import payroll.signals
+        pass

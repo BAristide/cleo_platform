@@ -1,6 +1,7 @@
 # payroll/urls.py
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from . import views
 
 # Créer un routeur pour les vues REST
@@ -20,8 +21,6 @@ app_name = 'payroll'
 urlpatterns = [
     # Routes API automatiques
     path('', include(router.urls)),
-    
     # Route du tableau de bord
     path('dashboard/', views.payroll_dashboard, name='dashboard'),
 ]
-

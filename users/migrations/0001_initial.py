@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -19,15 +18,63 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ActivityLog',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('action', models.CharField(max_length=100, verbose_name='Action')),
-                ('module', models.CharField(choices=[('core', 'Core'), ('crm', 'CRM'), ('sales', 'Ventes'), ('hr', 'Ressources Humaines'), ('payroll', 'Paie'), ('accounting', 'Comptabilité')], max_length=20, verbose_name='Module')),
-                ('entity_type', models.CharField(blank=True, max_length=100, verbose_name="Type d'entité")),
-                ('entity_id', models.PositiveIntegerField(blank=True, null=True, verbose_name="ID de l'entité")),
+                (
+                    'module',
+                    models.CharField(
+                        choices=[
+                            ('core', 'Core'),
+                            ('crm', 'CRM'),
+                            ('sales', 'Ventes'),
+                            ('hr', 'Ressources Humaines'),
+                            ('payroll', 'Paie'),
+                            ('accounting', 'Comptabilité'),
+                        ],
+                        max_length=20,
+                        verbose_name='Module',
+                    ),
+                ),
+                (
+                    'entity_type',
+                    models.CharField(
+                        blank=True, max_length=100, verbose_name="Type d'entité"
+                    ),
+                ),
+                (
+                    'entity_id',
+                    models.PositiveIntegerField(
+                        blank=True, null=True, verbose_name="ID de l'entité"
+                    ),
+                ),
                 ('details', models.TextField(blank=True, verbose_name='Détails')),
-                ('ip_address', models.GenericIPAddressField(blank=True, null=True, verbose_name='Adresse IP')),
-                ('timestamp', models.DateTimeField(auto_now_add=True, verbose_name='Horodatage')),
-                ('user', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='activity_logs', to=settings.AUTH_USER_MODEL)),
+                (
+                    'ip_address',
+                    models.GenericIPAddressField(
+                        blank=True, null=True, verbose_name='Adresse IP'
+                    ),
+                ),
+                (
+                    'timestamp',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Horodatage'),
+                ),
+                (
+                    'user',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='activity_logs',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
                 'verbose_name': "Journal d'activité",
@@ -38,12 +85,48 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='UserProfile',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('phone', models.CharField(blank=True, max_length=20, verbose_name='Téléphone')),
-                ('password_changed_at', models.DateTimeField(blank=True, null=True, verbose_name='Date de modification du mot de passe')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'phone',
+                    models.CharField(
+                        blank=True, max_length=20, verbose_name='Téléphone'
+                    ),
+                ),
+                (
+                    'password_changed_at',
+                    models.DateTimeField(
+                        blank=True,
+                        null=True,
+                        verbose_name='Date de modification du mot de passe',
+                    ),
+                ),
                 ('is_active', models.BooleanField(default=True, verbose_name='Actif')),
-                ('employee', models.OneToOneField(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='user_profile', to='hr.employee')),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='profile', to=settings.AUTH_USER_MODEL)),
+                (
+                    'employee',
+                    models.OneToOneField(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='user_profile',
+                        to='hr.employee',
+                    ),
+                ),
+                (
+                    'user',
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='profile',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Profil utilisateur',
@@ -53,13 +136,40 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='UserRole',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(max_length=100, unique=True, verbose_name='Nom')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'name',
+                    models.CharField(max_length=100, unique=True, verbose_name='Nom'),
+                ),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
                 ('is_active', models.BooleanField(default=True, verbose_name='Actif')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('group', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='role', to='auth.group')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'group',
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='role',
+                        to='auth.group',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Rôle utilisateur',
@@ -69,12 +179,62 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ModulePermission',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('module', models.CharField(choices=[('core', 'Core'), ('crm', 'CRM'), ('sales', 'Ventes'), ('hr', 'Ressources Humaines'), ('payroll', 'Paie'), ('accounting', 'Comptabilité')], max_length=20, verbose_name='Module')),
-                ('access_level', models.CharField(choices=[('no_access', 'Aucun accès'), ('read', 'Lecture seule'), ('create', 'Créer'), ('update', 'Modifier'), ('delete', 'Supprimer'), ('admin', 'Administration complète')], default='no_access', max_length=20, verbose_name="Niveau d'accès")),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('role', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='module_permissions', to='users.userrole')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'module',
+                    models.CharField(
+                        choices=[
+                            ('core', 'Core'),
+                            ('crm', 'CRM'),
+                            ('sales', 'Ventes'),
+                            ('hr', 'Ressources Humaines'),
+                            ('payroll', 'Paie'),
+                            ('accounting', 'Comptabilité'),
+                        ],
+                        max_length=20,
+                        verbose_name='Module',
+                    ),
+                ),
+                (
+                    'access_level',
+                    models.CharField(
+                        choices=[
+                            ('no_access', 'Aucun accès'),
+                            ('read', 'Lecture seule'),
+                            ('create', 'Créer'),
+                            ('update', 'Modifier'),
+                            ('delete', 'Supprimer'),
+                            ('admin', 'Administration complète'),
+                        ],
+                        default='no_access',
+                        max_length=20,
+                        verbose_name="Niveau d'accès",
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'role',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='module_permissions',
+                        to='users.userrole',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Permission de module',

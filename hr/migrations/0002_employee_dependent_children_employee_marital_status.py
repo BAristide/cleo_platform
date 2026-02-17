@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('hr', '0001_initial'),
     ]
@@ -13,11 +12,23 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='employee',
             name='dependent_children',
-            field=models.PositiveSmallIntegerField(default=0, verbose_name='Enfants à charge'),
+            field=models.PositiveSmallIntegerField(
+                default=0, verbose_name='Enfants à charge'
+            ),
         ),
         migrations.AddField(
             model_name='employee',
             name='marital_status',
-            field=models.CharField(choices=[('single', 'Célibataire'), ('married', 'Marié(e)'), ('divorced', 'Divorcé(e)'), ('widowed', 'Veuf/Veuve')], default='single', max_length=20, verbose_name='Statut matrimonial'),
+            field=models.CharField(
+                choices=[
+                    ('single', 'Célibataire'),
+                    ('married', 'Marié(e)'),
+                    ('divorced', 'Divorcé(e)'),
+                    ('widowed', 'Veuf/Veuve'),
+                ],
+                default='single',
+                max_length=20,
+                verbose_name='Statut matrimonial',
+            ),
         ),
     ]

@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('crm', '0001_initial'),
     ]
@@ -13,6 +12,19 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='contact',
             name='source',
-            field=models.CharField(choices=[('website', 'Website'), ('referral', 'Referral'), ('cold_call', 'Cold Call'), ('social', 'Social Media'), ('email', 'Email Campaign'), ('chatbot', 'Chatbot IA'), ('event', 'Event/Conference'), ('other', 'Other')], default='website', max_length=20),
+            field=models.CharField(
+                choices=[
+                    ('website', 'Website'),
+                    ('referral', 'Referral'),
+                    ('cold_call', 'Cold Call'),
+                    ('social', 'Social Media'),
+                    ('email', 'Email Campaign'),
+                    ('chatbot', 'Chatbot IA'),
+                    ('event', 'Event/Conference'),
+                    ('other', 'Other'),
+                ],
+                default='website',
+                max_length=20,
+            ),
         ),
     ]

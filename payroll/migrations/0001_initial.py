@@ -5,7 +5,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -16,13 +15,33 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ContractType',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('code', models.CharField(max_length=20, unique=True, verbose_name='Code')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'code',
+                    models.CharField(max_length=20, unique=True, verbose_name='Code'),
+                ),
                 ('name', models.CharField(max_length=100, verbose_name='Nom')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
                 ('is_active', models.BooleanField(default=True, verbose_name='Actif')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
             ],
             options={
                 'verbose_name': 'Type de contrat',
@@ -33,16 +52,44 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='PayrollParameter',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('code', models.CharField(max_length=50, unique=True, verbose_name='Code')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'code',
+                    models.CharField(max_length=50, unique=True, verbose_name='Code'),
+                ),
                 ('name', models.CharField(max_length=100, verbose_name='Nom')),
-                ('value', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='Valeur')),
+                (
+                    'value',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='Valeur'
+                    ),
+                ),
                 ('effective_date', models.DateField(verbose_name="Date d'effet")),
-                ('end_date', models.DateField(blank=True, null=True, verbose_name='Date de fin')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
+                (
+                    'end_date',
+                    models.DateField(blank=True, null=True, verbose_name='Date de fin'),
+                ),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
                 ('is_active', models.BooleanField(default=True, verbose_name='Actif')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
             ],
             options={
                 'verbose_name': 'Paramètre de paie',
@@ -53,13 +100,30 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='PayrollPeriod',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=100, verbose_name='Nom')),
                 ('start_date', models.DateField(verbose_name='Date de début')),
                 ('end_date', models.DateField(verbose_name='Date de fin')),
-                ('is_closed', models.BooleanField(default=False, verbose_name='Clôturée')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
+                (
+                    'is_closed',
+                    models.BooleanField(default=False, verbose_name='Clôturée'),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
             ],
             options={
                 'verbose_name': 'Période de paie',
@@ -70,17 +134,61 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='SalaryComponent',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('code', models.CharField(max_length=20, unique=True, verbose_name='Code')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'code',
+                    models.CharField(max_length=20, unique=True, verbose_name='Code'),
+                ),
                 ('name', models.CharField(max_length=100, verbose_name='Nom')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
-                ('component_type', models.CharField(choices=[('brut', 'Élément de salaire brut'), ('cotisation', 'Cotisation sociale'), ('non_soumise', 'Indemnité non soumise')], max_length=20, verbose_name='Type')),
-                ('is_taxable', models.BooleanField(default=True, verbose_name='Imposable')),
-                ('is_cnss_eligible', models.BooleanField(default=True, verbose_name='Soumis CNSS')),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
+                (
+                    'component_type',
+                    models.CharField(
+                        choices=[
+                            ('brut', 'Élément de salaire brut'),
+                            ('cotisation', 'Cotisation sociale'),
+                            ('non_soumise', 'Indemnité non soumise'),
+                        ],
+                        max_length=20,
+                        verbose_name='Type',
+                    ),
+                ),
+                (
+                    'is_taxable',
+                    models.BooleanField(default=True, verbose_name='Imposable'),
+                ),
+                (
+                    'is_cnss_eligible',
+                    models.BooleanField(default=True, verbose_name='Soumis CNSS'),
+                ),
                 ('is_active', models.BooleanField(default=True, verbose_name='Actif')),
-                ('formula', models.TextField(blank=True, help_text='Formule ou référence à une fonction de calcul', verbose_name='Formule de calcul')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
+                (
+                    'formula',
+                    models.TextField(
+                        blank=True,
+                        help_text='Formule ou référence à une fonction de calcul',
+                        verbose_name='Formule de calcul',
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
             ],
             options={
                 'verbose_name': 'Composant de salaire',
@@ -91,15 +199,62 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='TaxBracket',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('min_amount', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='Montant minimum')),
-                ('max_amount', models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True, verbose_name='Montant maximum')),
-                ('rate', models.DecimalField(decimal_places=2, help_text='Taux en pourcentage', max_digits=5, verbose_name='Taux')),
-                ('deduction', models.DecimalField(decimal_places=2, default=0, max_digits=12, verbose_name='Somme à déduire')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'min_amount',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='Montant minimum'
+                    ),
+                ),
+                (
+                    'max_amount',
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=12,
+                        null=True,
+                        verbose_name='Montant maximum',
+                    ),
+                ),
+                (
+                    'rate',
+                    models.DecimalField(
+                        decimal_places=2,
+                        help_text='Taux en pourcentage',
+                        max_digits=5,
+                        verbose_name='Taux',
+                    ),
+                ),
+                (
+                    'deduction',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=12,
+                        verbose_name='Somme à déduire',
+                    ),
+                ),
                 ('effective_date', models.DateField(verbose_name="Date d'effet")),
-                ('end_date', models.DateField(blank=True, null=True, verbose_name='Date de fin')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
+                (
+                    'end_date',
+                    models.DateField(blank=True, null=True, verbose_name='Date de fin'),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
             ],
             options={
                 'verbose_name': "Tranche d'imposition",
@@ -110,20 +265,107 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='EmployeePayroll',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('base_salary', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='Salaire de base')),
-                ('hourly_rate', models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Taux horaire')),
-                ('cnss_number', models.CharField(blank=True, max_length=30, verbose_name='N° CNSS')),
-                ('bank_account', models.CharField(blank=True, max_length=50, verbose_name='N° compte bancaire')),
-                ('bank_name', models.CharField(blank=True, max_length=100, verbose_name='Banque')),
-                ('bank_swift', models.CharField(blank=True, max_length=20, verbose_name='Code SWIFT')),
-                ('payment_method', models.CharField(choices=[('bank_transfer', 'Virement bancaire'), ('check', 'Chèque'), ('cash', 'Espèces')], default='bank_transfer', max_length=20, verbose_name='Méthode de paiement')),
-                ('transport_allowance', models.DecimalField(decimal_places=2, default=0, max_digits=10, verbose_name='Indemnité de transport')),
-                ('meal_allowance', models.DecimalField(decimal_places=2, default=0, max_digits=10, verbose_name='Prime de panier')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('contract_type', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='payroll.contracttype', verbose_name='Type de contrat')),
-                ('employee', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='payroll_info', to='hr.employee', verbose_name='Employé')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'base_salary',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='Salaire de base'
+                    ),
+                ),
+                (
+                    'hourly_rate',
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=10,
+                        null=True,
+                        verbose_name='Taux horaire',
+                    ),
+                ),
+                (
+                    'cnss_number',
+                    models.CharField(blank=True, max_length=30, verbose_name='N° CNSS'),
+                ),
+                (
+                    'bank_account',
+                    models.CharField(
+                        blank=True, max_length=50, verbose_name='N° compte bancaire'
+                    ),
+                ),
+                (
+                    'bank_name',
+                    models.CharField(blank=True, max_length=100, verbose_name='Banque'),
+                ),
+                (
+                    'bank_swift',
+                    models.CharField(
+                        blank=True, max_length=20, verbose_name='Code SWIFT'
+                    ),
+                ),
+                (
+                    'payment_method',
+                    models.CharField(
+                        choices=[
+                            ('bank_transfer', 'Virement bancaire'),
+                            ('check', 'Chèque'),
+                            ('cash', 'Espèces'),
+                        ],
+                        default='bank_transfer',
+                        max_length=20,
+                        verbose_name='Méthode de paiement',
+                    ),
+                ),
+                (
+                    'transport_allowance',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=10,
+                        verbose_name='Indemnité de transport',
+                    ),
+                ),
+                (
+                    'meal_allowance',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=10,
+                        verbose_name='Prime de panier',
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'contract_type',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to='payroll.contracttype',
+                        verbose_name='Type de contrat',
+                    ),
+                ),
+                (
+                    'employee',
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='payroll_info',
+                        to='hr.employee',
+                        verbose_name='Employé',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Données de paie employé',
@@ -134,21 +376,108 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='PayrollRun',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=100, verbose_name='Nom')),
-                ('description', models.TextField(blank=True, verbose_name='Description')),
-                ('status', models.CharField(choices=[('draft', 'Brouillon'), ('in_progress', 'En cours'), ('calculated', 'Calculé'), ('validated', 'Validé'), ('paid', 'Payé'), ('cancelled', 'Annulé')], default='draft', max_length=20, verbose_name='Statut')),
-                ('run_date', models.DateTimeField(auto_now_add=True, verbose_name='Date de lancement')),
-                ('calculated_date', models.DateTimeField(blank=True, null=True, verbose_name='Date de calcul')),
-                ('validated_date', models.DateTimeField(blank=True, null=True, verbose_name='Date de validation')),
-                ('paid_date', models.DateTimeField(blank=True, null=True, verbose_name='Date de paiement')),
+                (
+                    'description',
+                    models.TextField(blank=True, verbose_name='Description'),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('draft', 'Brouillon'),
+                            ('in_progress', 'En cours'),
+                            ('calculated', 'Calculé'),
+                            ('validated', 'Validé'),
+                            ('paid', 'Payé'),
+                            ('cancelled', 'Annulé'),
+                        ],
+                        default='draft',
+                        max_length=20,
+                        verbose_name='Statut',
+                    ),
+                ),
+                (
+                    'run_date',
+                    models.DateTimeField(
+                        auto_now_add=True, verbose_name='Date de lancement'
+                    ),
+                ),
+                (
+                    'calculated_date',
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name='Date de calcul'
+                    ),
+                ),
+                (
+                    'validated_date',
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name='Date de validation'
+                    ),
+                ),
+                (
+                    'paid_date',
+                    models.DateTimeField(
+                        blank=True, null=True, verbose_name='Date de paiement'
+                    ),
+                ),
                 ('notes', models.TextField(blank=True, verbose_name='Notes')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_payrolls', to='hr.employee', verbose_name='Créé par')),
-                ('department', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='hr.department', verbose_name='Département')),
-                ('period', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='payroll.payrollperiod', verbose_name='Période')),
-                ('validated_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='validated_payrolls', to='hr.employee', verbose_name='Validé par')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'created_by',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='created_payrolls',
+                        to='hr.employee',
+                        verbose_name='Créé par',
+                    ),
+                ),
+                (
+                    'department',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to='hr.department',
+                        verbose_name='Département',
+                    ),
+                ),
+                (
+                    'period',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to='payroll.payrollperiod',
+                        verbose_name='Période',
+                    ),
+                ),
+                (
+                    'validated_by',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='validated_payrolls',
+                        to='hr.employee',
+                        verbose_name='Validé par',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Lancement de paie',
@@ -159,34 +488,201 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='PaySlip',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('number', models.CharField(max_length=50, unique=True, verbose_name='Numéro')),
-                ('worked_days', models.DecimalField(decimal_places=2, default=26, max_digits=5, verbose_name='Jours travaillés')),
-                ('absence_days', models.DecimalField(decimal_places=2, default=0, max_digits=5, verbose_name="Jours d'absence")),
-                ('paid_leave_days', models.DecimalField(decimal_places=2, default=0, max_digits=5, verbose_name='Jours de congés payés')),
-                ('unpaid_leave_days', models.DecimalField(decimal_places=2, default=0, max_digits=5, verbose_name='Jours de congés sans solde')),
-                ('overtime_25_hours', models.DecimalField(decimal_places=2, default=0, max_digits=5, verbose_name='Heures supp. 25%')),
-                ('overtime_50_hours', models.DecimalField(decimal_places=2, default=0, max_digits=5, verbose_name='Heures supp. 50%')),
-                ('overtime_100_hours', models.DecimalField(decimal_places=2, default=0, max_digits=5, verbose_name='Heures supp. 100%')),
-                ('basic_salary', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='Salaire de base')),
-                ('gross_salary', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='Salaire brut')),
-                ('taxable_salary', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='Salaire imposable')),
-                ('net_salary', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='Salaire net')),
-                ('cnss_employee', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='CNSS employé')),
-                ('cnss_employer', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='CNSS employeur')),
-                ('amo_employee', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='AMO employé')),
-                ('amo_employer', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='AMO employeur')),
-                ('income_tax', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='IR')),
-                ('status', models.CharField(choices=[('draft', 'Brouillon'), ('calculated', 'Calculé'), ('validated', 'Validé'), ('paid', 'Payé'), ('cancelled', 'Annulé')], default='draft', max_length=20, verbose_name='Statut')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'number',
+                    models.CharField(max_length=50, unique=True, verbose_name='Numéro'),
+                ),
+                (
+                    'worked_days',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=26,
+                        max_digits=5,
+                        verbose_name='Jours travaillés',
+                    ),
+                ),
+                (
+                    'absence_days',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=5,
+                        verbose_name="Jours d'absence",
+                    ),
+                ),
+                (
+                    'paid_leave_days',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=5,
+                        verbose_name='Jours de congés payés',
+                    ),
+                ),
+                (
+                    'unpaid_leave_days',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=5,
+                        verbose_name='Jours de congés sans solde',
+                    ),
+                ),
+                (
+                    'overtime_25_hours',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=5,
+                        verbose_name='Heures supp. 25%',
+                    ),
+                ),
+                (
+                    'overtime_50_hours',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=5,
+                        verbose_name='Heures supp. 50%',
+                    ),
+                ),
+                (
+                    'overtime_100_hours',
+                    models.DecimalField(
+                        decimal_places=2,
+                        default=0,
+                        max_digits=5,
+                        verbose_name='Heures supp. 100%',
+                    ),
+                ),
+                (
+                    'basic_salary',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='Salaire de base'
+                    ),
+                ),
+                (
+                    'gross_salary',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='Salaire brut'
+                    ),
+                ),
+                (
+                    'taxable_salary',
+                    models.DecimalField(
+                        decimal_places=2,
+                        max_digits=12,
+                        verbose_name='Salaire imposable',
+                    ),
+                ),
+                (
+                    'net_salary',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='Salaire net'
+                    ),
+                ),
+                (
+                    'cnss_employee',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='CNSS employé'
+                    ),
+                ),
+                (
+                    'cnss_employer',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='CNSS employeur'
+                    ),
+                ),
+                (
+                    'amo_employee',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='AMO employé'
+                    ),
+                ),
+                (
+                    'amo_employer',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='AMO employeur'
+                    ),
+                ),
+                (
+                    'income_tax',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='IR'
+                    ),
+                ),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('draft', 'Brouillon'),
+                            ('calculated', 'Calculé'),
+                            ('validated', 'Validé'),
+                            ('paid', 'Payé'),
+                            ('cancelled', 'Annulé'),
+                        ],
+                        default='draft',
+                        max_length=20,
+                        verbose_name='Statut',
+                    ),
+                ),
                 ('is_paid', models.BooleanField(default=False, verbose_name='Payé')),
-                ('payment_date', models.DateField(blank=True, null=True, verbose_name='Date de paiement')),
-                ('payment_reference', models.CharField(blank=True, max_length=100, verbose_name='Référence de paiement')),
-                ('pdf_file', models.CharField(blank=True, max_length=255, null=True, verbose_name='Fichier PDF')),
+                (
+                    'payment_date',
+                    models.DateField(
+                        blank=True, null=True, verbose_name='Date de paiement'
+                    ),
+                ),
+                (
+                    'payment_reference',
+                    models.CharField(
+                        blank=True, max_length=100, verbose_name='Référence de paiement'
+                    ),
+                ),
+                (
+                    'pdf_file',
+                    models.CharField(
+                        blank=True,
+                        max_length=255,
+                        null=True,
+                        verbose_name='Fichier PDF',
+                    ),
+                ),
                 ('notes', models.TextField(blank=True, verbose_name='Notes')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='hr.employee', verbose_name='Employé')),
-                ('payroll_run', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='payslips', to='payroll.payrollrun', verbose_name='Lancement de paie')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'employee',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to='hr.employee',
+                        verbose_name='Employé',
+                    ),
+                ),
+                (
+                    'payroll_run',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='payslips',
+                        to='payroll.payrollrun',
+                        verbose_name='Lancement de paie',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Bulletin de paie',
@@ -198,16 +694,60 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='AdvanceSalary',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('amount', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='Montant')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'amount',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='Montant'
+                    ),
+                ),
                 ('payment_date', models.DateField(verbose_name='Date de paiement')),
                 ('is_paid', models.BooleanField(default=False, verbose_name='Payé')),
                 ('notes', models.TextField(blank=True, verbose_name='Notes')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('employee', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='salary_advances', to='hr.employee', verbose_name='Employé')),
-                ('period', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='payroll.payrollperiod', verbose_name='Période')),
-                ('payslip', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='advances', to='payroll.payslip', verbose_name='Bulletin de paie')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'employee',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name='salary_advances',
+                        to='hr.employee',
+                        verbose_name='Employé',
+                    ),
+                ),
+                (
+                    'period',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to='payroll.payrollperiod',
+                        verbose_name='Période',
+                    ),
+                ),
+                (
+                    'payslip',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='advances',
+                        to='payroll.payslip',
+                        verbose_name='Bulletin de paie',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Acompte sur salaire',
@@ -218,17 +758,88 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='PaySlipLine',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('amount', models.DecimalField(decimal_places=2, max_digits=12, verbose_name='Montant')),
-                ('base_amount', models.DecimalField(blank=True, decimal_places=2, max_digits=12, null=True, verbose_name='Montant de base')),
-                ('rate', models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True, verbose_name='Taux')),
-                ('quantity', models.DecimalField(blank=True, decimal_places=2, max_digits=5, null=True, verbose_name='Quantité')),
-                ('is_employer_contribution', models.BooleanField(default=False, verbose_name='Contribution employeur')),
-                ('display_order', models.PositiveSmallIntegerField(default=0, verbose_name="Ordre d'affichage")),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
-                ('payslip', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='lines', to='payroll.payslip', verbose_name='Bulletin de paie')),
-                ('component', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='payroll.salarycomponent', verbose_name='Composant')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'amount',
+                    models.DecimalField(
+                        decimal_places=2, max_digits=12, verbose_name='Montant'
+                    ),
+                ),
+                (
+                    'base_amount',
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=12,
+                        null=True,
+                        verbose_name='Montant de base',
+                    ),
+                ),
+                (
+                    'rate',
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=5,
+                        null=True,
+                        verbose_name='Taux',
+                    ),
+                ),
+                (
+                    'quantity',
+                    models.DecimalField(
+                        blank=True,
+                        decimal_places=2,
+                        max_digits=5,
+                        null=True,
+                        verbose_name='Quantité',
+                    ),
+                ),
+                (
+                    'is_employer_contribution',
+                    models.BooleanField(
+                        default=False, verbose_name='Contribution employeur'
+                    ),
+                ),
+                (
+                    'display_order',
+                    models.PositiveSmallIntegerField(
+                        default=0, verbose_name="Ordre d'affichage"
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
+                (
+                    'payslip',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='lines',
+                        to='payroll.payslip',
+                        verbose_name='Bulletin de paie',
+                    ),
+                ),
+                (
+                    'component',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to='payroll.salarycomponent',
+                        verbose_name='Composant',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Ligne de bulletin',

@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('sales', '0003_add_tax_exemption_and_discount'),
     ]
@@ -13,6 +12,16 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='invoice',
             name='type',
-            field=models.CharField(choices=[('standard', 'Standard'), ('deposit', 'Acompte'), ('final', 'Solde'), ('credit', 'Avoir')], default='standard', max_length=20, verbose_name='Type de facture'),
+            field=models.CharField(
+                choices=[
+                    ('standard', 'Standard'),
+                    ('deposit', 'Acompte'),
+                    ('final', 'Solde'),
+                    ('credit', 'Avoir'),
+                ],
+                default='standard',
+                max_length=20,
+                verbose_name='Type de facture',
+            ),
         ),
     ]

@@ -6,7 +6,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
@@ -17,16 +16,39 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='ActivityType',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=100)),
-                ('icon', models.CharField(blank=True, help_text="Icon name (e.g., 'phone', 'envelope')", max_length=50)),
+                (
+                    'icon',
+                    models.CharField(
+                        blank=True,
+                        help_text="Icon name (e.g., 'phone', 'envelope')",
+                        max_length=50,
+                    ),
+                ),
                 ('color', models.CharField(default='#3498db', max_length=20)),
             ],
         ),
         migrations.CreateModel(
             name='Industry',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=100, unique=True)),
             ],
             options={
@@ -36,12 +58,41 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='SalesStage',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=100)),
-                ('order', models.PositiveSmallIntegerField(default=0, help_text='Order in the sales pipeline')),
-                ('probability', models.PositiveSmallIntegerField(default=0, help_text='Default probability percentage for this stage')),
-                ('is_won', models.BooleanField(default=False, help_text='Is this a won/closed stage?')),
-                ('is_lost', models.BooleanField(default=False, help_text='Is this a lost/closed stage?')),
+                (
+                    'order',
+                    models.PositiveSmallIntegerField(
+                        default=0, help_text='Order in the sales pipeline'
+                    ),
+                ),
+                (
+                    'probability',
+                    models.PositiveSmallIntegerField(
+                        default=0,
+                        help_text='Default probability percentage for this stage',
+                    ),
+                ),
+                (
+                    'is_won',
+                    models.BooleanField(
+                        default=False, help_text='Is this a won/closed stage?'
+                    ),
+                ),
+                (
+                    'is_lost',
+                    models.BooleanField(
+                        default=False, help_text='Is this a lost/closed stage?'
+                    ),
+                ),
                 ('color', models.CharField(default='#3498db', max_length=20)),
             ],
             options={
@@ -51,7 +102,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Tag',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=50, unique=True)),
                 ('color', models.CharField(default='#3498db', max_length=20)),
             ],
@@ -59,7 +118,15 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Company',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=200)),
                 ('website', models.URLField(blank=True)),
                 ('phone', models.CharField(blank=True, max_length=20)),
@@ -71,14 +138,49 @@ class Migration(migrations.Migration):
                 ('postal_code', models.CharField(blank=True, max_length=20)),
                 ('country', models.CharField(blank=True, max_length=100)),
                 ('description', models.TextField(blank=True)),
-                ('annual_revenue', models.DecimalField(blank=True, decimal_places=2, max_digits=14, null=True)),
+                (
+                    'annual_revenue',
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=14, null=True
+                    ),
+                ),
                 ('employee_count', models.PositiveIntegerField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
-                ('score', models.PositiveSmallIntegerField(default=0, help_text='Company qualification score (0-100)')),
-                ('assigned_to', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assigned_companies', to=settings.AUTH_USER_MODEL)),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_companies', to=settings.AUTH_USER_MODEL)),
-                ('industry', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='crm.industry')),
+                (
+                    'score',
+                    models.PositiveSmallIntegerField(
+                        default=0, help_text='Company qualification score (0-100)'
+                    ),
+                ),
+                (
+                    'assigned_to',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='assigned_companies',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'created_by',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='created_companies',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'industry',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to='crm.industry',
+                    ),
+                ),
                 ('tags', models.ManyToManyField(blank=True, to='crm.tag')),
             ],
             options={
@@ -89,24 +191,83 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Contact',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('first_name', models.CharField(max_length=100)),
                 ('last_name', models.CharField(max_length=100)),
-                ('title', models.CharField(blank=True, help_text='Job title or position', max_length=100)),
+                (
+                    'title',
+                    models.CharField(
+                        blank=True, help_text='Job title or position', max_length=100
+                    ),
+                ),
                 ('email', models.EmailField(blank=True, max_length=254)),
                 ('phone', models.CharField(blank=True, max_length=20)),
                 ('mobile', models.CharField(blank=True, max_length=20)),
                 ('linkedin', models.URLField(blank=True)),
                 ('twitter', models.CharField(blank=True, max_length=100)),
-                ('source', models.CharField(choices=[('website', 'Website'), ('referral', 'Referral'), ('cold_call', 'Cold Call'), ('social', 'Social Media'), ('email', 'Email Campaign'), ('event', 'Event/Conference'), ('other', 'Other')], default='website', max_length=20)),
-                ('source_detail', models.CharField(blank=True, help_text='Additional details about the lead source', max_length=200)),
+                (
+                    'source',
+                    models.CharField(
+                        choices=[
+                            ('website', 'Website'),
+                            ('referral', 'Referral'),
+                            ('cold_call', 'Cold Call'),
+                            ('social', 'Social Media'),
+                            ('email', 'Email Campaign'),
+                            ('event', 'Event/Conference'),
+                            ('other', 'Other'),
+                        ],
+                        default='website',
+                        max_length=20,
+                    ),
+                ),
+                (
+                    'source_detail',
+                    models.CharField(
+                        blank=True,
+                        help_text='Additional details about the lead source',
+                        max_length=200,
+                    ),
+                ),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('notes', models.TextField(blank=True)),
                 ('is_active', models.BooleanField(default=True)),
-                ('assigned_to', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assigned_contacts', to=settings.AUTH_USER_MODEL)),
-                ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='contacts', to='crm.company')),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_contacts', to=settings.AUTH_USER_MODEL)),
+                (
+                    'assigned_to',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='assigned_contacts',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'company',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='contacts',
+                        to='crm.company',
+                    ),
+                ),
+                (
+                    'created_by',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='created_contacts',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
                 ('tags', models.ManyToManyField(blank=True, to='crm.tag')),
             ],
             options={
@@ -116,21 +277,87 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Opportunity',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=200)),
-                ('amount', models.DecimalField(blank=True, decimal_places=2, max_digits=14, null=True)),
-                ('currency', models.CharField(choices=[('USD', 'US Dollar'), ('EUR', 'Euro'), ('GBP', 'British Pound'), ('MAD', 'Moroccan Dirham')], default='MAD', max_length=3)),
-                ('probability', models.PositiveSmallIntegerField(default=0, help_text='Probability percentage (0-100)')),
+                (
+                    'amount',
+                    models.DecimalField(
+                        blank=True, decimal_places=2, max_digits=14, null=True
+                    ),
+                ),
+                (
+                    'currency',
+                    models.CharField(
+                        choices=[
+                            ('USD', 'US Dollar'),
+                            ('EUR', 'Euro'),
+                            ('GBP', 'British Pound'),
+                            ('MAD', 'Moroccan Dirham'),
+                        ],
+                        default='MAD',
+                        max_length=3,
+                    ),
+                ),
+                (
+                    'probability',
+                    models.PositiveSmallIntegerField(
+                        default=0, help_text='Probability percentage (0-100)'
+                    ),
+                ),
                 ('expected_close_date', models.DateField(blank=True, null=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('closed_date', models.DateField(blank=True, null=True)),
                 ('description', models.TextField(blank=True)),
-                ('assigned_to', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assigned_opportunities', to=settings.AUTH_USER_MODEL)),
-                ('company', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='opportunities', to='crm.company')),
-                ('contacts', models.ManyToManyField(blank=True, related_name='opportunities', to='crm.contact')),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_opportunities', to=settings.AUTH_USER_MODEL)),
-                ('stage', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='opportunities', to='crm.salesstage')),
+                (
+                    'assigned_to',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='assigned_opportunities',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'company',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='opportunities',
+                        to='crm.company',
+                    ),
+                ),
+                (
+                    'contacts',
+                    models.ManyToManyField(
+                        blank=True, related_name='opportunities', to='crm.contact'
+                    ),
+                ),
+                (
+                    'created_by',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='created_opportunities',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'stage',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name='opportunities',
+                        to='crm.salesstage',
+                    ),
+                ),
                 ('tags', models.ManyToManyField(blank=True, to='crm.tag')),
             ],
             options={
@@ -141,24 +368,89 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Activity',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('subject', models.CharField(max_length=200)),
                 ('start_date', models.DateTimeField()),
                 ('end_date', models.DateTimeField(blank=True, null=True)),
                 ('all_day', models.BooleanField(default=False)),
-                ('status', models.CharField(choices=[('planned', 'Planned'), ('completed', 'Completed'), ('cancelled', 'Cancelled')], default='planned', max_length=20)),
+                (
+                    'status',
+                    models.CharField(
+                        choices=[
+                            ('planned', 'Planned'),
+                            ('completed', 'Completed'),
+                            ('cancelled', 'Cancelled'),
+                        ],
+                        default='planned',
+                        max_length=20,
+                    ),
+                ),
                 ('completed_date', models.DateTimeField(blank=True, null=True)),
                 ('description', models.TextField(blank=True)),
                 ('created_at', models.DateTimeField(auto_now_add=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('reminder', models.BooleanField(default=False)),
                 ('reminder_datetime', models.DateTimeField(blank=True, null=True)),
-                ('assigned_to', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assigned_activities', to=settings.AUTH_USER_MODEL)),
-                ('created_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='created_activities', to=settings.AUTH_USER_MODEL)),
-                ('activity_type', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='crm.activitytype')),
-                ('company', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='activities', to='crm.company')),
-                ('contacts', models.ManyToManyField(blank=True, related_name='activities', to='crm.contact')),
-                ('opportunity', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='activities', to='crm.opportunity')),
+                (
+                    'assigned_to',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='assigned_activities',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'created_by',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name='created_activities',
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'activity_type',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to='crm.activitytype',
+                    ),
+                ),
+                (
+                    'company',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='activities',
+                        to='crm.company',
+                    ),
+                ),
+                (
+                    'contacts',
+                    models.ManyToManyField(
+                        blank=True, related_name='activities', to='crm.contact'
+                    ),
+                ),
+                (
+                    'opportunity',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='activities',
+                        to='crm.opportunity',
+                    ),
+                ),
             ],
             options={
                 'verbose_name_plural': 'Activities',
@@ -168,13 +460,51 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='StageHistory',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('changed_at', models.DateTimeField(auto_now_add=True)),
                 ('notes', models.TextField(blank=True)),
-                ('changed_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL)),
-                ('from_stage', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, related_name='from_stage_history', to='crm.salesstage')),
-                ('opportunity', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='stage_history', to='crm.opportunity')),
-                ('to_stage', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='to_stage_history', to='crm.salesstage')),
+                (
+                    'changed_by',
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    'from_stage',
+                    models.ForeignKey(
+                        blank=True,
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name='from_stage_history',
+                        to='crm.salesstage',
+                    ),
+                ),
+                (
+                    'opportunity',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='stage_history',
+                        to='crm.opportunity',
+                    ),
+                ),
+                (
+                    'to_stage',
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name='to_stage_history',
+                        to='crm.salesstage',
+                    ),
+                ),
             ],
             options={
                 'verbose_name_plural': 'Stage Histories',

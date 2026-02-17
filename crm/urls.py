@@ -1,5 +1,6 @@
-from django.urls import path, include
+from django.urls import include, path
 from rest_framework.routers import DefaultRouter
+
 from . import views
 
 # Créer un routeur pour les vues REST
@@ -20,12 +21,15 @@ app_name = 'crm'
 urlpatterns = [
     # Routes API existantes
     path('', include(router.urls)),
-    
     # AJOUT: Nouvel endpoint pour le tableau de bord
     path('dashboard/', views.dashboard_view, name='dashboard'),
     # URLs spécifiques au chatbot qui ne suivent pas le modèle standard API REST
     path('api/chatbot/qualify/', views.chatbot_qualify, name='chatbot_qualify'),
     path('api/chatbot/faq/', views.chatbot_faq, name='chatbot_faq'),
-    path('api/chatbot/appointment/', views.chatbot_appointment, name='chatbot_appointment'),
+    path(
+        'api/chatbot/appointment/',
+        views.chatbot_appointment,
+        name='chatbot_appointment',
+    ),
     path('api/chatbot/support/', views.chatbot_support, name='chatbot_support'),
 ]

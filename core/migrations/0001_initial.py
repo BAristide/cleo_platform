@@ -5,35 +5,111 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
             name='Company',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
                 ('name', models.CharField(max_length=100, verbose_name='Nom')),
-                ('legal_name', models.CharField(blank=True, max_length=100, verbose_name='Raison sociale')),
-                ('tax_id', models.CharField(blank=True, max_length=50, verbose_name='Identifiant fiscal')),
-                ('registration_number', models.CharField(blank=True, max_length=50, verbose_name="Numéro d'immatriculation")),
+                (
+                    'legal_name',
+                    models.CharField(
+                        blank=True, max_length=100, verbose_name='Raison sociale'
+                    ),
+                ),
+                (
+                    'tax_id',
+                    models.CharField(
+                        blank=True, max_length=50, verbose_name='Identifiant fiscal'
+                    ),
+                ),
+                (
+                    'registration_number',
+                    models.CharField(
+                        blank=True,
+                        max_length=50,
+                        verbose_name="Numéro d'immatriculation",
+                    ),
+                ),
                 ('website', models.URLField(blank=True, verbose_name='Site web')),
-                ('email', models.EmailField(blank=True, max_length=254, verbose_name='Email')),
-                ('phone', models.CharField(blank=True, max_length=20, verbose_name='Téléphone')),
-                ('street', models.CharField(blank=True, max_length=100, verbose_name='Adresse')),
-                ('street2', models.CharField(blank=True, max_length=100, verbose_name="Complément d'adresse")),
-                ('city', models.CharField(blank=True, max_length=50, verbose_name='Ville')),
-                ('zip_code', models.CharField(blank=True, max_length=20, verbose_name='Code postal')),
-                ('state', models.CharField(blank=True, max_length=50, verbose_name='État/Province')),
-                ('country', models.CharField(blank=True, max_length=50, verbose_name='Pays')),
-                ('fiscal_year_start', models.DateField(blank=True, null=True, verbose_name="Début de l'année fiscale")),
-                ('logo', models.ImageField(blank=True, null=True, upload_to='company/logos/', verbose_name='Logo')),
+                (
+                    'email',
+                    models.EmailField(blank=True, max_length=254, verbose_name='Email'),
+                ),
+                (
+                    'phone',
+                    models.CharField(
+                        blank=True, max_length=20, verbose_name='Téléphone'
+                    ),
+                ),
+                (
+                    'street',
+                    models.CharField(
+                        blank=True, max_length=100, verbose_name='Adresse'
+                    ),
+                ),
+                (
+                    'street2',
+                    models.CharField(
+                        blank=True, max_length=100, verbose_name="Complément d'adresse"
+                    ),
+                ),
+                (
+                    'city',
+                    models.CharField(blank=True, max_length=50, verbose_name='Ville'),
+                ),
+                (
+                    'zip_code',
+                    models.CharField(
+                        blank=True, max_length=20, verbose_name='Code postal'
+                    ),
+                ),
+                (
+                    'state',
+                    models.CharField(
+                        blank=True, max_length=50, verbose_name='État/Province'
+                    ),
+                ),
+                (
+                    'country',
+                    models.CharField(blank=True, max_length=50, verbose_name='Pays'),
+                ),
+                (
+                    'fiscal_year_start',
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Début de l'année fiscale"
+                    ),
+                ),
+                (
+                    'logo',
+                    models.ImageField(
+                        blank=True,
+                        null=True,
+                        upload_to='company/logos/',
+                        verbose_name='Logo',
+                    ),
+                ),
                 ('is_active', models.BooleanField(default=True, verbose_name='Actif')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
             ],
             options={
                 'verbose_name': 'Entreprise',
@@ -43,18 +119,72 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='Currency',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('code', models.CharField(max_length=3, unique=True, verbose_name='Code')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'code',
+                    models.CharField(max_length=3, unique=True, verbose_name='Code'),
+                ),
                 ('name', models.CharField(max_length=50, verbose_name='Nom')),
-                ('symbol', models.CharField(blank=True, max_length=5, verbose_name='Symbole')),
-                ('is_default', models.BooleanField(default=False, verbose_name='Par défaut')),
-                ('exchange_rate', models.DecimalField(decimal_places=6, default=1.0, max_digits=10, verbose_name='Taux de change')),
-                ('decimal_places', models.PositiveSmallIntegerField(default=2, verbose_name='Décimales')),
-                ('decimal_separator', models.CharField(default='.', max_length=1, verbose_name='Séparateur décimal')),
-                ('thousand_separator', models.CharField(default=',', max_length=1, verbose_name='Séparateur de milliers')),
-                ('symbol_position', models.CharField(choices=[('before', 'Avant'), ('after', 'Après')], default='before', max_length=10, verbose_name='Position du symbole')),
-                ('created_at', models.DateTimeField(auto_now_add=True, verbose_name='Créé le')),
-                ('updated_at', models.DateTimeField(auto_now=True, verbose_name='Modifié le')),
+                (
+                    'symbol',
+                    models.CharField(blank=True, max_length=5, verbose_name='Symbole'),
+                ),
+                (
+                    'is_default',
+                    models.BooleanField(default=False, verbose_name='Par défaut'),
+                ),
+                (
+                    'exchange_rate',
+                    models.DecimalField(
+                        decimal_places=6,
+                        default=1.0,
+                        max_digits=10,
+                        verbose_name='Taux de change',
+                    ),
+                ),
+                (
+                    'decimal_places',
+                    models.PositiveSmallIntegerField(
+                        default=2, verbose_name='Décimales'
+                    ),
+                ),
+                (
+                    'decimal_separator',
+                    models.CharField(
+                        default='.', max_length=1, verbose_name='Séparateur décimal'
+                    ),
+                ),
+                (
+                    'thousand_separator',
+                    models.CharField(
+                        default=',', max_length=1, verbose_name='Séparateur de milliers'
+                    ),
+                ),
+                (
+                    'symbol_position',
+                    models.CharField(
+                        choices=[('before', 'Avant'), ('after', 'Après')],
+                        default='before',
+                        max_length=10,
+                        verbose_name='Position du symbole',
+                    ),
+                ),
+                (
+                    'created_at',
+                    models.DateTimeField(auto_now_add=True, verbose_name='Créé le'),
+                ),
+                (
+                    'updated_at',
+                    models.DateTimeField(auto_now=True, verbose_name='Modifié le'),
+                ),
             ],
             options={
                 'verbose_name': 'Devise',
@@ -65,19 +195,96 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name='CoreSettings',
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('language', models.CharField(default='fr', max_length=10, verbose_name='Langue')),
-                ('timezone', models.CharField(default='Africa/Casablanca', max_length=50, verbose_name='Fuseau horaire')),
-                ('date_format', models.CharField(default='d/m/Y', max_length=20, verbose_name='Format de date')),
-                ('time_format', models.CharField(default='H:i', max_length=20, verbose_name="Format d'heure")),
-                ('default_payment_term', models.PositiveIntegerField(default=30, verbose_name='Délai de paiement par défaut (jours)')),
-                ('invoice_prefix', models.CharField(default='FACT-', max_length=10, verbose_name='Préfixe des factures')),
-                ('quote_prefix', models.CharField(default='DEV-', max_length=10, verbose_name='Préfixe des devis')),
-                ('order_prefix', models.CharField(default='CMD-', max_length=10, verbose_name='Préfixe des commandes')),
-                ('decimal_precision', models.PositiveSmallIntegerField(default=2, verbose_name='Précision décimale')),
-                ('auto_archive_documents', models.BooleanField(default=False, verbose_name='Archiver automatiquement les documents')),
-                ('archive_after_days', models.PositiveIntegerField(default=365, verbose_name='Archiver après (jours)')),
-                ('company', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='settings', to='core.company')),
+                (
+                    'id',
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name='ID',
+                    ),
+                ),
+                (
+                    'language',
+                    models.CharField(
+                        default='fr', max_length=10, verbose_name='Langue'
+                    ),
+                ),
+                (
+                    'timezone',
+                    models.CharField(
+                        default='Africa/Casablanca',
+                        max_length=50,
+                        verbose_name='Fuseau horaire',
+                    ),
+                ),
+                (
+                    'date_format',
+                    models.CharField(
+                        default='d/m/Y', max_length=20, verbose_name='Format de date'
+                    ),
+                ),
+                (
+                    'time_format',
+                    models.CharField(
+                        default='H:i', max_length=20, verbose_name="Format d'heure"
+                    ),
+                ),
+                (
+                    'default_payment_term',
+                    models.PositiveIntegerField(
+                        default=30, verbose_name='Délai de paiement par défaut (jours)'
+                    ),
+                ),
+                (
+                    'invoice_prefix',
+                    models.CharField(
+                        default='FACT-',
+                        max_length=10,
+                        verbose_name='Préfixe des factures',
+                    ),
+                ),
+                (
+                    'quote_prefix',
+                    models.CharField(
+                        default='DEV-', max_length=10, verbose_name='Préfixe des devis'
+                    ),
+                ),
+                (
+                    'order_prefix',
+                    models.CharField(
+                        default='CMD-',
+                        max_length=10,
+                        verbose_name='Préfixe des commandes',
+                    ),
+                ),
+                (
+                    'decimal_precision',
+                    models.PositiveSmallIntegerField(
+                        default=2, verbose_name='Précision décimale'
+                    ),
+                ),
+                (
+                    'auto_archive_documents',
+                    models.BooleanField(
+                        default=False,
+                        verbose_name='Archiver automatiquement les documents',
+                    ),
+                ),
+                (
+                    'archive_after_days',
+                    models.PositiveIntegerField(
+                        default=365, verbose_name='Archiver après (jours)'
+                    ),
+                ),
+                (
+                    'company',
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name='settings',
+                        to='core.company',
+                    ),
+                ),
             ],
             options={
                 'verbose_name': 'Paramètres',
@@ -87,6 +294,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='company',
             name='currency',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='companies', to='core.currency', verbose_name='Devise'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name='companies',
+                to='core.currency',
+                verbose_name='Devise',
+            ),
         ),
     ]

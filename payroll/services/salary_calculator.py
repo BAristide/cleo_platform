@@ -1,15 +1,17 @@
 # payroll/services/salary_calculator.py
-from decimal import Decimal
 import calendar
-import datetime
-from dateutil.relativedelta import relativedelta
+from decimal import Decimal
+
 from django.db import models
 
 from ..models import (
-    PayrollParameter, SalaryComponent, TaxBracket,
-    PaySlip, PaySlipLine, EmployeePayroll, PayrollRun
+    EmployeePayroll,
+    PayrollParameter,
+    PaySlipLine,
+    SalaryComponent,
+    TaxBracket,
 )
-from hr.models import Employee, Availability, Mission
+
 
 class SalaryCalculator:
     """Classe de service pour calculer les salaires."""
@@ -18,13 +20,15 @@ class SalaryCalculator:
     def calculate_payslip(payslip, recalculate=False):
         """Calcule ou recalcule un bulletin de paie."""
         if payslip.status != 'draft' and not recalculate:
-            raise ValueError("Impossible de calculer un bulletin qui n'est pas en brouillon")
+            raise ValueError(
+                "Impossible de calculer un bulletin qui n'est pas en brouillon"
+            )
 
         employee = payslip.employee
         payroll_info = EmployeePayroll.objects.get(employee=employee)
 
         # Récupérer la période de paie
-        period = payslip.payroll_run.period
+        _period = payslip.payroll_run.period
 
         # Calculer le salaire de base au prorata des jours travaillés
         base_salary = SalaryCalculator._calculate_base_salary(payslip, payroll_info)
@@ -40,7 +44,7 @@ class SalaryCalculator:
             payslip=payslip,
             component=base_component,
             amount=base_salary,
-            display_order=10
+            display_order=10,
         )
 
         # Calculer les heures supplémentaires
@@ -56,7 +60,7 @@ class SalaryCalculator:
                 component=hs_25_component,
                 amount=hs_25_amount,
                 quantity=payslip.overtime_25_hours,
-                display_order=20
+                display_order=20,
             )
 
         if payslip.overtime_50_hours > 0:
@@ -66,7 +70,7 @@ class SalaryCalculator:
                 component=hs_50_component,
                 amount=hs_50_amount,
                 quantity=payslip.overtime_50_hours,
-                display_order=21
+                display_order=21,
             )
 
         if payslip.overtime_100_hours > 0:
@@ -76,18 +80,20 @@ class SalaryCalculator:
                 component=hs_100_component,
                 amount=hs_100_amount,
                 quantity=payslip.overtime_100_hours,
-                display_order=22
+                display_order=22,
             )
 
         # Calculer la prime d'ancienneté
-        seniority_amount = SalaryCalculator._calculate_seniority_bonus(payslip, base_salary)
+        seniority_amount = SalaryCalculator._calculate_seniority_bonus(
+            payslip, base_salary
+        )
         if seniority_amount > 0:
             seniority_component = SalaryComponent.objects.get(code='ANCIENNETE')
             PaySlipLine.objects.create(
                 payslip=payslip,
                 component=seniority_component,
                 amount=seniority_amount,
-                display_order=30
+                display_order=30,
             )
 
         # Ajouter les indemnités régulières
@@ -97,7 +103,7 @@ class SalaryCalculator:
                 payslip=payslip,
                 component=transport_component,
                 amount=payroll_info.transport_allowance,
-                display_order=40
+                display_order=40,
             )
 
         if payroll_info.meal_allowance > 0:
@@ -106,7 +112,7 @@ class SalaryCalculator:
                 payslip=payslip,
                 component=meal_component,
                 amount=payroll_info.meal_allowance,
-                display_order=41
+                display_order=41,
             )
 
         # Calculer le salaire brut
@@ -120,12 +126,20 @@ class SalaryCalculator:
             cnss_base = cnss_ceiling
 
         # Taux CNSS employé et employeur
-        cnss_employee_rate = PayrollParameter.objects.get(code='CNSS_EMPLOYEE_RATE').value / 100
-        cnss_employer_rate = PayrollParameter.objects.get(code='CNSS_EMPLOYER_RATE').value / 100
+        cnss_employee_rate = (
+            PayrollParameter.objects.get(code='CNSS_EMPLOYEE_RATE').value / 100
+        )
+        cnss_employer_rate = (
+            PayrollParameter.objects.get(code='CNSS_EMPLOYER_RATE').value / 100
+        )
 
         # Taux AMO employé et employeur
-        amo_employee_rate = PayrollParameter.objects.get(code='AMO_EMPLOYEE_RATE').value / 100
-        amo_employer_rate = PayrollParameter.objects.get(code='AMO_EMPLOYER_RATE').value / 100
+        amo_employee_rate = (
+            PayrollParameter.objects.get(code='AMO_EMPLOYEE_RATE').value / 100
+        )
+        amo_employer_rate = (
+            PayrollParameter.objects.get(code='AMO_EMPLOYER_RATE').value / 100
+        )
 
         # Calcul des cotisations
         cnss_employee_amount = cnss_base * cnss_employee_rate
@@ -147,7 +161,7 @@ class SalaryCalculator:
             amount=-cnss_employee_amount,
             base_amount=cnss_base,
             rate=cnss_employee_rate * 100,
-            display_order=50
+            display_order=50,
         )
 
         amo_component = SalaryComponent.objects.get(code='AMO_EMP')
@@ -157,7 +171,7 @@ class SalaryCalculator:
             amount=-amo_employee_amount,
             base_amount=gross_salary,
             rate=amo_employee_rate * 100,
-            display_order=51
+            display_order=51,
         )
 
         # Calculer le salaire imposable
@@ -175,7 +189,7 @@ class SalaryCalculator:
             component=ir_component,
             amount=-income_tax,
             base_amount=taxable_salary,
-            display_order=60
+            display_order=60,
         )
 
         # Déduire les acomptes
@@ -188,7 +202,7 @@ class SalaryCalculator:
                 payslip=payslip,
                 component=advance_component,
                 amount=-advance_total,
-                display_order=70
+                display_order=70,
             )
 
             # Marquer les acomptes comme utilisés
@@ -198,11 +212,11 @@ class SalaryCalculator:
 
         # Calculer le salaire net
         net_salary = (
-            gross_salary -
-            cnss_employee_amount -
-            amo_employee_amount -
-            income_tax -
-            advance_total
+            gross_salary
+            - cnss_employee_amount
+            - amo_employee_amount
+            - income_tax
+            - advance_total
         )
         payslip.net_salary = net_salary
 
@@ -218,8 +232,10 @@ class SalaryCalculator:
         full_salary = payroll_info.base_salary
 
         # Calculer le nombre de jours standard dans le mois
-        period = payslip.payroll_run.period
-        month_days = calendar.monthrange(period.start_date.year, period.start_date.month)[1]
+        _period = payslip.payroll_run.period
+        _month_days = calendar.monthrange(
+            _period.start_date.year, _period.start_date.month
+        )[1]
 
         # Jours de base (normalement 26 jours ouvrés par mois)
         base_days = Decimal('26.0')
@@ -285,10 +301,7 @@ class SalaryCalculator:
     @staticmethod
     def _calculate_gross_salary(payslip):
         """Calcule le salaire brut en additionnant toutes les composantes positives."""
-        positive_lines = PaySlipLine.objects.filter(
-            payslip=payslip,
-            amount__gt=0
-        )
+        positive_lines = PaySlipLine.objects.filter(payslip=payslip, amount__gt=0)
         return sum(line.amount for line in positive_lines)
 
     @staticmethod
@@ -296,9 +309,7 @@ class SalaryCalculator:
         """Récupère la base de calcul pour les cotisations CNSS."""
         # Récupérer les lignes soumises à CNSS
         cnss_lines = PaySlipLine.objects.filter(
-            payslip=payslip,
-            component__is_cnss_eligible=True,
-            amount__gt=0
+            payslip=payslip, component__is_cnss_eligible=True, amount__gt=0
         )
         return sum(line.amount for line in cnss_lines)
 
@@ -307,35 +318,35 @@ class SalaryCalculator:
         """Calcule l'impôt sur le revenu (IR)."""
         # Récupérer les tranches d'imposition en vigueur
         today = payslip.payroll_run.period.end_date
-        brackets = TaxBracket.objects.filter(
-            effective_date__lte=today
-        ).filter(
-            models.Q(end_date__isnull=True) | models.Q(end_date__gte=today)
-        ).order_by('min_amount')
-        
+        brackets = (
+            TaxBracket.objects.filter(effective_date__lte=today)
+            .filter(models.Q(end_date__isnull=True) | models.Q(end_date__gte=today))
+            .order_by('min_amount')
+        )
+
         # Récupérer l'employé
         employee = payslip.employee
-        
+
         # Calculer l'IR annuel
         annual_salary = taxable_salary * 12
-        
+
         # Déductions pour charges de famille
         family_deduction = Decimal('0')
-        
+
         # Si marié, déduction de base
         if employee.marital_status == 'married':
             family_deduction += Decimal('360')  # 30 DH par mois pour le conjoint
-        
+
         # Déduction pour enfants à charge (maximum 6 enfants)
         child_count = min(employee.dependent_children, 6)
         child_deduction = child_count * Decimal('360')  # 360 DH par enfant par an
         family_deduction += child_deduction
-        
+
         # Appliquer les déductions
         taxable_annual = annual_salary - family_deduction
         if taxable_annual < 0:
             taxable_annual = Decimal('0')
-        
+
         # Calculer l'impôt selon les tranches
         tax = Decimal('0.0')
         for bracket in brackets:
@@ -344,21 +355,26 @@ class SalaryCalculator:
                     tax += (taxable_annual - bracket.min_amount) * (bracket.rate / 100)
             elif taxable_annual > bracket.min_amount:
                 if taxable_annual > bracket.max_amount:
-                    tax += (bracket.max_amount - bracket.min_amount) * (bracket.rate / 100)
+                    tax += (bracket.max_amount - bracket.min_amount) * (
+                        bracket.rate / 100
+                    )
                 else:
                     tax += (taxable_annual - bracket.min_amount) * (bracket.rate / 100)
-        
+
         # Soustraire la somme à déduire si applicable
         for bracket in brackets:
             if hasattr(bracket, 'deduction'):
                 if bracket.max_amount is None and taxable_annual > bracket.min_amount:
                     tax -= bracket.deduction
                     break
-                elif bracket.max_amount and bracket.min_amount < taxable_annual <= bracket.max_amount:
+                elif (
+                    bracket.max_amount
+                    and bracket.min_amount < taxable_annual <= bracket.max_amount
+                ):
                     tax -= bracket.deduction
                     break
-        
+
         # Impôt mensuel (diviser par 12)
         monthly_tax = tax / 12
-        
+
         return monthly_tax if monthly_tax > 0 else Decimal('0.0')

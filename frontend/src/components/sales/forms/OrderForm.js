@@ -86,7 +86,7 @@ const OrderForm = () => {
         if (defaultCurrency) {
           const defaultBankAccounts = bankAccountsData.filter(ba => ba.currency === defaultCurrency.id);
           setFilteredBankAccounts(defaultBankAccounts);
-          
+
           form.setFieldsValue({
             date: moment(),
             currency: defaultCurrency.id,
@@ -162,12 +162,12 @@ const OrderForm = () => {
     try {
       const response = await axios.get(`/api/crm/companies/${companyId}/contacts/`);
       const contactsData = extractResultsFromResponse(response);
-      
+
       const options = contactsData.map(contact => ({
         value: contact.id,
-        label: `${contact.first_name} ${contact.last_name}`,
+        label: contact.full_name || `Contact #${contact.id}`,
       }));
-      
+
       setContactOptions(options);
       setContacts(contactsData);
     } catch (error) {
@@ -179,12 +179,12 @@ const OrderForm = () => {
 
   const fetchQuoteItems = async (quoteId) => {
     if (!quoteId) return;
-    
+
     setLoadingQuoteItems(true);
     try {
       const response = await axios.get(`/api/sales/quote-items/?quote=${quoteId}`);
       const itemsData = extractResultsFromResponse(response);
-      
+
       // Convertir les éléments du devis en éléments de commande
       const convertedItems = itemsData.map(item => ({
         id: `temp_${Date.now()}_${item.id}`,
@@ -199,16 +199,16 @@ const OrderForm = () => {
         tax_amount: isExempt ? 0 : (item.quantity * item.unit_price * (item.tax_rate / 100)),
         total: item.quantity * item.unit_price * (isExempt ? 1 : (1 + item.tax_rate / 100))
       }));
-      
+
       setOrderItems(convertedItems);
-      
+
       // Calculer les totaux pour les nouveaux éléments
       calculateTotals(convertedItems, form.getFieldValue('discount_percentage') || 0, isExempt);
-      
+
       // Récupérer également les informations du devis pour préremplir le formulaire
       const quoteResponse = await axios.get(`/api/sales/quotes/${quoteId}/`);
       const quoteData = quoteResponse.data;
-      
+
       // Mettre à jour les informations du formulaire à partir du devis
       if (quoteData) {
         // Chercher la compagnie du devis
@@ -217,12 +217,12 @@ const OrderForm = () => {
           setSelectedCompany(quoteData.company);
           await fetchContactsByCompany(quoteData.company);
         }
-        
+
         // Chercher le contact du devis
         if (quoteData.contact && (!form.getFieldValue('contact') || !isEditMode)) {
           form.setFieldsValue({ contact: quoteData.contact });
         }
-        
+
         // Copier les informations financières
         if (!isEditMode) {
           form.setFieldsValue({
@@ -234,14 +234,14 @@ const OrderForm = () => {
             notes: quoteData.notes,
             terms: quoteData.terms
           });
-          
+
           // Mettre à jour l'exonération de TVA
           setIsExempt(quoteData.is_tax_exempt || false);
-          
+
           // Filtrer les comptes bancaires par devise
           const filteredAccounts = bankAccounts.filter(ba => ba.currency === quoteData.currency);
           setFilteredBankAccounts(filteredAccounts);
-          
+
           // Sélectionner le même compte bancaire ou le premier compte compatible
           if (quoteData.bank_account) {
             form.setFieldsValue({ bank_account: quoteData.bank_account });
@@ -251,7 +251,7 @@ const OrderForm = () => {
           }
         }
       }
-      
+
     } catch (error) {
       console.error("Erreur lors de la récupération des éléments du devis:", error);
       message.error("Impossible de charger les éléments du devis");
@@ -268,7 +268,7 @@ const OrderForm = () => {
 
   const handleQuoteChange = (value) => {
     setSelectedQuote(value);
-    
+
     // Si une quote est sélectionnée, récupérer ses éléments
     if (value) {
       fetchQuoteItems(value);
@@ -282,7 +282,7 @@ const OrderForm = () => {
   const handleCurrencyChange = (value) => {
     const filtered = bankAccounts.filter(ba => ba.currency === value);
     setFilteredBankAccounts(filtered);
-    
+
     // Si pas de compte bancaire pour cette devise, réinitialiser la sélection
     if (filtered.length === 0) {
       form.setFieldsValue({ bank_account: undefined });
@@ -291,39 +291,39 @@ const OrderForm = () => {
       const defaultAccount = filtered.find(ba => ba.is_default);
       form.setFieldsValue({ bank_account: defaultAccount ? defaultAccount.id : filtered[0].id });
     }
-    
+
     // Vérifier si c'est une devise étrangère (différente de MAD)
     const isForeignCurrency = value !== 1; // On assume que l'ID 1 correspond au MAD
     if (isForeignCurrency) {
       setIsExempt(true);
-      form.setFieldsValue({ 
+      form.setFieldsValue({
         is_tax_exempt: true,
         tax_exemption_reason: "Exonération de TVA pour facturation en devise étrangère"
       });
     } else {
       setIsExempt(false);
-      form.setFieldsValue({ 
+      form.setFieldsValue({
         is_tax_exempt: false,
         tax_exemption_reason: null
       });
     }
-    
+
     // Recalculer les totaux
     calculateTotals(orderItems, form.getFieldValue('discount_percentage') || 0, isForeignCurrency);
   };
 
   const handleExemptChange = (checked) => {
     setIsExempt(checked);
-    
+
     // Si exonération activée, suggérer une raison
     if (checked) {
-      form.setFieldsValue({ 
+      form.setFieldsValue({
         tax_exemption_reason: "Exonération de TVA pour facturation en devise étrangère"
       });
     } else {
       form.setFieldsValue({ tax_exemption_reason: null });
     }
-    
+
     // Recalculer les totaux
     calculateTotals(orderItems, form.getFieldValue('discount_percentage') || 0, checked);
   };
@@ -334,11 +334,11 @@ const OrderForm = () => {
 
   const calculateTotals = (items, discountPercentage, taxExempt) => {
     const itemsSubtotal = items.reduce((sum, item) => sum + (item.quantity * item.unit_price), 0);
-    
+
     // Calculer le montant de la remise
     const discount = (itemsSubtotal * discountPercentage) / 100;
     const afterDiscount = itemsSubtotal - discount;
-    
+
     // Calculer la TVA (sauf si exonéré)
     let tax = 0;
     if (!taxExempt) {
@@ -349,9 +349,9 @@ const OrderForm = () => {
         return sum + (itemAfterDiscount * (item.tax_rate / 100));
       }, 0);
     }
-    
+
     const totalAmount = afterDiscount + tax;
-    
+
     setSubtotal(itemsSubtotal);
     setDiscountAmount(discount);
     setSubtotalAfterDiscount(afterDiscount);
@@ -364,18 +364,18 @@ const OrderForm = () => {
       message.error("Veuillez sélectionner un produit");
       return;
     }
-    
+
     if (currentQuantity <= 0) {
       message.error("La quantité doit être supérieure à 0");
       return;
     }
-    
+
     const product = products.find(p => p.id === currentProduct);
     if (!product) {
       message.error("Produit non trouvé");
       return;
     }
-    
+
     // Créer le nouvel élément
     const newItem = {
       id: `temp_${Date.now()}`,  // ID temporaire pour l'UI
@@ -390,14 +390,14 @@ const OrderForm = () => {
       tax_amount: isExempt ? 0 : (product.unit_price * currentQuantity * (product.tax_rate / 100)),
       total: product.unit_price * currentQuantity * (isExempt ? 1 : (1 + product.tax_rate / 100))
     };
-    
+
     // Ajouter l'élément à la liste
     const updatedItems = [...orderItems, newItem];
     setOrderItems(updatedItems);
-    
+
     // Recalculer les totaux
     calculateTotals(updatedItems, form.getFieldValue('discount_percentage') || 0, isExempt);
-    
+
     // Réinitialiser le formulaire d'ajout
     setCurrentProduct(null);
     setCurrentQuantity(1);
@@ -408,7 +408,7 @@ const OrderForm = () => {
   const handleRemoveItem = (itemId) => {
     const updatedItems = orderItems.filter(item => item.id !== itemId);
     setOrderItems(updatedItems);
-    
+
     // Recalculer les totaux
     calculateTotals(updatedItems, form.getFieldValue('discount_percentage') || 0, isExempt);
   };
@@ -418,7 +418,7 @@ const OrderForm = () => {
       message.error("Veuillez ajouter au moins un produit à la commande");
       return;
     }
-    
+
     setSubmitting(true);
     try {
       // Formater les données pour l'API
@@ -429,9 +429,9 @@ const OrderForm = () => {
         is_tax_exempt: isExempt,
         // Pas besoin d'envoyer les montants calculés, ils seront recalculés par le backend
       };
-      
+
       let orderId;
-      
+
       // Créer ou mettre à jour la commande
       if (isEditMode) {
         await axios.put(`/api/sales/orders/${id}/`, formData);
@@ -442,7 +442,7 @@ const OrderForm = () => {
         orderId = response.data.id;
         message.success("Commande créée avec succès");
       }
-      
+
       // Pour chaque élément temporaire, créer un élément réel
       for (const item of orderItems) {
         const itemData = {
@@ -453,7 +453,7 @@ const OrderForm = () => {
           unit_price: item.unit_price,
           tax_rate: item.tax_rate
         };
-        
+
         if (item.id && (item.id.toString().startsWith('temp_') || !isEditMode)) {
           // Nouvel élément
           await axios.post('/api/sales/order-items/', itemData);
@@ -462,7 +462,7 @@ const OrderForm = () => {
           await axios.put(`/api/sales/order-items/${item.id}/`, itemData);
         }
       }
-      
+
       // Naviguer vers la page de détail de la commande
       navigate(`/sales/orders/${orderId}`);
     } catch (error) {
@@ -533,9 +533,9 @@ const OrderForm = () => {
           okText="Oui"
           cancelText="Non"
         >
-          <Button 
-            danger 
-            icon={<DeleteOutlined />} 
+          <Button
+            danger
+            icon={<DeleteOutlined />}
             size="small"
           />
         </Popconfirm>
@@ -553,9 +553,9 @@ const OrderForm = () => {
 
   return (
     <Card title={isEditMode ? "Modifier la commande" : "Nouvelle commande"}>
-      <Button 
-        icon={<ArrowLeftOutlined />} 
-        onClick={() => navigate(-1)} 
+      <Button
+        icon={<ArrowLeftOutlined />}
+        onClick={() => navigate(-1)}
         style={{ marginBottom: 16 }}
       >
         Retour
@@ -647,8 +647,8 @@ const OrderForm = () => {
               name="quote"
               label="Devis d'origine"
             >
-              <Select 
-                placeholder="Sélectionner un devis" 
+              <Select
+                placeholder="Sélectionner un devis"
                 allowClear
                 onChange={handleQuoteChange}
                 disabled={isEditMode}
@@ -678,7 +678,7 @@ const OrderForm = () => {
               label="Devise"
               rules={[{ required: true, message: 'Veuillez sélectionner une devise' }]}
             >
-              <Select 
+              <Select
                 placeholder="Sélectionner une devise"
                 onChange={handleCurrencyChange}
               >
@@ -784,10 +784,10 @@ const OrderForm = () => {
               </div>
             </Card>
           ) : (
-            <Button 
-              type="dashed" 
-              icon={<PlusOutlined />} 
-              onClick={() => setNewProductVisible(true)} 
+            <Button
+              type="dashed"
+              icon={<PlusOutlined />}
+              onClick={() => setNewProductVisible(true)}
               style={{ width: '100%' }}
             >
               Ajouter un produit
@@ -810,16 +810,16 @@ const OrderForm = () => {
                   {subtotal.toFixed(2)} {currencies.find(c => c.id === form.getFieldValue('currency'))?.code || ''}
                 </Table.Summary.Cell>
               </Table.Summary.Row>
-              
+
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={6} align="right">
                   <Form.Item
                     name="discount_percentage"
                     noStyle
                   >
-                    <InputNumber 
-                      min={0} 
-                      max={100} 
+                    <InputNumber
+                      min={0}
+                      max={100}
                       formatter={value => `${value}%`}
                       parser={value => value.replace('%', '')}
                       onChange={handleDiscountChange}
@@ -832,7 +832,7 @@ const OrderForm = () => {
                   {discountAmount.toFixed(2)} {currencies.find(c => c.id === form.getFieldValue('currency'))?.code || ''}
                 </Table.Summary.Cell>
               </Table.Summary.Row>
-              
+
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={6} align="right">
                   <strong>Sous-total après remise:</strong>
@@ -841,14 +841,14 @@ const OrderForm = () => {
                   {subtotalAfterDiscount.toFixed(2)} {currencies.find(c => c.id === form.getFieldValue('currency'))?.code || ''}
                 </Table.Summary.Cell>
               </Table.Summary.Row>
-              
+
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={6} align="right">
                   <Form.Item
                     name="is_tax_exempt"
                     noStyle
                   >
-                    <Switch 
+                    <Switch
                       checked={isExempt}
                       onChange={handleExemptChange}
                       style={{ marginRight: 8 }}
@@ -860,7 +860,7 @@ const OrderForm = () => {
                   {isExempt ? '0.00' : taxAmount.toFixed(2)} {currencies.find(c => c.id === form.getFieldValue('currency'))?.code || ''}
                 </Table.Summary.Cell>
               </Table.Summary.Row>
-              
+
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={6} align="right">
                   <strong>Total{!isExempt ? ' TTC' : ''}:</strong>
@@ -906,9 +906,9 @@ const OrderForm = () => {
 
         <Form.Item>
           <Space>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
+            <Button
+              type="primary"
+              htmlType="submit"
               icon={<SaveOutlined />}
               loading={submitting}
             >

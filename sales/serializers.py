@@ -92,6 +92,9 @@ class QuoteItemSerializer(serializers.ModelSerializer):
 
     product_name = serializers.SerializerMethodField()
     product_reference = serializers.SerializerMethodField()
+    subtotal = serializers.SerializerMethodField()
+    tax_amount = serializers.SerializerMethodField()
+    total = serializers.SerializerMethodField()
 
     class Meta:
         model = QuoteItem
@@ -115,6 +118,22 @@ class QuoteItemSerializer(serializers.ModelSerializer):
 
     def get_product_reference(self, obj):
         return obj.product.reference if obj.product else None
+
+    def get_subtotal(self, obj):
+        return obj.quantity * obj.unit_price if obj.quantity and obj.unit_price else 0
+
+    def get_tax_amount(self, obj):
+        subtotal = (
+            obj.quantity * obj.unit_price if obj.quantity and obj.unit_price else 0
+        )
+        return subtotal * obj.tax_rate / 100 if obj.tax_rate else 0
+
+    def get_total(self, obj):
+        subtotal = (
+            obj.quantity * obj.unit_price if obj.quantity and obj.unit_price else 0
+        )
+        tax = subtotal * obj.tax_rate / 100 if obj.tax_rate else 0
+        return subtotal + tax
 
 
 class QuoteSerializer(serializers.ModelSerializer):
@@ -157,6 +176,13 @@ class QuoteSerializer(serializers.ModelSerializer):
             'pdf_file',
             'email_sent',
             'email_sent_date',
+        ]
+        read_only_fields = [
+            'number',
+            'expiration_date',
+            'subtotal',
+            'tax_amount',
+            'total',
         ]
 
     def get_company_name(self, obj):
@@ -242,6 +268,11 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
             'email_sent_date',
         ]
         read_only_fields = [
+            'number',
+            'expiration_date',
+            'subtotal',
+            'tax_amount',
+            'total',
             'created_at',
             'updated_at',
             'converted_to_order',
@@ -274,6 +305,9 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     product_name = serializers.SerializerMethodField()
     product_reference = serializers.SerializerMethodField()
+    subtotal = serializers.SerializerMethodField()
+    tax_amount = serializers.SerializerMethodField()
+    total = serializers.SerializerMethodField()
 
     class Meta:
         model = OrderItem
@@ -297,6 +331,22 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     def get_product_reference(self, obj):
         return obj.product.reference if obj.product else None
+
+    def get_subtotal(self, obj):
+        return obj.quantity * obj.unit_price if obj.quantity and obj.unit_price else 0
+
+    def get_tax_amount(self, obj):
+        subtotal = (
+            obj.quantity * obj.unit_price if obj.quantity and obj.unit_price else 0
+        )
+        return subtotal * obj.tax_rate / 100 if obj.tax_rate else 0
+
+    def get_total(self, obj):
+        subtotal = (
+            obj.quantity * obj.unit_price if obj.quantity and obj.unit_price else 0
+        )
+        tax = subtotal * obj.tax_rate / 100 if obj.tax_rate else 0
+        return subtotal + tax
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -347,6 +397,12 @@ class OrderSerializer(serializers.ModelSerializer):
             'pdf_file',
             'email_sent',
             'email_sent_date',
+        ]
+        read_only_fields = [
+            'number',
+            'subtotal',
+            'tax_amount',
+            'total',
         ]
 
     def get_company_name(self, obj):
@@ -444,6 +500,10 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             'email_sent_date',
         ]
         read_only_fields = [
+            'number',
+            'subtotal',
+            'tax_amount',
+            'total',
             'created_by',
             'created_at',
             'updated_at',
@@ -495,6 +555,9 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
 
     product_name = serializers.SerializerMethodField()
     product_reference = serializers.SerializerMethodField()
+    subtotal = serializers.SerializerMethodField()
+    tax_amount = serializers.SerializerMethodField()
+    total = serializers.SerializerMethodField()
 
     class Meta:
         model = InvoiceItem
@@ -518,6 +581,22 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
 
     def get_product_reference(self, obj):
         return obj.product.reference if obj.product else None
+
+    def get_subtotal(self, obj):
+        return obj.quantity * obj.unit_price if obj.quantity and obj.unit_price else 0
+
+    def get_tax_amount(self, obj):
+        subtotal = (
+            obj.quantity * obj.unit_price if obj.quantity and obj.unit_price else 0
+        )
+        return subtotal * obj.tax_rate / 100 if obj.tax_rate else 0
+
+    def get_total(self, obj):
+        subtotal = (
+            obj.quantity * obj.unit_price if obj.quantity and obj.unit_price else 0
+        )
+        tax = subtotal * obj.tax_rate / 100 if obj.tax_rate else 0
+        return subtotal + tax
 
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -609,6 +688,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'pdf_file',
             'email_sent',
             'email_sent_date',
+        ]
+        read_only_fields = [
+            'number',
+            'subtotal',
+            'tax_amount',
+            'total',
         ]
 
     def get_company_name(self, obj):
@@ -743,6 +828,10 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             'email_sent_date',
         ]
         read_only_fields = [
+            'number',
+            'subtotal',
+            'tax_amount',
+            'total',
             'created_by',
             'created_at',
             'updated_at',

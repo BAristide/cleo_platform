@@ -191,7 +191,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
         return QuoteSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save()
 
     @action(detail=True, methods=['post'])
     def generate_pdf(self, request, pk=None):
@@ -460,7 +460,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         return OrderSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save()
 
     @action(detail=True, methods=['post'])
     def generate_pdf(self, request, pk=None):
@@ -645,7 +645,6 @@ class OrderViewSet(viewsets.ModelViewSet):
                 terms=order.terms,
                 order=order,
                 quote=order.quote,
-                created_by=request.user,
             )
 
             # Copier les lignes de produits avec des quantités ajustées
@@ -771,7 +770,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         return InvoiceSerializer
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        serializer.save()
 
     @action(detail=True, methods=['post'])
     def generate_pdf(self, request, pk=None):
@@ -967,7 +966,6 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 credit_note_reason=reason,
                 is_tax_exempt=invoice.is_tax_exempt,
                 tax_exemption_reason=invoice.tax_exemption_reason,
-                created_by=request.user,
             )
 
             # Copier les lignes de produits avec des montants ajustés

@@ -74,10 +74,10 @@ const QuoteList = () => {
       }
 
       const response = await axios.get('/api/sales/quotes/', { params });
-      
+
       // Extraire les résultats avec l'utilitaire
       const quotesData = extractResultsFromResponse(response);
-      
+
       // Mettre à jour la pagination avec la réponse
       if (response.data && response.data.count !== undefined) {
         setPagination({
@@ -85,7 +85,7 @@ const QuoteList = () => {
           total: response.data.count,
         });
       }
-      
+
       setQuotes(quotesData);
     } catch (error) {
       console.error('Erreur lors de la récupération des devis:', error);
@@ -115,17 +115,17 @@ const QuoteList = () => {
     try {
       const response = await axios.get(`/api/crm/companies/${companyId}/contacts/`);
       const contactsData = extractResultsFromResponse(response);
-      
+
       console.log("Contacts récupérés:", contactsData);
-      
+
       // Stocker les contacts complets pour une utilisation ultérieure
       setContacts(contactsData);
-      
+
       console.log('Contacts après extraction:', contactsData);
-      
+
       // Stocker les contacts complets pour une utilisation ultérieure
       setContacts(contactsData);
-      
+
       // Vérifier la structure des données et créer les options de manière appropriée
       if (Array.isArray(contactsData)) {
         // Utiliser full_name au lieu de first_name + last_name
@@ -204,12 +204,20 @@ const QuoteList = () => {
       message.success('Devis créé avec succès');
       setShowCreateDrawer(false);
       quoteForm.resetFields();
-      
+
       // Rediriger vers la page de détail du nouveau devis
       navigate(`/sales/quotes/${response.data.id}`);
     } catch (error) {
       console.error('Erreur lors de la création du devis:', error);
-      message.error('Impossible de créer le devis');
+      if (error.response && error.response.data) {
+        const errors = error.response.data;
+        const errorMessages = Object.entries(errors)
+          .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join(' | ');
+        message.error(`Erreur de validation : ${errorMessages}`);
+      } else {
+        message.error('Impossible de créer le devis');
+      }
     } finally {
       setActionLoading(false);
     }
@@ -262,7 +270,7 @@ const QuoteList = () => {
     try {
       const response = await axios.post(`/api/sales/quotes/${id}/convert_to_order/`);
       message.success('Devis converti en commande avec succès');
-      
+
       // Si la réponse contient l'ID de la commande, naviguer vers la page de détail
       if (response.data && response.data.order && response.data.order.id) {
         navigate(`/sales/orders/${response.data.order.id}`);
@@ -298,7 +306,7 @@ const QuoteList = () => {
       // Récupérer l'email du contact associé au devis
       const quote = quotes.find(q => q.id === id);
       const contact = quote && quote.contact_id ? contacts.find(c => c.id === quote.contact_id) : null;
-      
+
       if (contact && contact.email) {
         await axios.post(`/api/sales/quotes/${id}/send_by_email/`, {
           recipient_email: contact.email,
@@ -309,7 +317,7 @@ const QuoteList = () => {
         navigate(`/sales/quotes/${id}`);
         return;
       }
-      
+
       fetchQuotes();
     } catch (error) {
       console.error("Erreur lors de l'envoi du devis par email:", error);
@@ -408,20 +416,20 @@ const QuoteList = () => {
 
           {record.status === 'sent' && (
             <>
-              <Button 
-                size="small" 
-                type="primary" 
-                icon={<CheckOutlined />} 
+              <Button
+                size="small"
+                type="primary"
+                icon={<CheckOutlined />}
                 onClick={() => handleAcceptQuote(record.id)}
                 style={{ backgroundColor: 'green', borderColor: 'green' }}
                 loading={actionLoading}
               >
                 Accepter
               </Button>
-              <Button 
-                size="small" 
-                danger 
-                icon={<CloseOutlined />} 
+              <Button
+                size="small"
+                danger
+                icon={<CloseOutlined />}
                 onClick={() => handleRejectQuote(record.id)}
                 loading={actionLoading}
               >
@@ -431,10 +439,10 @@ const QuoteList = () => {
           )}
 
           {record.status === 'accepted' && !record.converted_to_order && (
-            <Button 
-              size="small" 
-              type="primary" 
-              icon={<ShoppingCartOutlined />} 
+            <Button
+              size="small"
+              type="primary"
+              icon={<ShoppingCartOutlined />}
               onClick={() => handleConvertToOrder(record.id)}
               loading={actionLoading}
             >
@@ -442,9 +450,9 @@ const QuoteList = () => {
             </Button>
           )}
 
-          <Button 
-            size="small" 
-            icon={<FileOutlined />} 
+          <Button
+            size="small"
+            icon={<FileOutlined />}
             onClick={() => handleGeneratePdf(record.id)}
             loading={actionLoading}
           >
@@ -452,9 +460,9 @@ const QuoteList = () => {
           </Button>
 
           {['draft', 'sent', 'accepted'].includes(record.status) && (
-            <Button 
-              size="small" 
-              icon={<MailOutlined />} 
+            <Button
+              size="small"
+              icon={<MailOutlined />}
               onClick={() => handleSendByEmail(record.id)}
               loading={actionLoading}
             >
@@ -469,9 +477,9 @@ const QuoteList = () => {
               okText="Oui"
               cancelText="Non"
             >
-              <Button 
-                size="small" 
-                danger 
+              <Button
+                size="small"
+                danger
                 icon={<DeleteOutlined />}
                 loading={actionLoading}
               >
@@ -492,7 +500,7 @@ const QuoteList = () => {
           <Button
             type="primary"
             icon={<PlusOutlined />}
-            onClick={() => setShowCreateDrawer(true)}
+            onClick={() => navigate('/sales/quotes/new')}
           >
             Nouveau devis
           </Button>
@@ -553,14 +561,14 @@ const QuoteList = () => {
           locale={{ emptyText: 'Aucun devis trouvé' }}
           summary={pageData => {
             if (pageData.length === 0) return null;
-            
+
             // Calculer les statistiques
             let totalAmount = 0;
-            
+
             pageData.forEach(item => {
               totalAmount += Number(item.total || 0);
             });
-            
+
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={5}>
@@ -585,14 +593,14 @@ const QuoteList = () => {
         bodyStyle={{ paddingBottom: 80 }}
         footer={
           <div style={{ textAlign: 'right' }}>
-            <Button 
-              onClick={() => setShowCreateDrawer(false)} 
+            <Button
+              onClick={() => setShowCreateDrawer(false)}
               style={{ marginRight: 8 }}
             >
               Annuler
             </Button>
-            <Button 
-              onClick={() => quoteForm.submit()} 
+            <Button
+              onClick={() => quoteForm.submit()}
               type="primary"
               loading={actionLoading}
             >

@@ -104,7 +104,7 @@ const InvoiceForm = () => {
             is_tax_exempt: false,
             type: 'standard'
           });
-          
+
           // Calculer la date d'échéance par défaut (30 jours après la date actuelle)
           handlePaymentTermsChange('30_days');
         }
@@ -181,7 +181,7 @@ const InvoiceForm = () => {
 
       const options = contactsData.map(contact => ({
         value: contact.id,
-        label: `${contact.first_name} ${contact.last_name}`,
+        label: contact.full_name || `Contact #${contact.id}`,
       }));
 
       setContactOptions(options);
@@ -646,7 +646,7 @@ const InvoiceForm = () => {
           label="Type de facture"
           rules={[{ required: true, message: 'Veuillez sélectionner un type de facture' }]}
         >
-          <RadioGroup 
+          <RadioGroup
             onChange={(e) => setInvoiceType(e.target.value)}
             disabled={isEditMode} // Ne peut pas changer le type en mode édition
           >
@@ -735,8 +735,8 @@ const InvoiceForm = () => {
               label="Date d'émission"
               rules={[{ required: true, message: 'Veuillez sélectionner une date' }]}
             >
-              <DatePicker 
-                style={{ width: '100%' }} 
+              <DatePicker
+                style={{ width: '100%' }}
                 format="DD/MM/YYYY"
                 onChange={handleDateChange}
               />
@@ -748,7 +748,7 @@ const InvoiceForm = () => {
               label="Conditions de paiement"
               rules={[{ required: true, message: 'Veuillez sélectionner des conditions de paiement' }]}
             >
-              <Select 
+              <Select
                 placeholder="Sélectionner les conditions"
                 onChange={handlePaymentTermsChange}
               >
@@ -808,9 +808,9 @@ const InvoiceForm = () => {
               label="Remise (%)"
               initialValue={0}
             >
-              <InputNumber 
-                min={0} 
-                max={100} 
+              <InputNumber
+                min={0}
+                max={100}
                 style={{ width: '100%' }}
                 onChange={handleDiscountChange}
                 disabled={(selectedQuote || selectedOrder) && !isEditMode}
@@ -827,9 +827,9 @@ const InvoiceForm = () => {
             initialValue={30}
             rules={[{ required: true, message: 'Veuillez indiquer le pourcentage d\'acompte' }]}
           >
-            <InputNumber 
-              min={1} 
-              max={100} 
+            <InputNumber
+              min={1}
+              max={100}
               style={{ width: '100%' }}
             />
           </Form.Item>

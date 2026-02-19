@@ -28,7 +28,7 @@ const SalesLayout = ({ children }) => {
   const getBreadcrumbItems = () => {
     const paths = location.pathname.split('/').filter(i => i);
     const result = [];
-    
+
     // Élément Home
     result.push(
       <Breadcrumb.Item key="home">
@@ -37,7 +37,7 @@ const SalesLayout = ({ children }) => {
         </Link>
       </Breadcrumb.Item>
     );
-    
+
     // Élément Sales
     result.push(
       <Breadcrumb.Item key="sales">
@@ -46,7 +46,7 @@ const SalesLayout = ({ children }) => {
         </Link>
       </Breadcrumb.Item>
     );
-    
+
     // Autres éléments basés sur le chemin
     if (paths.length > 1 && paths[0] === 'sales') {
       const module = paths[1];
@@ -60,7 +60,7 @@ const SalesLayout = ({ children }) => {
           'products': 'Produits',
           'bank-accounts': 'Comptes bancaires'
         };
-        
+
         result.push(
           <Breadcrumb.Item key={module}>
             <Link to={`/sales/${module}`}>
@@ -69,7 +69,7 @@ const SalesLayout = ({ children }) => {
           </Breadcrumb.Item>
         );
       }
-      
+
       // Si c'est un détail d'élément
       if (paths.length > 2 && !['new', 'edit'].includes(paths[2])) {
         result.push(
@@ -78,7 +78,7 @@ const SalesLayout = ({ children }) => {
           </Breadcrumb.Item>
         );
       }
-      
+
       // Si c'est un nouveau ou édition
       if (paths.length > 2 && paths[2] === 'new') {
         result.push(
@@ -87,7 +87,7 @@ const SalesLayout = ({ children }) => {
           </Breadcrumb.Item>
         );
       }
-      
+
       if (paths.length > 2 && paths[2] === 'edit') {
         result.push(
           <Breadcrumb.Item key="edit">
@@ -96,7 +96,7 @@ const SalesLayout = ({ children }) => {
         );
       }
     }
-    
+
     return result;
   };
 
@@ -152,8 +152,10 @@ const SalesLayout = ({ children }) => {
         onBreakpoint={onBreakpoint}
       >
         <div className="logo">
-          {!collapsed && <Title level={4} style={{ color: 'white', margin: '16px 0', textAlign: 'center' }}>Cleo ERP</Title>}
-          {collapsed && <Title level={4} style={{ color: 'white', margin: '16px 0', textAlign: 'center' }}>C</Title>}
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            {!collapsed && <Title level={4} style={{ color: 'white', margin: '16px 0', textAlign: 'center' }}>Cleo ERP</Title>}
+            {collapsed && <Title level={4} style={{ color: 'white', margin: '16px 0', textAlign: 'center' }}>C</Title>}
+          </Link>
         </div>
         <Menu
           theme="dark"

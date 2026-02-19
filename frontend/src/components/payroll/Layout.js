@@ -147,8 +147,10 @@ const PayrollLayout = ({ children }) => {
         onBreakpoint={onBreakpoint}
       >
         <div className="logo">
-          {!collapsed && <Title level={4} style={{ color: 'white', margin: '16px 0', textAlign: 'center' }}>Cleo ERP</Title>}
-          {collapsed && <Title level={4} style={{ color: 'white', margin: '16px 0', textAlign: 'center' }}>C</Title>}
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            {!collapsed && <Title level={4} style={{ color: 'white', margin: '16px 0', textAlign: 'center' }}>Cleo ERP</Title>}
+            {collapsed && <Title level={4} style={{ color: 'white', margin: '16px 0', textAlign: 'center' }}>C</Title>}
+          </Link>
         </div>
         <Menu
           theme="dark"

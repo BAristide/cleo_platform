@@ -1,7 +1,7 @@
 // src/components/accounting/Layout.js
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Layout as AntLayout, Menu, Typography, Button, Dropdown, Avatar, Space } from 'antd';
+import { Layout as AntLayout, Menu, Typography, Button, Dropdown, Avatar, Space, Breadcrumb } from 'antd';
 import {
   AccountBookOutlined,
   BankOutlined,
@@ -18,7 +18,8 @@ import {
   BookOutlined,
   FileExcelOutlined,
   FileSearchOutlined,
-  DashboardOutlined
+  DashboardOutlined,
+  HomeOutlined
 } from '@ant-design/icons';
 import './Layout.css';
 
@@ -162,8 +163,10 @@ const Layout = ({ children }) => {
     <AntLayout className="accounting-layout">
       <Sider trigger={null} collapsible collapsed={collapsed} width={250}>
         <div className="logo">
-          <DollarOutlined className="icon" />
-          {!collapsed && <span>Comptabilité</span>}
+          <Link to="/" style={{ color: '#fff', textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
+            <DollarOutlined className="icon" />
+            {!collapsed && <span>Cleo ERP</span>}
+          </Link>
         </div>
         <Menu
           theme="dark"
@@ -193,6 +196,14 @@ const Layout = ({ children }) => {
           </Space>
         </Header>
         <Content className="site-layout-background">
+          <Breadcrumb style={{ marginBottom: '16px' }}>
+            <Breadcrumb.Item key="home">
+              <Link to="/"><HomeOutlined /> Home</Link>
+            </Breadcrumb.Item>
+            <Breadcrumb.Item key="accounting">
+              <Link to="/accounting">Comptabilité</Link>
+            </Breadcrumb.Item>
+          </Breadcrumb>
           {children}
         </Content>
         <Footer>Cleo ERP © {new Date().getFullYear()} - Module Comptabilité</Footer>

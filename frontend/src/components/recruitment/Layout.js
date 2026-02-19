@@ -8,7 +8,8 @@ import {
   TeamOutlined,
   FileTextOutlined,
   BarChartOutlined,
-  BellOutlined
+  BellOutlined,
+  AppstoreOutlined
 } from '@ant-design/icons';
 import './Layout.css';
 
@@ -20,7 +21,7 @@ const RecruitmentLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   // Déterminer l'élément de menu actif à partir de l'URL
   const getSelectedKeys = () => {
     const path = location.pathname;
@@ -30,19 +31,20 @@ const RecruitmentLayout = ({ children }) => {
     if (path.includes('/statistics')) return ['statistics'];
     return [];
   };
-  
+
   // Définir les éléments du fil d'Ariane
   const getBreadcrumbItems = () => {
     const path = location.pathname;
     const items = [
-      { title: <Link to="/recruitment">Recrutement</Link>, key: 'recruitment' }
+      { title: <Link to="/"><HomeOutlined /> Home</Link>, key: 'home' },
+      { title: <Link to="/recruitment"><AppstoreOutlined /> Recrutement</Link>, key: 'recruitment' }
     ];
-    
+
     if (path === '/recruitment') {
       items.push({ title: 'Tableau de bord', key: 'dashboard' });
     } else if (path.includes('/job-openings')) {
       items.push({ title: <Link to="/recruitment/job-openings">Offres d'emploi</Link>, key: 'job-openings' });
-      
+
       if (path.includes('/new')) {
         items.push({ title: 'Nouvelle offre', key: 'new-job' });
       } else if (path.includes('/edit')) {
@@ -54,7 +56,7 @@ const RecruitmentLayout = ({ children }) => {
       }
     } else if (path.includes('/applications')) {
       items.push({ title: <Link to="/recruitment/applications">Candidatures</Link>, key: 'applications' });
-      
+
       if (path.match(/\/applications\/\d+$/)) {
         items.push({ title: 'Détails de la candidature', key: 'application-details' });
       } else if (path.includes('/schedule-interview')) {
@@ -64,24 +66,26 @@ const RecruitmentLayout = ({ children }) => {
       }
     } else if (path.includes('/evaluations')) {
       items.push({ title: <Link to="/recruitment/applications">Évaluations</Link>, key: 'evaluations' });
-      
+
       if (path.match(/\/evaluations\/\d+$/)) {
         items.push({ title: 'Détails de l\'évaluation', key: 'evaluation-details' });
       }
     } else if (path.includes('/statistics')) {
       items.push({ title: 'Statistiques', key: 'statistics' });
     }
-    
+
     return items;
   };
-  
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
       <Sider collapsible collapsed={collapsed} onCollapse={setCollapsed} theme="light">
         <div className="logo" style={{ textAlign: 'center', margin: '16px 0' }}>
-          <Title level={4} style={{ marginBottom: 0, color: '#1890ff' }}>
-            {collapsed ? 'CR' : 'Recrutement'}
-          </Title>
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            <Title level={4} style={{ marginBottom: 0, color: '#1890ff' }}>
+              {collapsed ? 'C' : 'Cleo ERP'}
+            </Title>
+          </Link>
         </div>
         <Menu
           theme="light"

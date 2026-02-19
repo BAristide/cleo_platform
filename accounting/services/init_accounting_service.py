@@ -3,6 +3,8 @@ from datetime import date
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from core.models import Currency
+
 from ..models import (
     Account,
     AccountType,
@@ -27,12 +29,71 @@ class InitAccountingService:
 
     def init_all(self):
         """Initialise toutes les données comptables."""
+        self.create_currencies()
         self.create_account_types()
         self.create_accounts()
         self.create_journals()
         self.create_fiscal_year()
         self.create_taxes()
         self.create_analytic_accounts()
+
+    def create_currencies(self):
+        """Crée les devises de base."""
+        if self.force and Currency.objects.exists():
+            Currency.objects.all().delete()
+
+        if Currency.objects.exists():
+            return
+
+        currencies = [
+            {
+                'code': 'MAD',
+                'name': 'Dirham marocain',
+                'symbol': 'MAD',
+                'is_default': True,
+                'exchange_rate': 1.000000,
+                'decimal_places': 2,
+                'decimal_separator': '.',
+                'thousand_separator': ',',
+                'symbol_position': 'after',
+            },
+            {
+                'code': 'EUR',
+                'name': 'Euro',
+                'symbol': '€',
+                'is_default': False,
+                'exchange_rate': 10.800000,
+                'decimal_places': 2,
+                'decimal_separator': ',',
+                'thousand_separator': ' ',
+                'symbol_position': 'after',
+            },
+            {
+                'code': 'USD',
+                'name': 'Dollar américain',
+                'symbol': '$',
+                'is_default': False,
+                'exchange_rate': 10.000000,
+                'decimal_places': 2,
+                'decimal_separator': '.',
+                'thousand_separator': ',',
+                'symbol_position': 'before',
+            },
+            {
+                'code': 'XOF',
+                'name': 'Franc CFA',
+                'symbol': 'F CFA',
+                'is_default': False,
+                'exchange_rate': 0.017000,
+                'decimal_places': 0,
+                'decimal_separator': '.',
+                'thousand_separator': ' ',
+                'symbol_position': 'after',
+            },
+        ]
+
+        for data in currencies:
+            Currency.objects.create(**data)
 
     def create_account_types(self):
         """Crée les types de comptes comptables."""

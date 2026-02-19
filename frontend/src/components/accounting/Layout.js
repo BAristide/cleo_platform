@@ -156,6 +156,12 @@ const Layout = ({ children }) => {
       icon: <BarChartOutlined />,
       label: 'États et rapports',
       onClick: () => navigateToPath('/accounting/reports')
+    },
+    {
+      key: '9',
+      icon: <DollarOutlined />,
+      label: 'Devises',
+      onClick: () => navigateToPath('/accounting/currencies')
     }
   ];
 

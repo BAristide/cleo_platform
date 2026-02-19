@@ -32,13 +32,25 @@ class Command(BaseCommand):
             action='store_true',
             help=_('Initialiser les comptes analytiques'),
         )
+        parser.add_argument(
+            '--currencies',
+            action='store_true',
+            help=_('Initialiser les devises'),
+        )
 
     def handle(self, *args, **options):
         force = options['force']
         init_service = InitAccountingService(force=force)
 
         # Si aucune option spécifique n'est fournie, initialiser tout
-        specific_options = ['accounts', 'journals', 'fiscal_year', 'taxes', 'analytic']
+        specific_options = [
+            'accounts',
+            'journals',
+            'fiscal_year',
+            'taxes',
+            'analytic',
+            'currencies',
+        ]
         if not any(options[opt] for opt in specific_options):
             self.stdout.write(
                 self.style.NOTICE(
@@ -86,6 +98,11 @@ class Command(BaseCommand):
             )
             init_service.create_analytic_accounts()
             self.stdout.write(self.style.SUCCESS(_('Comptes analytiques initialisés.')))
+
+        if options['currencies']:
+            self.stdout.write(self.style.NOTICE(_('Initialisation des devises...')))
+            init_service.create_currencies()
+            self.stdout.write(self.style.SUCCESS(_('Devises initialisées.')))
 
         self.stdout.write(
             self.style.SUCCESS(_('Initialisation des données comptables terminée.'))

@@ -34,7 +34,8 @@ echo "📦 Collecte des fichiers statiques Django..."
 python manage.py collectstatic --noinput
 
 echo "📦 Copie des fichiers frontend React..."
-cp -rf /app/frontend/build/static/* /data/static/
+cp -rf /app/frontend/build/static/* /data/static/ 2>/dev/null || true
+
 for f in favicon.ico manifest.json logo192.png logo512.png robots.txt; do
     cp /app/frontend/build/$f /data/static/ 2>/dev/null || true
 done
@@ -50,13 +51,16 @@ python manage.py create_default_roles 2>/dev/null || echo "  create_default_role
 echo "👤 Vérification du superuser..."
 python manage.py shell -c "
 from django.contrib.auth.models import User
+
+email = '${DJANGO_SUPERUSER_EMAIL:-admin@cleo.local}'
+
 if not User.objects.filter(is_superuser=True).exists():
     User.objects.create_superuser(
-        username='${DJANGO_SUPERUSER_USERNAME:-admin}',
-        email='${DJANGO_SUPERUSER_EMAIL:-admin@cleo.local}',
+        username=email,
+        email=email,
         password='${DJANGO_SUPERUSER_PASSWORD:-admin}'
     )
-    print('  ✅ Superuser créé : ${DJANGO_SUPERUSER_USERNAME:-admin}')
+    print(f'  ✅ Superuser créé : {email}')
     print('  ⚠️  CHANGEZ LE MOT DE PASSE IMMÉDIATEMENT')
 else:
     print('  ℹ️  Un superuser existe déjà.')

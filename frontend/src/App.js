@@ -12,6 +12,12 @@ import RecruitmentRoutes from './components/recruitment/Routes';
 import { AuthProvider } from './context/AuthContext';
 import PrivateRoute from './components/PrivateRoute';
 
+import ProfilePage from './components/profile/ProfilePage';
+import ChangePassword from './components/profile/ChangePassword';
+import UserRoutes from './components/users/UserRoutes';
+import AdminRoute from './components/common/AdminRoute';
+
+
 function App() {
   return (
     <AuthProvider>
@@ -21,6 +27,29 @@ function App() {
           <Route path="/" element={
             <PrivateRoute>
               <MainDashboard />
+            </PrivateRoute>
+          } />
+
+
+          {/* Profil utilisateur */}
+          <Route path="/profile" element={
+            <PrivateRoute>
+              <ProfilePage />
+            </PrivateRoute>
+          } />
+          <Route path="/profile/password" element={
+            <PrivateRoute>
+              <ChangePassword />
+            </PrivateRoute>
+          } />
+
+
+           {/* Gestion des utilisateurs (admin uniquement) */}
+          <Route path="/users/*" element={
+            <PrivateRoute>
+              <AdminRoute>
+                <UserRoutes />
+              </AdminRoute>
             </PrivateRoute>
           } />
 

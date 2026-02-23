@@ -81,27 +81,27 @@
             <h1>Cleo ERP</h1>
             <p>Connectez-vous pour accéder à votre tableau de bord</p>
         </div>
-        
+
         {% if error %}
         <div class="error-message">
             {{ error }}
         </div>
         {% endif %}
-        
+
         <form method="post" action="/login/">
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ next }}">
-            
+
             <div class="form-item">
-                <label for="username">Nom d'utilisateur</label>
-                <input type="text" id="username" name="username" required autofocus>
+                <label for="username">Email</label>
+                <input type="email" id="username" name="username" placeholder="votre@email.ma" required autofocus>
             </div>
-            
+
             <div class="form-item">
                 <label for="password">Mot de passe</label>
                 <input type="password" id="password" name="password" required>
             </div>
-            
+
             <button type="submit">Se connecter</button>
         </form>
     </div>

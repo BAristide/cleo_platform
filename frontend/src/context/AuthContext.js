@@ -8,26 +8,33 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Vérifier l'authentification au chargement de l'application
-    const checkAuthStatus = async () => {
-      try {
-        const res = await axios.get('/api/check-auth/');
-        if (res.data.authenticated) {
-          setIsAuthenticated(true);
-          setUser({ username: res.data.username });
-        } else {
-          setIsAuthenticated(false);
-          setUser(null);
-        }
-      } catch (error) {
+  const checkAuthStatus = async () => {
+    try {
+      const res = await axios.get('/api/check-auth/');
+      if (res.data.authenticated) {
+        setIsAuthenticated(true);
+        setUser({
+          username: res.data.username,
+          email: res.data.email,
+          fullName: res.data.full_name,
+          isSuperuser: res.data.is_superuser,
+          isStaff: res.data.is_staff,
+          roles: res.data.roles,
+          modulesAccess: res.data.modules_access,
+        });
+      } else {
         setIsAuthenticated(false);
         setUser(null);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      setIsAuthenticated(false);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     checkAuthStatus();
   }, []);
 
@@ -36,8 +43,13 @@ export const AuthProvider = ({ children }) => {
     window.location.href = '/logout/';
   };
 
+  // Fonction pour rafraîchir les données utilisateur (après PATCH /me/)
+  const refreshUser = () => {
+    checkAuthStatus();
+  };
+
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, loading, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, loading, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

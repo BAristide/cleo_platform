@@ -8,6 +8,7 @@ from .models import ActivityLog, ModulePermission, UserRole
 from .permissions import HasModulePermission
 from .serializers import (
     ActivityLogSerializer,
+    ChangePasswordSerializer,
     EmployeeUserLinkSerializer,
     ModulePermissionSerializer,
     UserRoleSerializer,
@@ -41,11 +42,54 @@ class UserViewSet(viewsets.ModelViewSet):
     # Définir le module pour les permissions
     module_name = 'core'
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get', 'patch'], url_path='me')
     def me(self, request):
-        """Retourne les informations de l'utilisateur connecté."""
-        serializer = self.get_serializer(request.user)
-        return Response(serializer.data)
+        """Retourne ou met à jour les informations de l'utilisateur connecté."""
+        if request.method == 'GET':
+            serializer = self.get_serializer(request.user)
+            return Response(serializer.data)
+
+        # PATCH — mise à jour partielle
+        allowed_fields = ['first_name', 'last_name', 'email']
+        data = {k: v for k, v in request.data.items() if k in allowed_fields}
+
+        # Gérer le profil (phone)
+        profile_data = {}
+        if 'phone' in request.data:
+            profile_data['phone'] = request.data['phone']
+        if profile_data:
+            data['profile'] = profile_data
+
+        serializer = self.get_serializer(request.user, data=data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(self.get_serializer(request.user).data)
+
+    @action(detail=False, methods=['post'], url_path='change-password')
+    def change_own_password(self, request):
+        """Permet à l'utilisateur connecté de changer son mot de passe."""
+        serializer = ChangePasswordSerializer(
+            data=request.data, context={'request': request}
+        )
+        serializer.is_valid(raise_exception=True)
+
+        request.user.set_password(serializer.validated_data['new_password'])
+        request.user.save()
+
+        # Mettre à jour la date de changement
+        if hasattr(request.user, 'profile'):
+            from django.utils import timezone
+
+            request.user.profile.password_changed_at = timezone.now()
+            request.user.profile.save()
+
+        # Re-login pour ne pas invalider la session
+        from django.contrib.auth import update_session_auth_hash
+
+        update_session_auth_hash(request, request.user)
+
+        return Response({'success': 'Mot de passe modifié avec succès'})
 
     @action(detail=True, methods=['post'])
     def set_password(self, request, pk=None):

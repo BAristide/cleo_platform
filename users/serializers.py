@@ -29,11 +29,28 @@ class UserSerializer(serializers.ModelSerializer):
             'last_name',
             'is_active',
             'is_staff',
+            'password',
             'profile',
             'groups',
             'employee_detail',
         ]
-        extra_kwargs = {'password': {'write_only': True}}
+
+        extra_kwargs = {
+            'password': {'write_only': True, 'required': False},
+            'username': {'read_only': True},
+        }
+
+    def validate_email(self, value):
+        """Vérifie l'unicité de l'email."""
+        value = value.lower().strip()
+        qs = User.objects.filter(email=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        if qs.exists():
+            raise serializers.ValidationError(
+                'Un utilisateur avec cet email existe déjà.'
+            )
+        return value
 
     def get_employee_detail(self, obj):
         """Retourne les détails de l'employé associé à l'utilisateur."""
@@ -59,6 +76,9 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password', None)
         groups_data = validated_data.pop('groups', [])
 
+        # Forcer username = email
+        validated_data['username'] = validated_data['email'].lower().strip()
+
         user = User.objects.create(**validated_data)
 
         if password:
@@ -83,6 +103,10 @@ class UserSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password', None)
         groups_data = validated_data.pop('groups', None)
 
+        # Synchroniser username si email change
+        if 'email' in validated_data:
+            validated_data['username'] = validated_data['email'].lower().strip()
+
         # Mise à jour des attributs User
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -106,6 +130,27 @@ class UserSerializer(serializers.ModelSerializer):
             instance.profile.save()
 
         return instance
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    """Changement de mot de passe avec vérification de l'ancien."""
+
+    old_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True, min_length=8)
+    confirm_password = serializers.CharField(required=True, write_only=True)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("L'ancien mot de passe est incorrect.")
+        return value
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError(
+                {'confirm_password': 'Les mots de passe ne correspondent pas.'}
+            )
+        return data
 
 
 class ModulePermissionSerializer(serializers.ModelSerializer):
@@ -134,12 +179,8 @@ class UserRoleSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Crée un nouveau rôle avec son groupe Django correspondant."""
-        # Créer d'abord un groupe Django
         group, _ = Group.objects.get_or_create(name=validated_data['name'])
-
-        # Créer le rôle avec ce groupe
         role = UserRole.objects.create(group=group, **validated_data)
-
         return role
 
 
@@ -192,7 +233,6 @@ class EmployeeUserLinkSerializer(serializers.Serializer):
         except Employee.DoesNotExist:
             raise serializers.ValidationError({'employee_id': 'Employé non trouvé.'})
 
-        # Vérifier si cet employé est déjà lié à un autre utilisateur
         if UserProfile.objects.filter(employee=employee).exclude(user=user).exists():
             raise serializers.ValidationError(
                 {'employee_id': 'Cet employé est déjà lié à un autre utilisateur.'}
@@ -204,12 +244,10 @@ class EmployeeUserLinkSerializer(serializers.Serializer):
         user = User.objects.get(pk=self.validated_data['user_id'])
         employee = Employee.objects.get(pk=self.validated_data['employee_id'])
 
-        # Mettre à jour le profil utilisateur
         profile, _ = UserProfile.objects.get_or_create(user=user)
         profile.employee = employee
         profile.save()
 
-        # Mettre à jour l'employé
         employee.user = user
         employee.save(update_fields=['user'])
 

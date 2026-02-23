@@ -1,3 +1,5 @@
+import os
+
 from .base import *
 
 DEBUG = False
@@ -10,5 +12,8 @@ X_FRAME_OPTIONS = 'DENY'
 # Si ton reverse proxy (nginx) envoie X-Forwarded-Proto=https
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+
+SESSION_COOKIE_SECURE = (
+    os.environ.get('SESSION_COOKIE_SECURE', 'True').lower() == 'true'
+)
+CSRF_COOKIE_SECURE = os.environ.get('CSRF_COOKIE_SECURE', 'True').lower() == 'true'

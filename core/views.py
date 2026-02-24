@@ -252,6 +252,29 @@ class SetupCreateView(APIView):
         setup.setup_date = timezone.now()
         setup.save()
 
+        # Créer le BankAccount dans le module Sales
+        if setup.bank_name and setup.bank_account:
+            try:
+                from core.models import Currency
+                from sales.models import BankAccount
+
+                currency = Currency.objects.filter(
+                    code=setup.default_currency_code
+                ).first()
+                if currency:
+                    BankAccount.objects.get_or_create(
+                        rib=setup.bank_account,
+                        defaults={
+                            'name': f'Compte Principal {setup.default_currency_code}',
+                            'bank_name': setup.bank_name,
+                            'swift': setup.bank_swift or '',
+                            'currency': currency,
+                            'is_default': True,
+                        },
+                    )
+            except Exception as e:
+                logger.warning(f'Impossible de créer le compte bancaire: {e}')
+
         return Response(
             {
                 'status': 'success',
@@ -285,7 +308,7 @@ class SetupCreateView(APIView):
         if install_demo:
             try:
                 demo_module = importlib.import_module(
-                    f'accounting.fixtures.demo.{locale_pack.lower()}'
+                    f'accounting.fixtures.locales.demo.{locale_pack.lower()}'
                 )
                 if hasattr(demo_module, 'load_demo_data'):
                     demo_module.load_demo_data()

@@ -1,20 +1,21 @@
 // src/components/payroll/Dashboard.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Row, Col, Card, Statistic, Table, List, Tabs, 
-  Tag, Progress, Typography, Spin, Empty, Button 
+import {
+  Row, Col, Card, Statistic, Table, List, Tabs,
+  Tag, Progress, Typography, Spin, Empty, Button
 } from 'antd';
-import { 
-  UserOutlined, BankOutlined, FileTextOutlined, 
+import {
+  UserOutlined, BankOutlined, FileTextOutlined,
   CheckCircleOutlined, ClockCircleOutlined, DollarOutlined,
   PlusOutlined, CalendarOutlined
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
-import { 
-  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, 
-  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell 
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts';
 import axios from '../../utils/axiosConfig';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -29,9 +30,10 @@ const statusColors = {
 };
 
 const Dashboard = () => {
+  const { currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
-  
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -41,7 +43,7 @@ const Dashboard = () => {
       } catch (error) {
         console.error('Erreur lors du chargement des données du tableau de bord:', error);
         setLoading(false);
-        
+
         // Données de démonstration en cas d'erreur
         setDashboardData({
           current_period: {
@@ -114,44 +116,44 @@ const Dashboard = () => {
         });
       }
     };
-    
+
     fetchData();
   }, []);
-  
+
   if (loading) {
     return <Spin size="large" tip="Chargement des données..." />;
   }
-  
+
   if (!dashboardData) {
     return <Empty description="Aucune donnée disponible" />;
   }
-  
+
   // Préparation des données pour les graphiques
   const payslipsByStatusData = dashboardData.payslips_by_status.map(item => ({
     name: item.status,
     value: item.count
   }));
-  
+
   const runsByStatusData = dashboardData.runs_by_status.map(item => ({
     name: item.status,
     value: item.count
   }));
-  
+
   const advancesByPeriodData = dashboardData.advances_by_period.map(item => ({
     name: item.period__name,
     amount: item.total,
     count: item.count
   }));
-  
+
   const departmentStatsData = dashboardData.department_stats.map(item => ({
     name: item.employee__department__name || 'Non défini',
     gross: item.total_gross,
     net: item.total_net,
     count: item.employees_count
   }));
-  
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D'];
-  
+
   return (
     <div style={{ padding: '20px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
@@ -165,7 +167,7 @@ const Dashboard = () => {
           </Button>
         </div>
       </div>
-      
+
       {/* Période actuelle */}
       {dashboardData.current_period ? (
         <Card style={{ marginBottom: '20px' }} title="Période en cours">
@@ -177,7 +179,7 @@ const Dashboard = () => {
                 valueStyle={{ color: '#3f8600' }}
               />
               <Text type="secondary">
-                Du {new Date(dashboardData.current_period.start_date).toLocaleDateString()} 
+                Du {new Date(dashboardData.current_period.start_date).toLocaleDateString()}
                 au {new Date(dashboardData.current_period.end_date).toLocaleDateString()}
               </Text>
             </Col>
@@ -195,7 +197,7 @@ const Dashboard = () => {
                 title="Total Brut"
                 value={dashboardData.current_period.total_gross}
                 valueStyle={{ color: '#cf1322' }}
-                suffix="MAD"
+                suffix={currencyCode}
               />
             </Col>
             <Col span={6}>
@@ -203,14 +205,14 @@ const Dashboard = () => {
                 title="Total Net"
                 value={dashboardData.current_period.total_net}
                 valueStyle={{ color: '#3f8600' }}
-                suffix="MAD"
+                suffix={currencyCode}
               />
             </Col>
           </Row>
           <Row style={{ marginTop: '20px' }}>
             <Col span={24}>
               <Progress
-                percent={Math.round((dashboardData.current_period.payslips_calculated / 
+                percent={Math.round((dashboardData.current_period.payslips_calculated /
                   (dashboardData.current_period.payslips_count || 1)) * 100)}
                 status="active"
                 strokeColor={{
@@ -232,7 +234,7 @@ const Dashboard = () => {
           </div>
         </Card>
       )}
-      
+
       {/* Statistiques générales */}
       <Row gutter={16} style={{ marginBottom: '20px' }}>
         <Col span={6}>
@@ -272,7 +274,7 @@ const Dashboard = () => {
           </Card>
         </Col>
       </Row>
-      
+
       {/* Graphiques et tableaux détaillés */}
       <Tabs defaultActiveKey="1">
         <TabPane tab="Bulletins et statuts" key="1">
@@ -461,7 +463,7 @@ const Dashboard = () => {
               </Card>
             </Col>
             <Col span={12}>
-              <Card 
+              <Card
                 title="Acomptes récents"
                 extra={
                   <Button type="primary" size="small">

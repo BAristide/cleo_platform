@@ -9,31 +9,33 @@ import {
   UserOutlined,
   DollarOutlined
 } from '@ant-design/icons';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const KPISummary = ({ stats }) => {
+  const { currencyCode } = useCurrency();
   // Formats des données extraites des différents modules basés sur les components Dashboard.js
-  
+
   // CRM: stats.crm contient { contacts, companies, opportunities, pipeline }
   const crmOpportunities = stats.crm?.opportunities || 0;
   const crmPipeline = stats.crm?.pipeline || 0;
-  
+
   // Sales: stats.sales contient { quotes: {count, amount}, orders: {count, amount}, invoices: {count, amount, paid, overdue} }
   const salesRevenue = stats.sales?.invoices?.amount || 0;
   const unpaidInvoices = stats.sales?.invoices?.count - (stats.sales?.invoices?.paid || 0) || 0;
-  
+
   // HR: stats.general contient { total_employees, employees_by_department, employees_by_job_title }
   const hrEmployees = stats.hr?.general?.total_employees || 0;
-  
+
   // Payroll
   const payrollTotal = stats.payroll?.current_period?.total_gross || 0;
-  
+
   // Accounting
   const accountingActive = stats.accounting?.accounts?.active || 0;
   const accountingEntries = stats.accounting?.entries?.amount || 0;
 
   // Recruitment
   const recruitmentOpenings = stats.recruitment?.active_job_openings_count || 0;
-  
+
   // Définir les KPIs qui seront affichés
   const kpis = [
     {
@@ -47,14 +49,14 @@ const KPISummary = ({ stats }) => {
       title: "Pipeline (CRM)",
       value: crmPipeline,
       prefix: <DollarOutlined />,
-      suffix: "MAD",
+      suffix: currencyCode,
       precision: 2
     },
     {
       title: "Chiffre d'affaires (Ventes)",
       value: salesRevenue,
       prefix: <ShoppingCartOutlined />,
-      suffix: "MAD",
+      suffix: currencyCode,
       precision: 2
     },
     {
@@ -75,14 +77,14 @@ const KPISummary = ({ stats }) => {
       title: "Masse salariale (Paie)",
       value: payrollTotal,
       prefix: <DollarOutlined />,
-      suffix: "MAD",
+      suffix: currencyCode,
       precision: 2
     },
     {
       title: "Écritures (Comptabilité)",
       value: accountingEntries,
       prefix: <BankOutlined />,
-      suffix: "MAD",
+      suffix: currencyCode,
       precision: 2
     },
     {

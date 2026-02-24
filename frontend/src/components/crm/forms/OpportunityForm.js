@@ -1,18 +1,18 @@
 // src/components/crm/forms/OpportunityForm.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Form, 
-  Input, 
-  Button, 
-  Select, 
-  InputNumber, 
-  DatePicker, 
-  Space, 
-  Card, 
-  Row, 
-  Col, 
-  Typography, 
-  message, 
+import {
+  Form,
+  Input,
+  Button,
+  Select,
+  InputNumber,
+  DatePicker,
+  Space,
+  Card,
+  Row,
+  Col,
+  Typography,
+  message,
   Spin,
   Divider
 } from 'antd';
@@ -20,12 +20,14 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 const OpportunityForm = () => {
+  const { currencyCode } = useCurrency();
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
@@ -42,6 +44,7 @@ const OpportunityForm = () => {
   const [selectedCompany, setSelectedCompany] = useState(companyId ? parseInt(companyId) : null);
   const [salesStages, setSalesStages] = useState([]);
   const [tags, setTags] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
   const [opportunity, setOpportunity] = useState(null);
 
   const isEditMode = !!id;
@@ -54,11 +57,13 @@ const OpportunityForm = () => {
         const [
           companiesResponse,
           stagesResponse,
-          tagsResponse
+          tagsResponse,
+          currenciesResponse
         ] = await Promise.all([
           axios.get('/api/crm/companies/'),
           axios.get('/api/crm/sales-stages/'),
-          axios.get('/api/crm/tags/')
+          axios.get('/api/crm/tags/'),
+          axios.get('/api/core/currencies/')
         ]);
 
         const companiesData = extractResultsFromResponse(companiesResponse);
@@ -69,6 +74,8 @@ const OpportunityForm = () => {
 
         const tagsData = extractResultsFromResponse(tagsResponse);
         setTags(tagsData);
+        const currenciesData = extractResultsFromResponse(currenciesResponse);
+        setCurrencies(currenciesData);
 
         // Si un ID d'entreprise est spécifié, charger les contacts associés
         if (selectedCompany) {
@@ -108,7 +115,7 @@ const OpportunityForm = () => {
             form.setFieldsValue({
               stage_id: firstStage.id,
               probability: firstStage.probability,
-              currency: 'MAD' // Devise par défaut
+              currency: currencyCode,
             });
           }
 
@@ -137,18 +144,18 @@ const OpportunityForm = () => {
     fetchFormData();
   }, [id, form, selectedCompany, companyId, contactId, isEditMode]);
 
- 
+
 const fetchContactsByCompany = async (companyId) => {
   try {
     const contactsResponse = await axios.get(`/api/crm/companies/${companyId}/contacts/`);
     console.log('Réponse contactsResponse:', contactsResponse);
-    
+
     // Utiliser l'utilitaire pour extraire correctement les résultats
     const contactsData = extractResultsFromResponse(contactsResponse);
     console.log('Contacts après extraction:', contactsData);
-    
+
     setContacts(contactsData);
-    
+
     // Assurez-vous que les contacts ont un format utilisable
     if (Array.isArray(contactsData)) {
       // Formatage amélioré des options de contact
@@ -245,7 +252,7 @@ const fetchContactsByCompany = async (companyId) => {
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
         initialValues={{
-          currency: 'MAD',
+          currency: currencyCode,
           probability: 10
         }}
       >
@@ -339,11 +346,10 @@ const fetchContactsByCompany = async (companyId) => {
               rules={[{ required: true, message: 'Veuillez sélectionner une devise' }]}
             >
               <Select>
-                <Option value="MAD">MAD</Option>
-                <Option value="EUR">EUR</Option>
-                <Option value="USD">USD</Option>
-                <Option value="GBP">GBP</Option>
-              </Select>
+                  {currencies.map(c => (
+                    <Option key={c.id} value={c.code}>{c.code} - {c.name}</Option>
+                  ))}
+                </Select>
             </Form.Item>
           </Col>
           <Col xs={24} md={6}>
@@ -366,8 +372,8 @@ const fetchContactsByCompany = async (companyId) => {
               name="expected_close_date"
               label="Date de clôture prévue"
             >
-              <DatePicker 
-                style={{ width: '100%' }} 
+              <DatePicker
+                style={{ width: '100%' }}
                 format="DD/MM/YYYY"
               />
             </Form.Item>

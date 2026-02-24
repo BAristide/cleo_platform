@@ -86,7 +86,9 @@
         <div class="company-name">{{ company.name }}</div>
         <div class="company-info">{{ company.address }}</div>
         <div class="company-info">{{ company.city }}, {{ company.country }}</div>
-        <div class="company-info">{{ company.contact }}</div>
+        <div class="company-info">
+            {{ company.email }}{% if company.phone %} | {{ company.phone }}{% endif %}
+        </div>
         <div class="company-info">{{ company.fiscal_info }}</div>
     </div>
 

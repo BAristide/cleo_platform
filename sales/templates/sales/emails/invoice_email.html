@@ -74,15 +74,15 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">ECINTELLIGENCE</div>
+            <div class="logo">{{ company.name }}</div>
             <div>Experts Computing Intelligence</div>
         </div>
-        
+
         <div class="content">
             <p>Bonjour {{ contact.first_name }} {{ contact.last_name }},</p>
-            
+
             <p>Veuillez trouver ci-joint la facture <span class="document-number">{{ invoice.number }}</span> pour {{ company.name }}.</p>
-            
+
             <div class="document-details">
                 <p><strong>Facture n°:</strong> {{ invoice.number }}</p>
                 <p><strong>Date d'émission:</strong> {{ invoice.issue_date|date:"d/m/Y" }}</p>
@@ -93,9 +93,9 @@
                 <p><strong>Reste à payer:</strong> {{ invoice.total|add:"-"|add:invoice.amount_paid }} {{ invoice.currency.code }}</p>
                 {% endif %}
             </div>
-            
+
             <p>Cette facture concerne les produits et services fournis{% if invoice.order %} conformément au bon de commande {{ invoice.order.number }}{% elif invoice.quote %} conformément au devis {{ invoice.quote.number }}{% endif %}.</p>
-            
+
             {% if invoice.bank_account %}
             <div class="payment-info">
                 <p><strong>Informations de paiement:</strong></p>
@@ -106,19 +106,19 @@
                 <p>Veuillez mentionner le numéro de facture <strong>{{ invoice.number }}</strong> dans le libellé de votre paiement.</p>
             </div>
             {% endif %}
-            
+
             <p>Pour toute question concernant cette facture, n'hésitez pas à me contacter directement en répondant à cet email ou par téléphone.</p>
-            
+
             <p>Dans l'attente de votre paiement, je vous prie d'agréer, Madame, Monsieur, l'expression de mes salutations distinguées.</p>
         </div>
-        
+
         <div class="footer">
             <p>Cordialement,</p>
-            <p class="highlight">L'équipe ECINTELLIGENCE</p>
-            
+            <p class="highlight">L'équipe {{ company.name }}</p>
+
             <div class="company-details">
-                <p>La Marina Casablanca | Tour Oceanes 3 Bureau 03 Rez-De-Jardin - Casablanca - Maroc</p>
-                <p>Email: infos@ecintelligence.ma | Tél: +(212) 5220 48-727 / 0666 366 018</p>
+                <p>{{ company.address_line1 }} - {{ company.city_line }}</p>
+                <p>{% if company.email %}Email: {{ company.email }}{% endif %}{% if company.phone %} | Tél: {{ company.phone }}{% endif %}</p>
                 <p>RC 393329 - IF 25018675 - Patente 350424929 - ICE 00203009000092</p>
             </div>
         </div>

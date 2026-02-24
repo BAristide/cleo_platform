@@ -4,6 +4,7 @@ import { Row, Col, Card, Statistic, Table, Typography, Spin, Divider, Alert } fr
 import { ShoppingCartOutlined, FileTextOutlined, BankOutlined, DollarOutlined } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 
@@ -17,8 +18,9 @@ const Dashboard = () => {
   });
   const [recentInvoices, setRecentInvoices] = useState([]);
   const [recentQuotes, setRecentQuotes] = useState([]);
+  const { currencyCode } = useCurrency();
 
- 
+
   const extractResults = (response) => {
     return response?.data?.results || [];
   };
@@ -115,7 +117,7 @@ const Dashboard = () => {
       title: 'Montant',
       dataIndex: 'total',
       key: 'total',
-      render: (text, record) => `${text} ${record.currency_code || 'MAD'}`,
+      render: (text, record) => `${text} ${record.currency_code || currencyCode}`,
     },
     {
       title: 'Date d\'émission',
@@ -156,7 +158,7 @@ const Dashboard = () => {
       title: 'Montant',
       dataIndex: 'total',
       key: 'total',
-      render: (text, record) => `${text} ${record.currency_code || 'MAD'}`,
+      render: (text, record) => `${text} ${record.currency_code || currencyCode}`,
     },
     {
       title: 'Date d\'émission',
@@ -194,11 +196,11 @@ const Dashboard = () => {
     return (
       <div className="sales-dashboard">
         <Title level={2}>Tableau de bord des ventes</Title>
-        <Alert 
-          message="Erreur" 
-          description={error} 
-          type="error" 
-          showIcon 
+        <Alert
+          message="Erreur"
+          description={error}
+          type="error"
+          showIcon
           style={{ marginBottom: 24 }}
         />
       </div>
@@ -223,7 +225,7 @@ const Dashboard = () => {
               title="Montant"
               value={stats.quotes.amount}
               precision={2}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ fontSize: '16px' }}
             />
           </Card>
@@ -241,7 +243,7 @@ const Dashboard = () => {
               title="Montant"
               value={stats.orders.amount}
               precision={2}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ fontSize: '16px' }}
             />
           </Card>
@@ -259,7 +261,7 @@ const Dashboard = () => {
               title="Montant"
               value={stats.invoices.amount}
               precision={2}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ fontSize: '16px' }}
             />
           </Card>
@@ -271,7 +273,7 @@ const Dashboard = () => {
               value={stats.invoices.paid}
               prefix={<DollarOutlined />}
               precision={2}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ color: '#3f8600' }}
             />
             <Divider style={{ margin: '12px 0' }} />
@@ -279,7 +281,7 @@ const Dashboard = () => {
               title="Montant en retard"
               value={stats.invoices.overdue}
               precision={2}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ color: '#cf1322', fontSize: '16px' }}
             />
           </Card>

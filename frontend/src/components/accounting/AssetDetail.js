@@ -37,12 +37,14 @@ import {
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { Step } = Steps;
 const { confirm } = Modal;
 
 const AssetDetail = () => {
+  const { currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -74,7 +76,7 @@ const AssetDetail = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des détails de l\'immobilisation:', error);
       setError('Impossible de charger les détails de l\'immobilisation. Veuillez réessayer plus tard.');
-      
+
       // If API fails, use demo data
       if (demoAssets[id - 1]) {
         setAsset(demoAssets[id - 1]);
@@ -306,7 +308,7 @@ const AssetDetail = () => {
       'close': { text: 'Clôturé', color: 'blue' },
       'sold': { text: 'Cédé', color: 'red' }
     };
-    
+
     return (
       <Tag color={stateMap[state]?.color}>
         {stateMap[state]?.text || state}
@@ -320,7 +322,7 @@ const AssetDetail = () => {
       'posted': { text: 'Comptabilisé', color: 'green' },
       'cancel': { text: 'Annulé', color: 'red' }
     };
-    
+
     return (
       <Tag color={stateMap[state]?.color}>
         {stateMap[state]?.text || state}
@@ -391,10 +393,10 @@ const AssetDetail = () => {
       width: '10%',
       render: (_, record) => (
         record.state === 'draft' ? (
-          <Button 
-            type="link" 
-            size="small" 
-            icon={<DollarOutlined />} 
+          <Button
+            type="link"
+            size="small"
+            icon={<DollarOutlined />}
             onClick={() => handlePostDepreciation(record.id)}
             loading={postingDepreciation}
           >
@@ -430,9 +432,9 @@ const AssetDetail = () => {
   }
 
   const displayedAsset = asset || demoAssets[0];
-  const displayedDepreciations = depreciations.length > 0 ? depreciations : 
+  const displayedDepreciations = depreciations.length > 0 ? depreciations :
     demoAssetDepreciations.filter(d => d.asset_id === parseInt(id));
-  
+
   // Calculate asset stats
   const netBookValue = parseFloat(displayedAsset.acquisition_value) - parseFloat(displayedAsset.depreciation_value || 0);
   const depreciationPercentage = (parseFloat(displayedAsset.depreciation_value || 0) / parseFloat(displayedAsset.acquisition_value)) * 100;
@@ -469,9 +471,9 @@ const AssetDetail = () => {
               </Popconfirm>
             </>
           )}
-          <Button 
-            type="primary" 
-            icon={<CalculatorOutlined />} 
+          <Button
+            type="primary"
+            icon={<CalculatorOutlined />}
             onClick={handleComputeDepreciation}
             loading={computingDepreciation}
           >
@@ -490,7 +492,7 @@ const AssetDetail = () => {
               title="Valeur nette comptable"
               value={netBookValue}
               precision={2}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ color: '#3f8600' }}
             />
             <Divider style={{ margin: '12px 0' }} />
@@ -498,9 +500,9 @@ const AssetDetail = () => {
               <Text>Amortissement</Text>
               <Text>{depreciationPercentage.toFixed(1)}%</Text>
             </div>
-            <Progress 
-              percent={depreciationPercentage} 
-              status={depreciationPercentage >= 100 ? 'success' : 'active'} 
+            <Progress
+              percent={depreciationPercentage}
+              status={depreciationPercentage >= 100 ? 'success' : 'active'}
               showInfo={false}
               style={{ marginTop: 8 }}
             />
@@ -512,7 +514,7 @@ const AssetDetail = () => {
               title="Valeur d'acquisition"
               value={displayedAsset.acquisition_value}
               precision={2}
-              suffix="MAD"
+              suffix={currencyCode}
             />
             <Divider style={{ margin: '12px 0' }} />
             <Row gutter={16}>
@@ -521,7 +523,7 @@ const AssetDetail = () => {
                   title="Amortissement"
                   value={displayedAsset.depreciation_value || 0}
                   precision={2}
-                  suffix="MAD"
+                  suffix={currencyCode}
                   valueStyle={{ fontSize: '14px' }}
                 />
               </Col>
@@ -530,7 +532,7 @@ const AssetDetail = () => {
                   title="Valeur résiduelle"
                   value={displayedAsset.salvage_value}
                   precision={2}
-                  suffix="MAD"
+                  suffix={currencyCode}
                   valueStyle={{ fontSize: '14px' }}
                 />
               </Col>
@@ -548,9 +550,9 @@ const AssetDetail = () => {
             <Divider style={{ margin: '12px 0' }} />
             <Steps size="small" progressDot current={postedDepreciations}>
               {displayedDepreciations.slice(0, 5).map((dep, index) => (
-                <Step 
-                  key={dep.id} 
-                  title={`${index + 1}`} 
+                <Step
+                  key={dep.id}
+                  title={`${index + 1}`}
                   description={moment(dep.date).format('MM/YYYY')}
                 />
               ))}
@@ -573,9 +575,9 @@ const AssetDetail = () => {
             {displayedAsset.first_depreciation_date ? moment(displayedAsset.first_depreciation_date).format('DD/MM/YYYY') : '-'}
           </Descriptions.Item>
           <Descriptions.Item label="Méthode d'amortissement" span={3}>
-            {displayedAsset.method === 'linear' ? 'Linéaire' : 
-             displayedAsset.method === 'degressive' ? 'Dégressive' : 
-             '-'} 
+            {displayedAsset.method === 'linear' ? 'Linéaire' :
+             displayedAsset.method === 'degressive' ? 'Dégressive' :
+             '-'}
             {displayedAsset.duration_years && ` (${displayedAsset.duration_years} ans)`}
           </Descriptions.Item>
           <Descriptions.Item label="Notes" span={3}>
@@ -593,11 +595,11 @@ const AssetDetail = () => {
           size="middle"
           summary={pageData => {
             let totalAmount = 0;
-            
+
             pageData.forEach(({ amount }) => {
               totalAmount += parseFloat(amount || 0);
             });
-            
+
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={3}><strong>Total</strong></Table.Summary.Cell>
@@ -613,7 +615,7 @@ const AssetDetail = () => {
 
       <Card title="Cycle de vie de l'immobilisation">
         <Timeline mode="left">
-          <Timeline.Item 
+          <Timeline.Item
             dot={<BuildOutlined style={{ fontSize: '16px' }} />}
           >
             <p>
@@ -621,9 +623,9 @@ const AssetDetail = () => {
             </p>
             <p>Valeur d'acquisition: {parseFloat(displayedAsset.acquisition_value).toFixed(2)} MAD</p>
           </Timeline.Item>
-          
+
           {displayedAsset.first_depreciation_date && (
-            <Timeline.Item 
+            <Timeline.Item
               dot={<ArrowRightOutlined style={{ fontSize: '16px' }} />}
             >
               <p>
@@ -632,9 +634,9 @@ const AssetDetail = () => {
               <p>Méthode: {displayedAsset.method === 'linear' ? 'Linéaire' : 'Dégressive'} - Durée: {displayedAsset.duration_years} ans</p>
             </Timeline.Item>
           )}
-          
+
           {displayedDepreciations.filter(d => d.state === 'posted').slice(-1).map(dep => (
-            <Timeline.Item 
+            <Timeline.Item
               key={dep.id}
               dot={<CheckCircleOutlined style={{ fontSize: '16px', color: '#52c41a' }} />}
             >
@@ -644,10 +646,10 @@ const AssetDetail = () => {
               <p>Montant: {parseFloat(dep.amount).toFixed(2)} MAD - Valeur restante: {parseFloat(dep.remaining_value).toFixed(2)} MAD</p>
             </Timeline.Item>
           ))}
-          
+
           {/* If asset is not fully depreciated, show next depreciation */}
           {displayedDepreciations.filter(d => d.state === 'draft').slice(0, 1).map(dep => (
-            <Timeline.Item 
+            <Timeline.Item
               key={dep.id}
               dot={<ClockCircleOutlined style={{ fontSize: '16px', color: '#1890ff' }} />}
               color="blue"
@@ -658,10 +660,10 @@ const AssetDetail = () => {
               <p>Montant: {parseFloat(dep.amount).toFixed(2)} MAD</p>
             </Timeline.Item>
           ))}
-          
+
           {/* Show end date if asset has a duration */}
           {displayedAsset.duration_years && displayedAsset.first_depreciation_date && (
-            <Timeline.Item 
+            <Timeline.Item
               dot={<DollarOutlined style={{ fontSize: '16px' }} />}
               color="gray"
             >

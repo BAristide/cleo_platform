@@ -35,11 +35,13 @@ import {
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text, Paragraph } = Typography;
 const { confirm } = Modal;
 
 const BankStatementDetail = () => {
+  const { currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -61,9 +63,9 @@ const BankStatementDetail = () => {
     try {
       const response = await axios.get(`/api/accounting/bank-statements/${id}/`);
       const statementData = response.data;
-      
+
       setStatement(statementData);
-      
+
       // Count reconciled lines
       if (statementData.lines) {
         const reconciled = statementData.lines.filter(line => line.is_reconciled).length;
@@ -72,12 +74,12 @@ const BankStatementDetail = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des détails du relevé:', error);
       setError('Impossible de charger les détails du relevé. Veuillez réessayer plus tard.');
-      
+
       // If API fails, use demo data
       if (demoStatements[id - 1]) {
         const demoStatement = demoStatements[id - 1];
         setStatement(demoStatement);
-        
+
         const reconciled = demoStatement.lines.filter(line => line.is_reconciled).length;
         setReconciledCount(reconciled);
       }
@@ -217,7 +219,7 @@ const BankStatementDetail = () => {
       'open': { text: 'En cours', color: 'blue', icon: <ExclamationCircleOutlined /> },
       'confirm': { text: 'Confirmé', color: 'green', icon: <CheckOutlined /> }
     };
-    
+
     return (
       <Tag color={stateMap[state]?.color} icon={stateMap[state]?.icon}>
         {stateMap[state]?.text || state}
@@ -273,10 +275,10 @@ const BankStatementDetail = () => {
       align: 'center',
       render: (reconciled, record) => (
         reconciled ? (
-          <Badge 
-            status="success" 
+          <Badge
+            status="success"
             text={
-              <Link 
+              <Link
                 to={`/accounting/entries/${record.journal_entry_line_ids[0]}`}
                 style={{ marginLeft: 8 }}
               >
@@ -285,13 +287,13 @@ const BankStatementDetail = () => {
                   Voir l'écriture
                 </Space>
               </Link>
-            } 
+            }
           />
         ) : (
-          <Button 
-            type="link" 
-            size="small" 
-            icon={<SearchOutlined />} 
+          <Button
+            type="link"
+            size="small"
+            icon={<SearchOutlined />}
             onClick={() => openReconcileModal(record.id)}
           >
             Rapprocher
@@ -364,9 +366,9 @@ const BankStatementDetail = () => {
               >
                 <Button icon={<DeleteOutlined />} danger>Supprimer</Button>
               </Popconfirm>
-              <Button 
-                type="primary" 
-                icon={<CheckOutlined />} 
+              <Button
+                type="primary"
+                icon={<CheckOutlined />}
                 onClick={handleConfirmStatement}
                 loading={confirming}
                 disabled={!isBalanced}
@@ -401,7 +403,7 @@ const BankStatementDetail = () => {
                   title="Solde initial"
                   value={displayedStatement.balance_start}
                   precision={2}
-                  suffix="MAD"
+                  suffix={currencyCode}
                 />
               </Col>
               <Col span={8}>
@@ -409,7 +411,7 @@ const BankStatementDetail = () => {
                   title="Solde final calculé"
                   value={displayedStatement.balance_end}
                   precision={2}
-                  suffix="MAD"
+                  suffix={currencyCode}
                 />
               </Col>
               <Col span={8}>
@@ -417,7 +419,7 @@ const BankStatementDetail = () => {
                   title="Solde final réel"
                   value={displayedStatement.balance_end_real}
                   precision={2}
-                  suffix="MAD"
+                  suffix={currencyCode}
                   valueStyle={{ color: isBalanced ? '#3f8600' : '#cf1322' }}
                 />
               </Col>
@@ -458,11 +460,11 @@ const BankStatementDetail = () => {
           size="middle"
           summary={pageData => {
             let totalAmount = 0;
-            
+
             pageData.forEach(({ amount }) => {
               totalAmount += parseFloat(amount || 0);
             });
-            
+
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={4}><strong>Total</strong></Table.Summary.Cell>
@@ -487,9 +489,9 @@ const BankStatementDetail = () => {
           <Button key="cancel" onClick={() => setShowReconcileModal(false)}>
             Annuler
           </Button>,
-          <Button 
-            key="reconcile" 
-            type="primary" 
+          <Button
+            key="reconcile"
+            type="primary"
             onClick={() => handleReconcileLine(selectedLine?.id, [305])}
           >
             Rapprocher
@@ -503,9 +505,9 @@ const BankStatementDetail = () => {
               <strong>Ligne de relevé :</strong> {selectedLine.name} - {parseFloat(selectedLine.amount).toFixed(2)} MAD
             </Paragraph>
             <p>Sélectionnez les écritures comptables à rapprocher :</p>
-            
+
             {/* Placeholder for matching entries table */}
-            <Table 
+            <Table
               columns={[
                 {
                   title: 'Date',

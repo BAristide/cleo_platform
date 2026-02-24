@@ -1,4 +1,5 @@
 // src/components/sales/forms/InvoiceForm.js
+import { useCurrency } from '../../../context/CurrencyContext';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -20,6 +21,7 @@ const { TextArea } = Input;
 const { Group: RadioGroup } = Radio;
 
 const InvoiceForm = () => {
+  const { isForeignCurrency: checkForeign } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -212,8 +214,8 @@ const InvoiceForm = () => {
       form.setFieldsValue({ bank_account: defaultAccount ? defaultAccount.id : filtered[0].id });
     }
 
-    // Vérifier si c'est une devise étrangère (différente de MAD)
-    const isForeignCurrency = value !== 1; // On assume que l'ID 1 correspond au MAD
+    // Vérifier si c'est une devise étrangère (différente de la devise par défaut)
+    const isForeignCurrency = checkForeign(value);
     if (isForeignCurrency) {
       setIsExempt(true);
       form.setFieldsValue({

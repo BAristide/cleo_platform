@@ -30,12 +30,14 @@ import {
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 const { RangePicker } = DatePicker;
 
 const AccountDetail = () => {
+  const { currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ const AccountDetail = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des détails du compte:', error);
       setError('Impossible de charger les détails du compte. Veuillez réessayer plus tard.');
-      
+
       // Si l'API n'est pas disponible, utiliser des données de démonstration
       if (demoAccounts[id - 1]) {
         setAccount(demoAccounts[id - 1]);
@@ -326,8 +328,8 @@ const AccountDetail = () => {
       dataIndex: 'is_reconciled',
       key: 'is_reconciled',
       align: 'center',
-      render: (reconciled) => reconciled ? 
-        <CheckCircleOutlined style={{ color: 'green' }} /> : 
+      render: (reconciled) => reconciled ?
+        <CheckCircleOutlined style={{ color: 'green' }} /> :
         <CloseCircleOutlined style={{ color: 'red' }} />
     }
   ];
@@ -380,11 +382,11 @@ const AccountDetail = () => {
               title="Solde du compte"
               value={displayedAccount.balance}
               precision={2}
-              valueStyle={{ 
-                color: displayedAccount.balance > 0 ? '#3f8600' : 
-                  displayedAccount.balance < 0 ? '#cf1322' : 'inherit' 
+              valueStyle={{
+                color: displayedAccount.balance > 0 ? '#3f8600' :
+                  displayedAccount.balance < 0 ? '#cf1322' : 'inherit'
               }}
-              suffix="MAD"
+              suffix={currencyCode}
             />
             <Divider style={{ margin: '12px 0' }} />
             <Space>
@@ -399,13 +401,13 @@ const AccountDetail = () => {
               <Descriptions.Item label="Code">{displayedAccount.code}</Descriptions.Item>
               <Descriptions.Item label="Type">{displayedAccount.type_name}</Descriptions.Item>
               <Descriptions.Item label="Compte parent">
-                {displayedAccount.parent_name ? 
-                  `${displayedAccount.parent_name} (${displayedAccount.parent_code})` : 
+                {displayedAccount.parent_name ?
+                  `${displayedAccount.parent_name} (${displayedAccount.parent_code})` :
                   'Aucun'}
               </Descriptions.Item>
               <Descriptions.Item label="Lettrable">
-                {displayedAccount.is_reconcilable ? 
-                  <Tag color="blue">Oui</Tag> : 
+                {displayedAccount.is_reconcilable ?
+                  <Tag color="blue">Oui</Tag> :
                   <Tag color="default">Non</Tag>}
               </Descriptions.Item>
               {displayedAccount.is_tax_account && (
@@ -431,39 +433,39 @@ const AccountDetail = () => {
 
       <Card>
         <Tabs defaultActiveKey="1">
-          <TabPane 
+          <TabPane
             tab={
               <span>
                 <HistoryOutlined />
                 Mouvements
               </span>
-            } 
+            }
             key="1"
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
               <Title level={4}>Écritures comptables</Title>
-              <RangePicker 
+              <RangePicker
                 value={dateRange}
                 onChange={handleDateRangeChange}
                 format="DD/MM/YYYY"
               />
             </div>
-            <Table 
-              columns={entriesColumns} 
+            <Table
+              columns={entriesColumns}
               dataSource={entries.length > 0 ? entries : demoEntries}
               rowKey="id"
               pagination={{ pageSize: 10 }}
               summary={pageData => {
                 let totalDebit = 0;
                 let totalCredit = 0;
-                
+
                 pageData.forEach(({ debit, credit }) => {
                   totalDebit += parseFloat(debit || 0);
                   totalCredit += parseFloat(credit || 0);
                 });
-                
+
                 const balanceDebitCredit = totalDebit - totalCredit;
-                
+
                 return (
                   <>
                     <Table.Summary.Row>
@@ -478,9 +480,9 @@ const AccountDetail = () => {
                     </Table.Summary.Row>
                     <Table.Summary.Row>
                       <Table.Summary.Cell index={0} colSpan={5}><strong>Solde (Débit - Crédit)</strong></Table.Summary.Cell>
-                      <Table.Summary.Cell 
-                        index={5} 
-                        colSpan={3} 
+                      <Table.Summary.Cell
+                        index={5}
+                        colSpan={3}
                         align="right"
                         style={{ color: balanceDebitCredit > 0 ? '#3f8600' : balanceDebitCredit < 0 ? '#cf1322' : 'inherit' }}
                       >
@@ -492,15 +494,15 @@ const AccountDetail = () => {
               }}
             />
           </TabPane>
-          
+
           {displayedAccount.is_reconcilable && (
-            <TabPane 
+            <TabPane
               tab={
                 <span>
                   <FileTextOutlined />
                   Rapprochements
                 </span>
-              } 
+              }
               key="2"
             >
               <div style={{ textAlign: 'center', padding: '40px 0' }}>
@@ -510,13 +512,13 @@ const AccountDetail = () => {
             </TabPane>
           )}
 
-          <TabPane 
+          <TabPane
             tab={
               <span>
                 <BarChartOutlined />
                 Analyse
               </span>
-            } 
+            }
             key="3"
           >
             <div style={{ textAlign: 'center', padding: '40px 0' }}>

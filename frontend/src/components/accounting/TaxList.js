@@ -1,14 +1,14 @@
 // src/components/accounting/TaxList.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Table, 
-  Card, 
-  Button, 
-  Tag, 
-  Typography, 
-  Space, 
-  Spin, 
+import {
+  Table,
+  Card,
+  Button,
+  Tag,
+  Typography,
+  Space,
+  Spin,
   Alert,
   Tabs,
   DatePicker,
@@ -21,8 +21,8 @@ import {
   Select,
   InputNumber
 } from 'antd';
-import { 
-  PlusOutlined, 
+import {
+  PlusOutlined,
   CalculatorOutlined,
   FileExcelOutlined,
   FilePdfOutlined,
@@ -32,6 +32,7 @@ import {
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -39,6 +40,7 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const TaxList = () => {
+  const { currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [taxes, setTaxes] = useState([]);
@@ -216,9 +218,9 @@ const TaxList = () => {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => (
-        <Button 
-          type="link" 
-          size="small" 
+        <Button
+          type="link"
+          size="small"
           icon={<EditOutlined />}
         >
           Modifier
@@ -316,13 +318,13 @@ const TaxList = () => {
       )}
 
       <Tabs defaultActiveKey="1" onChange={setActiveTab}>
-        <TabPane 
+        <TabPane
           tab={
             <span>
               <CalculatorOutlined />
               Déclaration de TVA
             </span>
-          } 
+          }
           key="1"
         >
           <Card style={{ marginBottom: 24 }}>
@@ -348,7 +350,7 @@ const TaxList = () => {
                     title="TVA Collectée"
                     value={vatStats.collected}
                     precision={2}
-                    suffix="MAD"
+                    suffix={currencyCode}
                     valueStyle={{ color: '#cf1322' }}
                     prefix={<PercentageOutlined />}
                   />
@@ -360,7 +362,7 @@ const TaxList = () => {
                     title="TVA Déductible"
                     value={vatStats.deductible}
                     precision={2}
-                    suffix="MAD"
+                    suffix={currencyCode}
                     valueStyle={{ color: '#3f8600' }}
                     prefix={<PercentageOutlined />}
                   />
@@ -372,7 +374,7 @@ const TaxList = () => {
                     title="Solde à payer"
                     value={vatStats.balance}
                     precision={2}
-                    suffix="MAD"
+                    suffix={currencyCode}
                     valueStyle={{ color: vatStats.balance >= 0 ? '#cf1322' : '#3f8600' }}
                     prefix={<PercentageOutlined />}
                   />
@@ -472,16 +474,16 @@ const TaxList = () => {
                 let totalVatCollected = 0;
                 let totalPurchasesBase = 0;
                 let totalVatDeductible = 0;
-                
+
                 pageData.forEach(({ sales_base, vat_collected, purchases_base, vat_deductible }) => {
                   totalSalesBase += sales_base;
                   totalVatCollected += vat_collected;
                   totalPurchasesBase += purchases_base;
                   totalVatDeductible += vat_deductible;
                 });
-                
+
                 const totalBalance = totalVatCollected - totalVatDeductible;
-                
+
                 return (
                   <Table.Summary.Row>
                     <Table.Summary.Cell index={0}><strong>Total</strong></Table.Summary.Cell>
@@ -508,14 +510,14 @@ const TaxList = () => {
             />
           </Card>
         </TabPane>
-        
-        <TabPane 
+
+        <TabPane
           tab={
             <span>
               <PercentageOutlined />
               Taux de taxe
             </span>
-          } 
+          }
           key="2"
         >
           <Card>
@@ -554,7 +556,7 @@ const TaxList = () => {
           >
             <Input placeholder="Ex: TVA (20%)" />
           </Form.Item>
-          
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -583,7 +585,7 @@ const TaxList = () => {
               </Form.Item>
             </Col>
           </Row>
-          
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -616,14 +618,14 @@ const TaxList = () => {
               </Form.Item>
             </Col>
           </Row>
-          
+
           <Form.Item
             name="description"
             label="Description"
           >
             <Input.TextArea rows={3} placeholder="Description de la taxe" />
           </Form.Item>
-          
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -650,7 +652,7 @@ const TaxList = () => {
               </Form.Item>
             </Col>
           </Row>
-          
+
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button onClick={() => setModalVisible(false)} style={{ marginRight: 8 }}>
               Annuler

@@ -14,6 +14,12 @@ class Command(BaseCommand):
             help=_('Forcer la recréation des données, même si existantes'),
         )
         parser.add_argument(
+            '--default-currency',
+            type=str,
+            default='MAD',
+            help=_('Code de la devise par défaut (ex: MAD, XOF, EUR)'),
+        )
+        parser.add_argument(
             '--accounts', action='store_true', help=_('Initialiser le plan comptable')
         )
         parser.add_argument(
@@ -40,6 +46,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         force = options['force']
+        default_currency = options['default_currency']
         init_service = InitAccountingService(force=force)
 
         # Si aucune option spécifique n'est fournie, initialiser tout
@@ -57,7 +64,7 @@ class Command(BaseCommand):
                     _('Initialisation de toutes les données comptables...')
                 )
             )
-            init_service.init_all()
+            init_service.init_all(default_currency_code=default_currency)
             self.stdout.write(
                 self.style.SUCCESS(_('Initialisation complète des données comptables.'))
             )
@@ -101,7 +108,7 @@ class Command(BaseCommand):
 
         if options['currencies']:
             self.stdout.write(self.style.NOTICE(_('Initialisation des devises...')))
-            init_service.create_currencies()
+            init_service.create_currencies(default_currency_code=default_currency)
             self.stdout.write(self.style.SUCCESS(_('Devises initialisées.')))
 
         self.stdout.write(

@@ -28,12 +28,14 @@ import {
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 const TrainingCourseDetail = () => {
+  const { currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [trainingCourse, setTrainingCourse] = useState(null);
@@ -58,7 +60,7 @@ const TrainingCourseDetail = () => {
       // Récupérer les détails de la formation
       const courseResponse = await axios.get(`/api/hr/training-courses/${id}/`);
       setTrainingCourse(courseResponse.data);
-      
+
       // Initialiser le formulaire avec les données de la formation
       form.setFieldsValue({
         title: courseResponse.data.title,
@@ -136,7 +138,7 @@ const TrainingCourseDetail = () => {
   const handleSkillSave = async () => {
     try {
       const values = await skillForm.validateFields();
-      
+
       const formData = {
         training_course: id,
         ...values
@@ -151,7 +153,7 @@ const TrainingCourseDetail = () => {
         await axios.post('/api/hr/training-skills/', formData);
         message.success("Compétence ajoutée avec succès");
       }
-      
+
       setSkillModalVisible(false);
       fetchTrainingCourseData();
     } catch (error) {
@@ -230,15 +232,15 @@ const TrainingCourseDetail = () => {
       key: 'level_provided',
       render: (_, record) => (
         <Space>
-          <div 
-            className="skill-level" 
-            style={{ 
+          <div
+            className="skill-level"
+            style={{
               display: 'inline-block',
               width: '16px',
               height: '16px',
               borderRadius: '50%',
               marginRight: '4px',
-              backgroundColor: getLevelColor(record.level_provided) 
+              backgroundColor: getLevelColor(record.level_provided)
             }}
           />
           {record.level_provided_display}
@@ -425,7 +427,7 @@ const TrainingCourseDetail = () => {
                   label="Coût"
                   style={{ width: '33%' }}
                 >
-                  <InputNumber min={0} style={{ width: '100%' }} addonAfter="MAD" />
+                  <InputNumber min={0} style={{ width: '100%' }} addonAfter={currencyCode} />
                 </Form.Item>
               </Space>
               <Form.Item

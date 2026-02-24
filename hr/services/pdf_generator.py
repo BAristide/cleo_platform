@@ -7,6 +7,8 @@ from django.utils import timezone
 from weasyprint import CSS, HTML
 from weasyprint.text.fonts import FontConfiguration
 
+from core.services import get_company_context
+
 
 class PDFGenerator:
     """Classe utilitaire pour générer des PDFs."""
@@ -36,14 +38,7 @@ class PDFGenerator:
         context = {
             'mission': mission,
             'employee': mission.employee,
-            'company': {
-                'name': 'ECINTELLIGENCE (Experts Computing Intelligence)',
-                'address': 'La Marina Casablanca | Tour Oceanes 3 Bureau 03 Rez-De-Jardin',
-                'city': 'Casablanca',
-                'country': 'Maroc',
-                'contact': 'infos@ecintelligence.ma | +(212) 5220 48-727/0666 366 018',
-                'fiscal_info': 'RC 393329 - IF 25018675 - Patente 350424929 - ICE 00203009000092',
-            },
+            'company': get_company_context(),
             'generated_date': timezone.now().date(),
         }
 

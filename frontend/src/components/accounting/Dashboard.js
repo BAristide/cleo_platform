@@ -13,11 +13,13 @@ import {
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const Dashboard = () => {
+  const { currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dateRange, setDateRange] = useState([moment().startOf('month'), moment()]);
@@ -53,7 +55,7 @@ const Dashboard = () => {
         params: { date_after: moment().format('YYYY-MM-DD') }
       });
 
-      const [accountsResponse, entriesResponse, bankStatementsResponse, assetsResponse, depreciationsResponse] = 
+      const [accountsResponse, entriesResponse, bankStatementsResponse, assetsResponse, depreciationsResponse] =
         await Promise.all([fetchAccounts, fetchEntries, fetchBankStatements, fetchAssets, fetchAssetDepreciations]);
 
       const accounts = extractResultsFromResponse(accountsResponse);
@@ -100,14 +102,14 @@ const Dashboard = () => {
       const recentEntriesList = [...entries]
         .sort((a, b) => new Date(b.date) - new Date(a.date))
         .slice(0, 5);
-      
+
       setRecentEntries(recentEntriesList);
 
       // Récupérer les prochaines dotations aux amortissements
       const upcomingDepreciationsList = [...depreciations]
         .sort((a, b) => new Date(a.date) - new Date(b.date))
         .slice(0, 5);
-      
+
       setUpcomingDepreciations(upcomingDepreciationsList);
 
     } catch (error) {
@@ -361,7 +363,7 @@ const Dashboard = () => {
               title="Montant total"
               value={stats.entries.amount}
               precision={2}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ fontSize: '16px' }}
             />
           </Card>
@@ -393,7 +395,7 @@ const Dashboard = () => {
               title="Valeur nette comptable"
               value={stats.assets.value - stats.assets.depreciation}
               precision={2}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ fontSize: '16px' }}
             />
           </Card>

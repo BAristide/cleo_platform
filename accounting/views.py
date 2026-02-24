@@ -868,6 +868,29 @@ class AssetViewSet(viewsets.ModelViewSet):
             )
 
 
+class AssetDepreciationViewSet(viewsets.ModelViewSet):
+    """ViewSet pour les dotations aux amortissements."""
+
+    queryset = AssetDepreciation.objects.all().order_by('date')
+    serializer_class = AssetDepreciationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filterset_fields = ['asset_id', 'state']
+    search_fields = ['name']
+
+    @action(detail=True, methods=['post'])
+    def post(self, request, pk=None):
+        """Comptabiliser une dotation."""
+        depreciation = self.get_object()
+        if depreciation.state != 'draft':
+            return Response(
+                {'success': False, 'message': 'La dotation n est pas en brouillon'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        depreciation.state = 'posted'
+        depreciation.save()
+        return Response({'success': True})
+
+
 # Vues pour le Dashboard et les rapports
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
@@ -928,10 +951,9 @@ def dashboard_view(request):
         income = Decimal(0)
         income_accounts = Account.objects.filter(code__regex=r'^7.*')
         for account in income_accounts:
-            income += account.get_balance(
+            income -= account.get_balance(
                 start_date=current_month,
                 end_date=month_end,
-                sign=-1,  # Les revenus sont créditeurs
             )
 
         # Dépenses: comptes 6xxxx

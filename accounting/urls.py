@@ -17,6 +17,7 @@ router.register(r'analytic-accounts', views.AnalyticAccountViewSet)
 router.register(r'taxes', views.TaxViewSet)
 router.register(r'asset-categories', views.AssetCategoryViewSet)
 router.register(r'assets', views.AssetViewSet)
+router.register(r'asset-depreciations', views.AssetDepreciationViewSet)
 
 app_name = 'accounting'
 

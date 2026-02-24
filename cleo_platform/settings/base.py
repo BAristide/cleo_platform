@@ -5,6 +5,8 @@ from decouple import Csv, config
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+SITE_URL = config('SITE_URL', default='http://localhost:8000')
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',

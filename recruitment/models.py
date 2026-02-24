@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -78,16 +79,15 @@ class JobOpening(models.Model):
         return f'{self.title} - {self.reference}'
 
     def generate_application_url(self):
-        """Génère l'URL unique pour la page de candidature."""
-        base_url = 'https://cleo.ecintelligence.ma/recruitment/apply/'
-        return f'{base_url}{self.reference}/'
+        """Génère l'URL unique pour la page de candidature (dynamique)."""
+        base_url = getattr(settings, 'SITE_URL', '').rstrip('/')
+        return f'{base_url}/recruitment/apply/{self.reference}/'
 
     def save(self, *args, **kwargs):
         # Générer une référence unique si elle n'existe pas
         if not self.reference:
             prefix = 'JOB'
             year = timezone.now().year
-            # Trouver le dernier numéro utilisé cette année
             last_job = (
                 JobOpening.objects.filter(reference__startswith=f'{prefix}-{year}')
                 .order_by('-reference')
@@ -95,7 +95,6 @@ class JobOpening(models.Model):
             )
 
             if last_job:
-                # Extraire le numéro et l'incrémenter
                 try:
                     last_num = int(last_job.reference.split('-')[-1])
                     new_num = last_num + 1
@@ -106,7 +105,7 @@ class JobOpening(models.Model):
 
             self.reference = f'{prefix}-{year}-{new_num:04d}'
 
-        # Générer l'URL de candidature
+        # Générer l'URL dynamique
         if not self.application_url and self.reference:
             self.application_url = self.generate_application_url()
 
@@ -116,14 +115,12 @@ class JobOpening(models.Model):
 class Candidate(models.Model):
     """Candidat au recrutement."""
 
-    # Informations personnelles
     first_name = models.CharField(_('Prénom'), max_length=100)
     last_name = models.CharField(_('Nom'), max_length=100)
     email = models.EmailField(_('Email'), unique=True)
     phone = models.CharField(_('Téléphone'), max_length=20, blank=True)
     address = models.TextField(_('Adresse'), blank=True)
 
-    # Informations professionnelles
     current_position = models.CharField(_('Poste actuel'), max_length=200, blank=True)
     current_company = models.CharField(
         _('Entreprise actuelle'), max_length=200, blank=True
@@ -135,7 +132,6 @@ class Candidate(models.Model):
         _('Diplôme le plus élevé'), max_length=200, blank=True
     )
 
-    # Métadonnées
     created_at = models.DateTimeField(_('Créé le'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Modifié le'), auto_now=True)
 
@@ -168,7 +164,6 @@ class Application(models.Model):
         verbose_name=_('Candidat'),
     )
 
-    # CV et documents
     resume = models.FileField(_('CV'), upload_to='recruitment/resumes/%Y/%m/')
     cover_letter = models.FileField(
         _('Lettre de motivation'),
@@ -177,10 +172,8 @@ class Application(models.Model):
         null=True,
     )
 
-    # Dates importantes
     application_date = models.DateTimeField(_('Date de candidature'), auto_now_add=True)
 
-    # Statut de la candidature
     STATUS_CHOICES = [
         ('received', _('Reçue')),
         ('preselected', _('Présélectionnée')),
@@ -198,14 +191,12 @@ class Application(models.Model):
         _('Statut'), max_length=30, choices=STATUS_CHOICES, default='received'
     )
 
-    # Notes et dates d'entretien
     interview_date = models.DateTimeField(_("Date d'entretien"), null=True, blank=True)
     interview_location = models.CharField(
         _("Lieu d'entretien"), max_length=200, blank=True
     )
     notes = models.TextField(_('Notes générales'), blank=True)
 
-    # Métadonnées
     created_at = models.DateTimeField(_('Créé le'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Modifié le'), auto_now=True)
 
@@ -213,7 +204,6 @@ class Application(models.Model):
         verbose_name = _('Candidature')
         verbose_name_plural = _('Candidatures')
         ordering = ['-application_date']
-        # Un candidat ne peut postuler qu'une fois à une offre
         unique_together = [['job_opening', 'candidate']]
 
     def __str__(self):

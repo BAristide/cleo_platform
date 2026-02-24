@@ -4,6 +4,8 @@ from django.conf import settings
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 
+from core.services import get_company_context
+
 from .pdf_generator import PDFGenerator
 
 
@@ -13,23 +15,18 @@ class EmailService:
     @staticmethod
     def send_quote_email(quote, recipient_email, subject=None):
         """Envoie un devis par email"""
+        company = get_company_context()
+
         # Si le sujet n'est pas spécifié, utiliser un sujet par défaut
         if not subject:
-            subject = f'Devis {quote.number} - ECINTELLIGENCE'
+            subject = f'Devis {quote.number} - {company["name"]}'
 
         # Préparer le contexte pour le template d'email
         context = {
             'quote': quote,
             'company': quote.company,
             'contact': quote.contact,
-            'company_info': {
-                'name': 'ECINTELLIGENCE',
-                'address': 'La Marina Casablanca | Tour Oceanes 3 Bureau 03 Rez-De-Jardin',
-                'city': 'Casablanca',
-                'country': 'Maroc',
-                'email': 'infos@ecintelligence.ma',
-                'phone': '+(212) 5220 48-727/0666 366 018',
-            },
+            'company_info': company,
         }
 
         # Générer le contenu de l'email à partir du template
@@ -37,7 +34,6 @@ class EmailService:
 
         # Vérifier que le PDF existe, sinon le générer
         if not quote.pdf_file:
-            # Générer le PDF si nécessaire
             pdf_path = PDFGenerator.generate_quote_pdf(quote)
         else:
             pdf_path = os.path.join(settings.MEDIA_ROOT, quote.pdf_file)
@@ -67,23 +63,18 @@ class EmailService:
     @staticmethod
     def send_order_email(order, recipient_email, subject=None):
         """Envoie un bon de commande par email"""
+        company = get_company_context()
+
         # Si le sujet n'est pas spécifié, utiliser un sujet par défaut
         if not subject:
-            subject = f'Commande {order.number} - ECINTELLIGENCE'
+            subject = f'Commande {order.number} - {company["name"]}'
 
         # Préparer le contexte pour le template d'email
         context = {
             'order': order,
             'company': order.company,
             'contact': order.contact,
-            'company_info': {
-                'name': 'ECINTELLIGENCE',
-                'address': 'La Marina Casablanca | Tour Oceanes 3 Bureau 03 Rez-De-Jardin',
-                'city': 'Casablanca',
-                'country': 'Maroc',
-                'email': 'infos@ecintelligence.ma',
-                'phone': '+(212) 5220 48-727/0666 366 018',
-            },
+            'company_info': company,
         }
 
         # Générer le contenu de l'email à partir du template
@@ -91,7 +82,6 @@ class EmailService:
 
         # Vérifier que le PDF existe, sinon le générer
         if not order.pdf_file:
-            # Générer le PDF si nécessaire
             pdf_path = PDFGenerator.generate_order_pdf(order)
         else:
             pdf_path = os.path.join(settings.MEDIA_ROOT, order.pdf_file)
@@ -121,23 +111,18 @@ class EmailService:
     @staticmethod
     def send_invoice_email(invoice, recipient_email, subject=None):
         """Envoie une facture par email"""
+        company = get_company_context()
+
         # Si le sujet n'est pas spécifié, utiliser un sujet par défaut
         if not subject:
-            subject = f'Facture {invoice.number} - ECINTELLIGENCE'
+            subject = f'Facture {invoice.number} - {company["name"]}'
 
         # Préparer le contexte pour le template d'email
         context = {
             'invoice': invoice,
             'company': invoice.company,
             'contact': invoice.contact,
-            'company_info': {
-                'name': 'ECINTELLIGENCE',
-                'address': 'La Marina Casablanca | Tour Oceanes 3 Bureau 03 Rez-De-Jardin',
-                'city': 'Casablanca',
-                'country': 'Maroc',
-                'email': 'infos@ecintelligence.ma',
-                'phone': '+(212) 5220 48-727/0666 366 018',
-            },
+            'company_info': company,
         }
 
         # Générer le contenu de l'email à partir du template
@@ -145,7 +130,6 @@ class EmailService:
 
         # Vérifier que le PDF existe, sinon le générer
         if not invoice.pdf_file:
-            # Générer le PDF si nécessaire
             pdf_path = PDFGenerator.generate_invoice_pdf(invoice)
         else:
             pdf_path = os.path.join(settings.MEDIA_ROOT, invoice.pdf_file)

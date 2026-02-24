@@ -51,7 +51,7 @@
             margin-bottom: 15px; /* Réduit de 20px */
             text-align: center;
         }
-        
+
         /* Section client en format deux colonnes */
         .client-info {
             margin-bottom: 15px; /* Réduit de 30px */
@@ -76,7 +76,7 @@
             margin: 2px 0;
             font-size: 8pt; /* Taille réduite */
         }
-        
+
         /* Tableau des articles optimisé */
         .items-table {
             width: 100%;
@@ -108,14 +108,14 @@
             font-size: 7pt; /* Encore plus petit */
             color: #555;
         }
-        
+
         /* Notes d'information optimisées */
         .info-box {
             margin: 8px 0; /* Réduit */
             padding: 8px; /* Réduit */
             font-size: 8pt; /* Plus petit */
         }
-        
+
         /* Informations de paiement et bancaires */
         .bank-info, .notes, .terms, .validity {
             margin-top: 15px; /* Réduit */
@@ -132,13 +132,13 @@
             border-bottom: 1px solid #ddd;
             padding-bottom: 3px; /* Réduit */
         }
-        
+
         /* Validité du devis */
         .validity {
             font-style: italic;
             color: #555;
         }
-        
+
         /* Pied de page */
         .footer {
             margin-top: 20px; /* Réduit de 50px */
@@ -162,7 +162,7 @@
         <div class="header">
             <div class="header-info">
                 <div class="company-info">
-                    <div class="logo">ECINTELLIGENCE</div>
+                    <div class="logo">{{ company_info.name }}</div>
                     <table style="border-collapse: collapse; margin-top: 5px; font-size: 8pt;">
                         <tr>
                             <td style="padding-right: 10px;">{{ company_info.address }}</td>
@@ -289,7 +289,6 @@
         </table>
 
         <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-            <!-- Colonne gauche -->
             <div style="width: 48%;">
                 {% if quote.bank_account %}
                 <div class="bank-info">
@@ -301,8 +300,7 @@
                 </div>
                 {% endif %}
             </div>
-            
-            <!-- Colonne droite -->
+
             <div style="width: 48%;">
                 <div class="validity">
                     <h3>Validité</h3>
@@ -330,8 +328,8 @@
         </div>
 
         <div class="footer">
-            <div class="footer-section">ECINTELLIGENCE</div>
-            <div class="footer-section text-center">La Marina Casablanca | Tour Oceanes 3 Bureau 03</div>
+            <div class="footer-section">{{ company_info.name }}</div>
+            <div class="footer-section text-center">{{ company_info.address_line1 }}</div>
             <div class="footer-section text-right">{{ generated_at|date:"d/m/Y" }}</div>
         </div>
     </div>

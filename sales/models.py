@@ -7,6 +7,7 @@ from django.db.models import F, Sum
 from django.utils.translation import gettext_lazy as _
 
 from core.models import Currency
+from core.services import get_company_context
 
 
 class SalesDocument(models.Model):
@@ -507,7 +508,7 @@ class Quote(SalesDocument):
         """
         Retourne le sujet de l'email.
         """
-        return f'Devis {self.number} - ECINTELLIGENCE'
+        return f'Devis {self.number} - {get_company_context()["name"]}'
 
     def generate_pdf(self):
         """
@@ -560,7 +561,9 @@ class Quote(SalesDocument):
 
         # Envoyer l'email en utilisant la méthode statique
         email_sent = EmailService.send_quote_email(
-            self, recipient_email, f'Devis {self.number} - ECINTELLIGENCE'
+            self,
+            recipient_email,
+            f'Devis {self.number} - {get_company_context()["name"]}',
         )
 
         # Mettre à jour le statut d'envoi
@@ -984,7 +987,7 @@ class Order(SalesDocument):
         """
         Retourne le sujet de l'email.
         """
-        return f'Commande {self.number} - ECINTELLIGENCE'
+        return f'Commande {self.number} - {get_company_context()["name"]}'
 
     def generate_pdf(self):
         """
@@ -1040,7 +1043,9 @@ class Order(SalesDocument):
 
         # Envoyer l'email en utilisant la méthode statique
         email_sent = EmailService.send_order_email(
-            self, recipient_email, f'Commande {self.number} - ECINTELLIGENCE'
+            self,
+            recipient_email,
+            f'Commande {self.number} - {get_company_context()["name"]}',
         )
 
         # Mettre à jour le statut d'envoi
@@ -1451,7 +1456,7 @@ class Invoice(SalesDocument):
         """
         Retourne le sujet de l'email.
         """
-        return f'Facture {self.number} - ECINTELLIGENCE'
+        return f'Facture {self.number} - {get_company_context()["name"]}'
 
     def generate_pdf(self):
         """
@@ -1507,7 +1512,9 @@ class Invoice(SalesDocument):
 
         # Envoyer l'email en utilisant la méthode statique
         email_sent = EmailService.send_invoice_email(
-            self, recipient_email, f'Facture {self.number} - ECINTELLIGENCE'
+            self,
+            recipient_email,
+            f'Facture {self.number} - {get_company_context()["name"]}',
         )
 
         # Mettre à jour le statut d'envoi

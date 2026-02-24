@@ -94,6 +94,29 @@ class CompanySetupSerializer(serializers.ModelSerializer):
             'legal_ids',
         ]
         read_only_fields = ['id', 'setup_completed', 'setup_date', 'is_locked']
+        extra_kwargs = {
+            'country_code': {'required': False},
+            'locale_pack': {'required': False},
+            'address_line1': {'required': False},
+            'address_line2': {'required': False},
+            'city': {'required': False},
+            'postal_code': {'required': False},
+            'country': {'required': False},
+            'phone': {'required': False},
+            'email': {'required': False},
+            'website': {'required': False},
+            'legal_id_1_label': {'required': False},
+            'legal_id_1_value': {'required': False},
+            'legal_id_2_label': {'required': False},
+            'legal_id_2_value': {'required': False},
+            'legal_id_3_label': {'required': False},
+            'legal_id_3_value': {'required': False},
+            'legal_id_4_label': {'required': False},
+            'legal_id_4_value': {'required': False},
+            'bank_name': {'required': False},
+            'bank_account': {'required': False},
+            'bank_swift': {'required': False},
+        }
 
     def get_legal_ids(self, obj):
         return obj.get_legal_ids()

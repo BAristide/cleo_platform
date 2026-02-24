@@ -52,7 +52,7 @@ const SetupWizard = () => {
 
   const handleSubmit = async () => {
     try {
-      const values = await form.validateFields();
+      const values = form.getFieldsValue(true);
       setSubmitting(true);
 
       const payload = {
@@ -216,7 +216,7 @@ const SetupWizard = () => {
           <Paragraph type="secondary" style={{ marginBottom: 24 }}>
             Ces informations apparaîtront sur vos documents commerciaux (devis, factures, bulletins de paie).
           </Paragraph>
-          <Form form={form} layout="vertical" requiredMark="optional">
+          <Form form={form} layout="vertical" requiredMark="optional" preserve={true}>
             <Form.Item
               name="company_name"
               label="Raison sociale"

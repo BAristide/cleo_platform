@@ -16,7 +16,7 @@ def load_demo_data():
 
     from accounting.models import (
         Account,
-        FiscalYear,
+        FiscalPeriod,
         Journal,
         JournalEntry,
         JournalEntryLine,
@@ -284,9 +284,8 @@ def load_demo_data():
             employee_id=emp_data['employee_id'], defaults=emp_data
         )
 
-    journal_ventes = Journal.objects.filter(code='VE').first()
-    fiscal_year = FiscalYear.objects.first()
-    if journal_ventes and fiscal_year:
+    journal_ventes = Journal.objects.filter(code='VEN').first()
+    if journal_ventes:
         acc_client = Account.objects.filter(code='411').first()
         acc_ventes = Account.objects.filter(code='701').first()
         acc_tva_col = Account.objects.filter(code='4431').first()
@@ -304,37 +303,41 @@ def load_demo_data():
                 tva = ht * Decimal('0.18')
                 ttc = ht + tva
                 entry, created = JournalEntry.objects.get_or_create(
-                    reference=f'VE-DEMO-{i:03d}',
+                    ref=f'VE-DEMO-{i:03d}',
                     defaults={
-                        'journal': journal_ventes,
+                        'journal_id': journal_ventes,
                         'date': today - timedelta(days=30 - i * 10),
-                        'description': desc,
-                        'fiscal_year': fiscal_year,
-                        'status': 'posted',
+                        'period_id': FiscalPeriod.objects.filter(
+                            start_date__lte=today - timedelta(days=30 - i * 10),
+                            end_date__gte=today - timedelta(days=30 - i * 10),
+                        ).first(),
+                        'name': f'VE-DEMO-{i:03d}',
+                        'narration': desc,
+                        'state': 'posted',
                         'created_by': admin_user,
                     },
                 )
                 if created:
                     JournalEntryLine.objects.create(
-                        entry=entry,
-                        account=acc_client,
+                        entry_id=entry,
+                        account_id=acc_client,
                         debit=ttc,
                         credit=Decimal('0'),
-                        description=desc,
+                        name=desc,
                     )
                     JournalEntryLine.objects.create(
-                        entry=entry,
-                        account=acc_ventes,
+                        entry_id=entry,
+                        account_id=acc_ventes,
                         debit=Decimal('0'),
                         credit=ht,
-                        description=desc,
+                        name=desc,
                     )
                     JournalEntryLine.objects.create(
-                        entry=entry,
-                        account=acc_tva_col,
+                        entry_id=entry,
+                        account_id=acc_tva_col,
                         debit=Decimal('0'),
                         credit=tva,
-                        description='TVA collectée 18%',
+                        name='TVA collectée 18%',
                     )
 
     logger.info('Données de démonstration OHADA chargées')

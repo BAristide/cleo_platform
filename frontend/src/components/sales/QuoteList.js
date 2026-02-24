@@ -18,6 +18,7 @@ import {
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 
 const { Title } = Typography;
@@ -44,10 +45,13 @@ const QuoteList = () => {
   });
 
   const navigate = useNavigate();
+  const { currencyId } = useCurrency();
+  const [currencies, setCurrencies] = useState([]);
 
   useEffect(() => {
     fetchQuotes();
     fetchCompanies();
+    fetchCurrencies();
   }, [statusFilter, pagination.current, pagination.pageSize]);
 
   const fetchQuotes = async () => {
@@ -103,6 +107,16 @@ const QuoteList = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des entreprises:', error);
       message.error('Impossible de charger les entreprises');
+    }
+  };
+
+  const fetchCurrencies = async () => {
+    try {
+      const response = await axios.get('/api/core/currencies/');
+      const currenciesData = extractResultsFromResponse(response);
+      setCurrencies(currenciesData);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des devises:', error);
     }
   };
 
@@ -616,7 +630,7 @@ const QuoteList = () => {
           initialValues={{
             date: moment(),
             validity_period: 20,
-            currency: 1, // ID de la devise par défaut (MAD)
+            currency: currencyId,
             payment_terms: '30_days',
           }}
         >
@@ -686,9 +700,9 @@ const QuoteList = () => {
                 rules={[{ required: true, message: 'Veuillez sélectionner une devise' }]}
               >
                 <Select placeholder="Sélectionner une devise">
-                  <Option value={1}>MAD - Dirham Marocain</Option>
-                  <Option value={2}>EUR - Euro</Option>
-                  <Option value={3}>USD - Dollar américain</Option>
+                  {currencies.map(c => (
+                    <Option key={c.id} value={c.id}>{c.code} - {c.name}</Option>
+                  ))}
                 </Select>
               </Form.Item>
             </Col>

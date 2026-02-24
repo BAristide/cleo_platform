@@ -1,17 +1,18 @@
 // src/components/payroll/PaySlipDetail.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Card, Typography, Descriptions, Button, Table, 
+import {
+  Card, Typography, Descriptions, Button, Table,
   Space, Tag, Divider, Statistic, Row, Col, Spin, message,
   Popconfirm, Modal, Empty, Result
 } from 'antd';
-import { 
+import {
   CalculatorOutlined, DownloadOutlined, FilePdfOutlined,
   ArrowLeftOutlined, EyeOutlined
 } from '@ant-design/icons';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 
@@ -33,6 +34,7 @@ const statusDisplay = {
 
 const PaySlipDetail = () => {
   const { id } = useParams();
+  const { currencyCode } = useCurrency();
   const navigate = useNavigate();
   const [payslip, setPayslip] = useState(null);
   const [payslipLines, setPayslipLines] = useState([]);
@@ -50,7 +52,7 @@ const PaySlipDetail = () => {
       // Récupérer les détails du bulletin
       const response = await axios.get(`/api/payroll/payslips/${id}/`);
       setPayslip(response.data);
-      
+
       // Récupérer les lignes du bulletin
       if (response.data.lines) {
         setPayslipLines(response.data.lines);
@@ -68,7 +70,7 @@ const PaySlipDetail = () => {
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
       message.error('Erreur lors du chargement des données');
-      
+
       // Données de démo en cas d'erreur
       setPayslip({
         id: parseInt(id),
@@ -76,10 +78,10 @@ const PaySlipDetail = () => {
         payroll_run: { id: 1, name: 'Paie Mai 2025 - Tous les départements' },
         period_name: 'Mai 2025',
         employee: { id: 1, first_name: 'Mohammed', last_name: 'Alami' },
-        employee_data: { 
-          id: 1, 
-          first_name: 'Mohammed', 
-          last_name: 'Alami', 
+        employee_data: {
+          id: 1,
+          first_name: 'Mohammed',
+          last_name: 'Alami',
           email: 'm.alami@example.com',
           employee_id: 'EMP001'
         },
@@ -108,7 +110,7 @@ const PaySlipDetail = () => {
         updated_at: '2025-05-20T10:00:00Z',
         pdf_file: null
       });
-      
+
       setPayslipLines([
         {
           id: 1,
@@ -238,7 +240,7 @@ const PaySlipDetail = () => {
     try {
       const response = await axios.post(`/api/payroll/payslips/${id}/calculate/`);
       message.success('Bulletin calculé avec succès');
-      
+
       if (response.data.payslip) {
         setPayslip(response.data.payslip);
         if (response.data.payslip.lines) {
@@ -297,7 +299,7 @@ const PaySlipDetail = () => {
 
   // Trier les lignes par ordre d'affichage
   const sortedLines = [...payslipLines].sort((a, b) => a.display_order - b.display_order);
-  
+
   // Séparer les gains et les retenues
   const gains = sortedLines.filter(line => line.amount > 0);
   const deductions = sortedLines.filter(line => line.amount < 0);
@@ -305,9 +307,9 @@ const PaySlipDetail = () => {
   return (
     <div style={{ padding: '20px' }}>
       <div style={{ marginBottom: '20px' }}>
-        <Button 
-          type="default" 
-          icon={<ArrowLeftOutlined />} 
+        <Button
+          type="default"
+          icon={<ArrowLeftOutlined />}
           onClick={() => navigate('/payroll/payslips')}
         >
           Retour
@@ -317,8 +319,8 @@ const PaySlipDetail = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
         <Title level={2}>
           Bulletin de paie #{payslip.number}
-          <Tag 
-            color={statusColors[payslip.status] || 'default'} 
+          <Tag
+            color={statusColors[payslip.status] || 'default'}
             style={{ marginLeft: '10px', verticalAlign: 'middle' }}
           >
             {statusDisplay[payslip.status] || payslip.status}
@@ -326,7 +328,7 @@ const PaySlipDetail = () => {
         </Title>
         <Space>
           {payslip.status === 'draft' && (
-            <Button 
+            <Button
               type="primary"
               icon={<CalculatorOutlined />}
               onClick={handleCalculate}
@@ -335,9 +337,9 @@ const PaySlipDetail = () => {
               Calculer
             </Button>
           )}
-          
+
           {payslip.status !== 'draft' && (
-            <Button 
+            <Button
               type="primary"
               icon={<FilePdfOutlined />}
               onClick={handleDownloadPDF}
@@ -410,14 +412,14 @@ const PaySlipDetail = () => {
             <Statistic
               title="Salaire de base"
               value={payslip.basic_salary.toLocaleString()}
-              suffix="MAD"
+              suffix={currencyCode}
             />
           </Col>
           <Col span={6}>
             <Statistic
               title="Salaire brut"
               value={payslip.gross_salary.toLocaleString()}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ color: '#cf1322' }}
             />
           </Col>
@@ -425,7 +427,7 @@ const PaySlipDetail = () => {
             <Statistic
               title="Total cotisations"
               value={(payslip.cnss_employee + payslip.amo_employee + payslip.income_tax).toLocaleString()}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ color: '#faad14' }}
             />
           </Col>
@@ -433,7 +435,7 @@ const PaySlipDetail = () => {
             <Statistic
               title="Salaire net"
               value={payslip.net_salary.toLocaleString()}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ color: '#3f8600' }}
             />
           </Col>
@@ -443,7 +445,7 @@ const PaySlipDetail = () => {
       <Row gutter={16}>
         <Col span={12}>
           <Card title="Gains" style={{ marginBottom: '20px' }}>
-            <Table 
+            <Table
               dataSource={gains}
               rowKey="id"
               columns={[
@@ -456,7 +458,7 @@ const PaySlipDetail = () => {
                   title: 'Base',
                   dataIndex: 'base_amount',
                   key: 'base_amount',
-                  render: value => value ? `${value.toLocaleString()} MAD` : '-'
+                  render: value => value ? `${value.toLocaleString()} ${currencyCode}` : '-'
                 },
                 {
                   title: 'Taux',
@@ -474,7 +476,7 @@ const PaySlipDetail = () => {
                   title: 'Montant',
                   dataIndex: 'amount',
                   key: 'amount',
-                  render: value => `${value.toLocaleString()} MAD`,
+                  render: value => `${value.toLocaleString()} ${currencyCode}`,
                   sorter: (a, b) => a.amount - b.amount,
                 },
               ]}
@@ -484,13 +486,13 @@ const PaySlipDetail = () => {
                 pageData.forEach(({ amount }) => {
                   totalAmount += amount;
                 });
-                
+
                 return (
                   <Table.Summary fixed>
                     <Table.Summary.Row>
                       <Table.Summary.Cell index={0} colSpan={4}><strong>Total des gains</strong></Table.Summary.Cell>
                       <Table.Summary.Cell index={4}>
-                        <strong>{totalAmount.toLocaleString()} MAD</strong>
+                        <strong>{totalAmount.toLocaleString()} {currencyCode}</strong>
                       </Table.Summary.Cell>
                     </Table.Summary.Row>
                   </Table.Summary>
@@ -501,7 +503,7 @@ const PaySlipDetail = () => {
         </Col>
         <Col span={12}>
           <Card title="Retenues" style={{ marginBottom: '20px' }}>
-            <Table 
+            <Table
               dataSource={deductions}
               rowKey="id"
               columns={[
@@ -514,7 +516,7 @@ const PaySlipDetail = () => {
                   title: 'Base',
                   dataIndex: 'base_amount',
                   key: 'base_amount',
-                  render: value => value ? `${value.toLocaleString()} MAD` : '-'
+                  render: value => value ? `${value.toLocaleString()} ${currencyCode}` : '-'
                 },
                 {
                   title: 'Taux',
@@ -526,7 +528,7 @@ const PaySlipDetail = () => {
                   title: 'Montant',
                   dataIndex: 'amount',
                   key: 'amount',
-                  render: value => `${Math.abs(value).toLocaleString()} MAD`,
+                  render: value => `${Math.abs(value).toLocaleString()} ${currencyCode}`,
                   sorter: (a, b) => Math.abs(a.amount) - Math.abs(b.amount),
                 },
               ]}
@@ -536,13 +538,13 @@ const PaySlipDetail = () => {
                 pageData.forEach(({ amount }) => {
                   totalAmount += Math.abs(amount);
                 });
-                
+
                 return (
                   <Table.Summary fixed>
                     <Table.Summary.Row>
                       <Table.Summary.Cell index={0} colSpan={3}><strong>Total des retenues</strong></Table.Summary.Cell>
                       <Table.Summary.Cell index={3}>
-                        <strong>{totalAmount.toLocaleString()} MAD</strong>
+                        <strong>{totalAmount.toLocaleString()} {currencyCode}</strong>
                       </Table.Summary.Cell>
                     </Table.Summary.Row>
                   </Table.Summary>
@@ -558,25 +560,25 @@ const PaySlipDetail = () => {
           <Col span={12}>
             <Descriptions bordered>
               <Descriptions.Item label="CNSS Employeur" span={3}>
-                {payslip.cnss_employer.toLocaleString()} MAD
+                {payslip.cnss_employer.toLocaleString()} {currencyCode}
               </Descriptions.Item>
               <Descriptions.Item label="AMO Employeur" span={3}>
-                {payslip.amo_employer.toLocaleString()} MAD
+                {payslip.amo_employer.toLocaleString()} {currencyCode}
               </Descriptions.Item>
               <Descriptions.Item label="Total charges patronales" span={3}>
-                <strong>{(payslip.cnss_employer + payslip.amo_employer).toLocaleString()} MAD</strong>
+                <strong>{(payslip.cnss_employer + payslip.amo_employer).toLocaleString()} {currencyCode}</strong>
               </Descriptions.Item>
             </Descriptions>
           </Col>
           <Col span={12}>
             <Descriptions bordered>
               <Descriptions.Item label="Coût total" span={3}>
-                <strong>{(payslip.gross_salary + payslip.cnss_employer + payslip.amo_employer).toLocaleString()} MAD</strong>
+                <strong>{(payslip.gross_salary + payslip.cnss_employer + payslip.amo_employer).toLocaleString()} {currencyCode}</strong>
               </Descriptions.Item>
               <Descriptions.Item label="Détail" span={3}>
-                <Text>Salaire brut: {payslip.gross_salary.toLocaleString()} MAD</Text>
+                <Text>Salaire brut: {payslip.gross_salary.toLocaleString()} {currencyCode}</Text>
                 <br />
-                <Text>Charges patronales: {(payslip.cnss_employer + payslip.amo_employer).toLocaleString()} MAD</Text>
+                <Text>Charges patronales: {(payslip.cnss_employer + payslip.amo_employer).toLocaleString()} {currencyCode}</Text>
               </Descriptions.Item>
             </Descriptions>
           </Col>

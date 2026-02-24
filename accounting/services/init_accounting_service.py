@@ -27,9 +27,9 @@ class InitAccountingService:
         """
         self.force = force
 
-    def init_all(self):
+    def init_all(self, default_currency_code='MAD'):
         """Initialise toutes les données comptables."""
-        self.create_currencies()
+        self.create_currencies(default_currency_code=default_currency_code)
         self.create_account_types()
         self.create_accounts()
         self.create_journals()
@@ -37,7 +37,7 @@ class InitAccountingService:
         self.create_taxes()
         self.create_analytic_accounts()
 
-    def create_currencies(self):
+    def create_currencies(self, default_currency_code='MAD'):
         """Crée les devises de base."""
         if self.force and Currency.objects.exists():
             Currency.objects.all().delete()
@@ -93,6 +93,7 @@ class InitAccountingService:
         ]
 
         for data in currencies:
+            data['is_default'] = data['code'] == default_currency_code
             Currency.objects.create(**data)
 
     def create_account_types(self):

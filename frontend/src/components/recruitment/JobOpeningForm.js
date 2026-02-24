@@ -5,23 +5,25 @@ import { Form, Input, Select, DatePicker, Switch, Button, Card, Typography, Row,
 import { SaveOutlined, SendOutlined, RollbackOutlined } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 const JobOpeningForm = () => {
+  const { currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const isEditing = Boolean(id);
-  
+
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [departments, setDepartments] = useState([]);
   const [jobTitles, setJobTitles] = useState([]);
   const [selectedDepartment, setSelectedDepartment] = useState(null);
-  
+
   // Charger les données initiales (départements, postes)
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -30,7 +32,7 @@ const JobOpeningForm = () => {
         const deptResponse = await axios.get('/api/hr/departments/');
         const departments = deptResponse.data.results || deptResponse.data;
         setDepartments(departments);
-        
+
         // Charger les postes (sans filtre de département pour le moment)
         const jobTitleResponse = await axios.get('/api/hr/job-titles/');
         const jobTitles = jobTitleResponse.data.results || jobTitleResponse.data;
@@ -40,10 +42,10 @@ const JobOpeningForm = () => {
         message.error('Erreur lors du chargement des données. Veuillez réessayer.');
       }
     };
-    
+
     fetchInitialData();
   }, []);
-  
+
   // Si édition, charger les données de l'offre
   useEffect(() => {
     if (isEditing) {
@@ -52,7 +54,7 @@ const JobOpeningForm = () => {
         try {
           const response = await axios.get(`/api/recruitment/job-openings/${id}/`);
           const jobOpening = response.data;
-          
+
           // Format des dates pour le formulaire
           if (jobOpening.opening_date) {
             jobOpening.opening_date = moment(jobOpening.opening_date);
@@ -60,10 +62,10 @@ const JobOpeningForm = () => {
           if (jobOpening.closing_date) {
             jobOpening.closing_date = moment(jobOpening.closing_date);
           }
-          
+
           // Définir le département sélectionné pour filtrer les postes
           setSelectedDepartment(jobOpening.department);
-          
+
           // Remplir le formulaire
           form.setFieldsValue(jobOpening);
           setLoading(false);
@@ -73,20 +75,20 @@ const JobOpeningForm = () => {
           setLoading(false);
         }
       };
-      
+
       fetchJobOpening();
     }
   }, [id, isEditing, form]);
-  
+
   // Filtrer les postes en fonction du département sélectionné
   const filteredJobTitles = selectedDepartment
     ? jobTitles.filter(job => job.department === selectedDepartment)
     : jobTitles;
-  
+
   // Gestionnaire de soumission du formulaire
   const handleSubmit = async (values) => {
     setSubmitting(true);
-    
+
     try {
       // Formater les dates
       if (values.opening_date) {
@@ -95,7 +97,7 @@ const JobOpeningForm = () => {
       if (values.closing_date) {
         values.closing_date = values.closing_date.format('YYYY-MM-DD');
       }
-      
+
       if (isEditing) {
         // Mise à jour d'une offre existante
         await axios.put(`/api/recruitment/job-openings/${id}/`, values);
@@ -105,7 +107,7 @@ const JobOpeningForm = () => {
         await axios.post('/api/recruitment/job-openings/', values);
         message.success('Offre d\'emploi créée avec succès!');
       }
-      
+
       // Rediriger vers la liste des offres
       navigate('/recruitment/job-openings');
     } catch (error) {
@@ -115,23 +117,23 @@ const JobOpeningForm = () => {
       setSubmitting(false);
     }
   };
-  
+
   // Gestionnaire pour la sélection de département
   const handleDepartmentChange = (value) => {
     setSelectedDepartment(value);
     // Réinitialiser le poste sélectionné si le département change
     form.setFieldsValue({ job_title: undefined });
   };
-  
+
   // Publier l'offre directement
   const handlePublish = async () => {
     try {
       // D'abord soumettre le formulaire pour sauvegarder
       const values = await form.validateFields();
       values.status = 'published'; // Forcer le statut à "publié"
-      
+
       setSubmitting(true);
-      
+
       // Formater les dates
       if (values.opening_date) {
         values.opening_date = values.opening_date.format('YYYY-MM-DD');
@@ -139,7 +141,7 @@ const JobOpeningForm = () => {
       if (values.closing_date) {
         values.closing_date = values.closing_date.format('YYYY-MM-DD');
       }
-      
+
       if (isEditing) {
         await axios.put(`/api/recruitment/job-openings/${id}/`, values);
         message.success('Offre d\'emploi publiée avec succès!');
@@ -147,7 +149,7 @@ const JobOpeningForm = () => {
         const response = await axios.post('/api/recruitment/job-openings/', values);
         message.success('Offre d\'emploi créée et publiée avec succès!');
       }
-      
+
       // Rediriger vers la liste des offres
       navigate('/recruitment/job-openings');
     } catch (error) {
@@ -157,7 +159,7 @@ const JobOpeningForm = () => {
       setSubmitting(false);
     }
   };
-  
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', margin: '50px 0' }}>
@@ -165,11 +167,11 @@ const JobOpeningForm = () => {
       </div>
     );
   }
-  
+
   return (
     <div className="job-opening-form">
       <Title level={2}>{isEditing ? 'Modifier l\'offre d\'emploi' : 'Nouvelle offre d\'emploi'}</Title>
-      
+
       <Card>
         <Form
           form={form}
@@ -208,7 +210,7 @@ const JobOpeningForm = () => {
               </Form.Item>
             </Col>
           </Row>
-          
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -242,7 +244,7 @@ const JobOpeningForm = () => {
               </Form.Item>
             </Col>
           </Row>
-          
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -258,11 +260,11 @@ const JobOpeningForm = () => {
                 name="salary_range"
                 label="Fourchette de salaire"
               >
-                <Input placeholder="Ex: 20 000 - 30 000 MAD" />
+                <Input placeholder={`Ex: 20 000 - 30 000 ${currencyCode}`} />
               </Form.Item>
             </Col>
           </Row>
-          
+
           <Row gutter={16}>
             <Col span={12}>
               <Form.Item
@@ -282,7 +284,7 @@ const JobOpeningForm = () => {
               </Form.Item>
             </Col>
           </Row>
-          
+
           <Form.Item
             name="is_remote"
             label="Télétravail possible"
@@ -290,7 +292,7 @@ const JobOpeningForm = () => {
           >
             <Switch />
           </Form.Item>
-          
+
           <Form.Item
             name="description"
             label="Description du poste"
@@ -298,7 +300,7 @@ const JobOpeningForm = () => {
           >
             <TextArea rows={4} placeholder="Description détaillée du poste" />
           </Form.Item>
-          
+
           <Form.Item
             name="requirements"
             label="Exigences / Qualifications"
@@ -306,7 +308,7 @@ const JobOpeningForm = () => {
           >
             <TextArea rows={4} placeholder="Qualifications, expérience et compétences requises" />
           </Form.Item>
-          
+
           <Form.Item
             name="responsibilities"
             label="Responsabilités"
@@ -314,7 +316,7 @@ const JobOpeningForm = () => {
           >
             <TextArea rows={4} placeholder="Principales responsabilités et tâches" />
           </Form.Item>
-          
+
           <Form.Item>
             <Row>
               <Col span={24} style={{ textAlign: 'right' }}>

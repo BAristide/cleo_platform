@@ -162,7 +162,7 @@ class SalesDocument(models.Model):
         Surcharge de la méthode save pour vérifier automatiquement si l'exonération
         de TVA doit être appliquée en fonction de la devise.
         """
-        # Vérifier si c'est une devise étrangère (différente de MAD)
+        # Vérifier si c'est une devise étrangère (différente de la devise par défaut)
         # et appliquer automatiquement l'exonération si c'est le cas
         if hasattr(self, 'currency') and self.currency:
             from core.models import Currency

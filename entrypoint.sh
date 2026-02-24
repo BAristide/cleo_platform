@@ -42,7 +42,7 @@ done
 
 # ── Initialisation des données de base ───────────────────────
 echo "📊 Initialisation des données..."
-python manage.py init_accounting 2>/dev/null || echo "  init_accounting : déjà initialisé ou non disponible"
+python manage.py init_accounting --default-currency ${DEFAULT_CURRENCY_CODE:-MAD} 2>/dev/null || echo "  init_accounting : déjà initialisé ou non disponible"
 python manage.py init_payroll_data 2>/dev/null || echo "  init_payroll_data : déjà initialisé ou non disponible"
 python manage.py create_custom_permissions 2>/dev/null || echo "  create_custom_permissions : déjà initialisé ou non disponible"
 python manage.py create_default_roles 2>/dev/null || echo "  create_default_roles : déjà initialisé ou non disponible"

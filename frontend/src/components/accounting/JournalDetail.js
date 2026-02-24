@@ -30,12 +30,14 @@ import {
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 const { RangePicker } = DatePicker;
 
 const JournalDetail = () => {
+  const { currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,7 @@ const JournalDetail = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des détails du journal:', error);
       setError('Impossible de charger les détails du journal. Veuillez réessayer plus tard.');
-      
+
       // If API fails, use demo data
       if (demoJournals[id - 1]) {
         setJournal(demoJournals[id - 1]);
@@ -354,7 +356,7 @@ const JournalDetail = () => {
           'posted': { text: 'Validé', color: 'green' },
           'cancel': { text: 'Annulé', color: 'red' }
         };
-        
+
         return (
           <Tag color={stateMap[state]?.color}>
             {stateMap[state]?.text || state}
@@ -448,7 +450,7 @@ const JournalDetail = () => {
               title="Total débit"
               value={stats.totalDebit}
               precision={2}
-              suffix="MAD"
+              suffix={currencyCode}
             />
           </Card>
         </Col>
@@ -458,7 +460,7 @@ const JournalDetail = () => {
               title="Total crédit"
               value={stats.totalCredit}
               precision={2}
-              suffix="MAD"
+              suffix={currencyCode}
             />
           </Card>
         </Col>
@@ -517,12 +519,12 @@ const JournalDetail = () => {
           summary={pageData => {
             let totalDebit = 0;
             let totalCredit = 0;
-            
+
             pageData.forEach(({ total_debit, total_credit }) => {
               totalDebit += parseFloat(total_debit || 0);
               totalCredit += parseFloat(total_credit || 0);
             });
-            
+
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={4}><strong>Total</strong></Table.Summary.Cell>

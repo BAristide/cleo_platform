@@ -12,12 +12,14 @@ import {
 import { Link } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 const TrainingCourseList = () => {
+  const { currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [trainingCourses, setTrainingCourses] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -93,7 +95,7 @@ const TrainingCourseList = () => {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      
+
       if (editingCourse) {
         // Mode édition
         await axios.put(`/api/hr/training-courses/${editingCourse.id}/`, values);
@@ -103,7 +105,7 @@ const TrainingCourseList = () => {
         await axios.post('/api/hr/training-courses/', values);
         message.success("Formation créée avec succès");
       }
-      
+
       setModalVisible(false);
       fetchTrainingCourses();
     } catch (error) {
@@ -128,7 +130,7 @@ const TrainingCourseList = () => {
   const handleSkillSave = async () => {
     try {
       const values = await skillForm.validateFields();
-      
+
       const formData = {
         training_course: selectedCourseId,
         ...values
@@ -143,7 +145,7 @@ const TrainingCourseList = () => {
         await axios.post('/api/hr/training-skills/', formData);
         message.success("Compétence ajoutée avec succès");
       }
-      
+
       setSkillModalVisible(false);
       fetchTrainingCourses();
     } catch (error) {
@@ -176,8 +178,8 @@ const TrainingCourseList = () => {
     setSearchText(e.target.value);
   };
 
-  const filteredTrainingCourses = trainingCourses.filter(course => 
-    (searchText === '' || 
+  const filteredTrainingCourses = trainingCourses.filter(course =>
+    (searchText === '' ||
      course.title.toLowerCase().includes(searchText.toLowerCase()) ||
      (course.description && course.description.toLowerCase().includes(searchText.toLowerCase())) ||
      (course.provider && course.provider.toLowerCase().includes(searchText.toLowerCase()))) &&
@@ -245,9 +247,9 @@ const TrainingCourseList = () => {
               {skill.skill_data.name}
             </Tag>
           ))}
-          <Button 
-            size="small" 
-            icon={<PlusOutlined />} 
+          <Button
+            size="small"
+            icon={<PlusOutlined />}
             onClick={() => showSkillModal(record.id)}
           >
             Ajouter
@@ -377,7 +379,7 @@ const TrainingCourseList = () => {
               label="Coût"
               style={{ width: '33%' }}
             >
-              <InputNumber min={0} style={{ width: '100%' }} addonAfter="MAD" />
+              <InputNumber min={0} style={{ width: '100%' }} addonAfter={currencyCode} />
             </Form.Item>
           </Space>
           <Form.Item

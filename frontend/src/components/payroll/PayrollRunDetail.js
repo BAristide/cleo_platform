@@ -1,11 +1,11 @@
 // src/components/payroll/PayrollRunDetail.js
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Card, Typography, Descriptions, Button, Table, Tabs,
   Space, Tag, Divider, Statistic, Row, Col, Spin, message,
   Popconfirm, Modal, Result
 } from 'antd';
-import { 
+import {
   EditOutlined, DownloadOutlined, CalculatorOutlined,
   CheckCircleOutlined, DollarOutlined, EyeOutlined,
   ArrowLeftOutlined, PlusOutlined, FilePdfOutlined
@@ -13,6 +13,7 @@ import {
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -36,6 +37,7 @@ const statusDisplay = {
 };
 
 const PayrollRunDetail = () => {
+  const { currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [payrollRun, setPayrollRun] = useState(null);
@@ -59,13 +61,13 @@ const PayrollRunDetail = () => {
       // Récupérer les détails du lancement de paie
       const runResponse = await axios.get(`/api/payroll/payroll-runs/${id}/`);
       setPayrollRun(runResponse.data);
-      
+
       // Récupérer les bulletins associés
       fetchPayslips(1, pagination.pageSize);
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
       message.error('Erreur lors du chargement des données');
-      
+
       // Données de démo en cas d'erreur
       setPayrollRun({
         id: parseInt(id),
@@ -99,7 +101,7 @@ const PayrollRunDetail = () => {
           }
         }
       });
-      
+
       setPayslips([
         {
           id: 1,
@@ -153,7 +155,7 @@ const PayrollRunDetail = () => {
     setPayslipLoading(true);
     try {
       const payslipsResponse = await axios.get(`/api/payroll/payslips/?payroll_run=${id}&page=${page}&page_size=${pageSize}`);
-      
+
       if (payslipsResponse.data.results) {
         setPayslips(payslipsResponse.data.results);
         setPagination({
@@ -341,28 +343,28 @@ const PayrollRunDetail = () => {
       key: 'actions',
       render: (_, record) => (
         <Space size="small">
-          <Button 
-            type="primary" 
-            icon={<EyeOutlined />} 
+          <Button
+            type="primary"
+            icon={<EyeOutlined />}
             size="small"
             onClick={() => navigate(`/payroll/payslips/${record.id}`)}
             title="Voir"
           />
-          
+
           {record.status === 'draft' && (
-            <Button 
-              type="default" 
-              icon={<CalculatorOutlined />} 
+            <Button
+              type="default"
+              icon={<CalculatorOutlined />}
               size="small"
               onClick={() => handleCalculatePayslip(record.id)}
               title="Calculer"
             />
           )}
-          
+
           {record.status !== 'draft' && (
-            <Button 
-              type="default" 
-              icon={<DownloadOutlined />} 
+            <Button
+              type="default"
+              icon={<DownloadOutlined />}
               size="small"
               onClick={() => handleDownloadPayslipPDF(record.id)}
               title="Télécharger PDF"
@@ -401,9 +403,9 @@ const PayrollRunDetail = () => {
   return (
     <div style={{ padding: '20px' }}>
       <div style={{ marginBottom: '20px' }}>
-        <Button 
-          type="default" 
-          icon={<ArrowLeftOutlined />} 
+        <Button
+          type="default"
+          icon={<ArrowLeftOutlined />}
           onClick={() => navigate('/payroll/runs')}
         >
           Retour
@@ -413,8 +415,8 @@ const PayrollRunDetail = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
         <Title level={2}>
           {payrollRun.name}
-          <Tag 
-            color={statusColors[payrollRun.status] || 'default'} 
+          <Tag
+            color={statusColors[payrollRun.status] || 'default'}
             style={{ marginLeft: '10px', verticalAlign: 'middle' }}
           >
             {statusDisplay[payrollRun.status] || payrollRun.status}
@@ -422,7 +424,7 @@ const PayrollRunDetail = () => {
         </Title>
         <Space>
           {payrollRun.status === 'draft' && (
-            <Button 
+            <Button
               type="primary"
               icon={<PlusOutlined />}
               onClick={handleGeneratePayslips}
@@ -430,9 +432,9 @@ const PayrollRunDetail = () => {
               Générer les bulletins
             </Button>
           )}
-          
+
           {(payrollRun.status === 'draft' || payrollRun.status === 'in_progress') && (
-            <Button 
+            <Button
               type="primary"
               icon={<CalculatorOutlined />}
               onClick={handleCalculatePayslips}
@@ -440,9 +442,9 @@ const PayrollRunDetail = () => {
               Calculer les bulletins
             </Button>
           )}
-          
+
           {payrollRun.status === 'calculated' && (
-            <Button 
+            <Button
               type="primary"
               icon={<CheckCircleOutlined />}
               onClick={handleValidatePayroll}
@@ -450,9 +452,9 @@ const PayrollRunDetail = () => {
               Valider
             </Button>
           )}
-          
+
           {payrollRun.status === 'validated' && (
-            <Button 
+            <Button
               type="primary"
               icon={<DollarOutlined />}
               onClick={handlePayPayroll}
@@ -460,9 +462,9 @@ const PayrollRunDetail = () => {
               Payer
             </Button>
           )}
-          
+
           {(payrollRun.status === 'calculated' || payrollRun.status === 'validated' || payrollRun.status === 'paid') && (
-            <Button 
+            <Button
               type="default"
               icon={<FilePdfOutlined />}
               onClick={handleGenerateSummaryPDF}
@@ -511,7 +513,7 @@ const PayrollRunDetail = () => {
             <Statistic
               title="Masse salariale brute"
               value={(payrollRun.payslips_summary?.total_gross || 0).toLocaleString()}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ color: '#cf1322' }}
             />
           </Col>
@@ -523,7 +525,7 @@ const PayrollRunDetail = () => {
                 (payrollRun.payslips_summary?.total_amo_employee || 0) +
                 (payrollRun.payslips_summary?.total_income_tax || 0)
               ).toLocaleString()}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ color: '#faad14' }}
             />
           </Col>
@@ -531,7 +533,7 @@ const PayrollRunDetail = () => {
             <Statistic
               title="Masse salariale nette"
               value={(payrollRun.payslips_summary?.total_net || 0).toLocaleString()}
-              suffix="MAD"
+              suffix={currencyCode}
               valueStyle={{ color: '#3f8600' }}
             />
           </Col>
@@ -542,10 +544,10 @@ const PayrollRunDetail = () => {
         <TabPane tab="Bulletins de paie" key="1">
           <Card>
             <Spin spinning={payslipLoading}>
-              <Table 
-                columns={payslipColumns} 
-                dataSource={payslips} 
-                rowKey="id" 
+              <Table
+                columns={payslipColumns}
+                dataSource={payslips}
+                rowKey="id"
                 pagination={pagination}
                 onChange={handleTableChange}
               />
@@ -555,7 +557,7 @@ const PayrollRunDetail = () => {
         <TabPane tab="Cotisations" key="2">
           <Card>
             <Title level={4}>Récapitulatif des cotisations</Title>
-            <Table 
+            <Table
               dataSource={[
                 {
                   key: '1',
@@ -618,13 +620,13 @@ const PayrollRunDetail = () => {
                 let totalSalariale = 0;
                 let totalPatronale = 0;
                 let totalTotal = 0;
-                
+
                 pageData.forEach(({ part_salariale, part_patronale, total }) => {
                   totalSalariale += part_salariale;
                   totalPatronale += part_patronale;
                   totalTotal += total;
                 });
-                
+
                 return (
                   <Table.Summary fixed>
                     <Table.Summary.Row>

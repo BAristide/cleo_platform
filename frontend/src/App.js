@@ -10,6 +10,7 @@ import PayrollRoutes from './components/payroll/Routes';
 import AccountingRoutes from './components/accounting/Routes';
 import RecruitmentRoutes from './components/recruitment/Routes';
 import { AuthProvider } from './context/AuthContext';
+import { CurrencyProvider } from './context/CurrencyContext';
 import PrivateRoute from './components/PrivateRoute';
 
 import ProfilePage from './components/profile/ProfilePage';
@@ -21,6 +22,7 @@ import AdminRoute from './components/common/AdminRoute';
 function App() {
   return (
     <AuthProvider>
+      <CurrencyProvider>
       <Router>
         <Routes>
           {/* Route principale pour le dashboard central */}
@@ -99,6 +101,7 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>
+      </CurrencyProvider>
     </AuthProvider>
   );
 }

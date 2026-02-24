@@ -1,25 +1,25 @@
 // src/components/accounting/AssetList.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Table, 
-  Card, 
-  Input, 
-  Button, 
-  Tag, 
-  Typography, 
-  Space, 
-  Select, 
-  DatePicker, 
-  Spin, 
-  Alert, 
+import {
+  Table,
+  Card,
+  Input,
+  Button,
+  Tag,
+  Typography,
+  Space,
+  Select,
+  DatePicker,
+  Spin,
+  Alert,
   Tooltip,
   Progress,
   Statistic
 } from 'antd';
-import { 
-  SearchOutlined, 
-  PlusOutlined, 
+import {
+  SearchOutlined,
+  PlusOutlined,
   BuildOutlined,
   CreditCardOutlined,
   DollarOutlined,
@@ -28,11 +28,13 @@ import {
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const AssetList = () => {
+  const { currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [assets, setAssets] = useState([]);
@@ -89,7 +91,7 @@ const AssetList = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des données:', error);
       setError('Impossible de charger les données. Veuillez réessayer plus tard.');
-      
+
       // Fallback to demo data
       setAssets(demoAssets);
       setCategories(demoCategories);
@@ -116,8 +118,8 @@ const AssetList = () => {
     // Filter by search text
     if (search) {
       const searchLower = search.toLowerCase();
-      filtered = filtered.filter(asset => 
-        (asset.code && asset.code.toLowerCase().includes(searchLower)) || 
+      filtered = filtered.filter(asset =>
+        (asset.code && asset.code.toLowerCase().includes(searchLower)) ||
         (asset.name && asset.name.toLowerCase().includes(searchLower))
       );
     }
@@ -140,10 +142,10 @@ const AssetList = () => {
 
   const calculateDepreciationPercentage = (asset) => {
     if (!asset.acquisition_value || asset.acquisition_value === 0) return 0;
-    
+
     const depreciationValue = asset.depreciation_value || 0;
     const percentage = (depreciationValue / asset.acquisition_value) * 100;
-    
+
     return Math.min(Math.max(0, percentage), 100); // Ensure it's between 0 and 100
   };
 
@@ -190,9 +192,9 @@ const AssetList = () => {
       key: 'depreciation',
       render: (_, record) => (
         <Tooltip title={`${parseFloat(record.depreciation_value || 0).toFixed(2)} MAD (${calculateDepreciationPercentage(record).toFixed(1)}%)`}>
-          <Progress 
-            percent={calculateDepreciationPercentage(record).toFixed(1)} 
-            size="small" 
+          <Progress
+            percent={calculateDepreciationPercentage(record).toFixed(1)}
+            size="small"
             status={calculateDepreciationPercentage(record) >= 100 ? 'success' : 'active'}
           />
         </Tooltip>
@@ -217,8 +219,8 @@ const AssetList = () => {
       dataIndex: 'method',
       key: 'method',
       render: (method) => {
-        return method === 'linear' ? 'Linéaire' : 
-               method === 'degressive' ? 'Dégressif' : 
+        return method === 'linear' ? 'Linéaire' :
+               method === 'degressive' ? 'Dégressif' :
                method;
       },
       filters: [
@@ -238,7 +240,7 @@ const AssetList = () => {
           'close': { text: 'Clôturé', color: 'blue' },
           'sold': { text: 'Cédé', color: 'red' }
         };
-        
+
         return (
           <Tag color={stateMap[state]?.color}>
             {stateMap[state]?.text || state}
@@ -413,7 +415,7 @@ const AssetList = () => {
             value={totalStats.acquisition}
             precision={2}
             prefix={<CreditCardOutlined />}
-            suffix="MAD"
+            suffix={currencyCode}
           />
         </Card>
         <Card style={{ flex: 1, marginRight: 8 }}>
@@ -422,7 +424,7 @@ const AssetList = () => {
             value={totalStats.depreciation}
             precision={2}
             prefix={<ClockCircleOutlined />}
-            suffix="MAD"
+            suffix={currencyCode}
           />
         </Card>
         <Card style={{ flex: 1 }}>
@@ -431,7 +433,7 @@ const AssetList = () => {
             value={totalStats.netBook}
             precision={2}
             prefix={<DollarOutlined />}
-            suffix="MAD"
+            suffix={currencyCode}
             valueStyle={{ color: '#3f8600' }}
           />
         </Card>
@@ -489,14 +491,14 @@ const AssetList = () => {
           summary={pageData => {
             let totalAcquisition = 0;
             let totalDepreciation = 0;
-            
+
             pageData.forEach(record => {
               totalAcquisition += parseFloat(record.acquisition_value || 0);
               totalDepreciation += parseFloat(record.depreciation_value || 0);
             });
-            
+
             const totalNetBook = totalAcquisition - totalDepreciation;
-            
+
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={4}><strong>Total</strong></Table.Summary.Cell>

@@ -21,7 +21,7 @@ class Currency(models.Model):
         _('Séparateur décimal'), max_length=1, default='.'
     )
     thousand_separator = models.CharField(
-        _('Séparateur de milliers'), max_length=1, default=','
+        _('Séparateur de milliers'), max_length=1, default=',', blank=True
     )
 
     # Indique si le symbole est placé avant ou après le montant
@@ -48,13 +48,10 @@ class Currency(models.Model):
         return f'{self.code} - {self.name}'
 
     def save(self, *args, **kwargs):
-        # Si cette devise est définie par défaut, désactiver le statut par défaut des autres devises
         if self.is_default:
             Currency.objects.filter(is_default=True).exclude(pk=self.pk).update(
                 is_default=False
             )
-
-        # S'assurer qu'il y a toujours une devise par défaut
         elif (
             not self.is_default
             and not Currency.objects.exclude(pk=self.pk)
@@ -67,29 +64,21 @@ class Currency(models.Model):
 
     def format_amount(self, amount):
         """Formater un montant selon les paramètres de la devise."""
-        # Arrondir à la précision demandée
         amount = round(amount, self.decimal_places)
-
-        # Convertir en chaîne avec la précision demandée
         amount_str = f'{amount:.{self.decimal_places}f}'
 
-        # Remplacer le séparateur décimal
         if self.decimal_separator != '.':
             amount_str = amount_str.replace('.', self.decimal_separator)
 
-        # Ajouter les séparateurs de milliers si configurés
         if self.thousand_separator:
             integer_part, decimal_part = amount_str.split(self.decimal_separator)
-            # Ajouter les séparateurs de milliers dans la partie entière
             integer_part = ''
             for i, char in enumerate(reversed(integer_part)):
                 if i > 0 and i % 3 == 0:
                     integer_part = self.thousand_separator + integer_part
                 integer_part = char + integer_part
-            # Reconstituer le montant
             amount_str = integer_part + self.decimal_separator + decimal_part
 
-        # Ajouter le symbole
         if self.symbol_position == 'before':
             return f'{self.symbol}{amount_str}'
         else:
@@ -150,7 +139,6 @@ class CoreSettings(models.Model):
         Company, on_delete=models.CASCADE, related_name='settings'
     )
 
-    # Préférences système
     language = models.CharField(_('Langue'), max_length=10, default='fr')
     timezone = models.CharField(
         _('Fuseau horaire'), max_length=50, default='Africa/Casablanca'
@@ -158,7 +146,6 @@ class CoreSettings(models.Model):
     date_format = models.CharField(_('Format de date'), max_length=20, default='d/m/Y')
     time_format = models.CharField(_("Format d'heure"), max_length=20, default='H:i')
 
-    # Préférences de facturation
     default_payment_term = models.PositiveIntegerField(
         _('Délai de paiement par défaut (jours)'), default=30
     )
@@ -172,12 +159,10 @@ class CoreSettings(models.Model):
         _('Préfixe des commandes'), max_length=10, default='CMD-'
     )
 
-    # Préférences numériques
     decimal_precision = models.PositiveSmallIntegerField(
         _('Précision décimale'), default=2
     )
 
-    # Gestion des documents
     auto_archive_documents = models.BooleanField(
         _('Archiver automatiquement les documents'), default=False
     )
@@ -191,3 +176,103 @@ class CoreSettings(models.Model):
 
     def __str__(self):
         return f'Paramètres de {self.company.name}'
+
+
+# ── Localization Packs — Configuration initiale ─────────────────────
+
+
+class CompanySetup(models.Model):
+    """Configuration initiale — créée au premier setup via wizard ou mode headless."""
+
+    # ── Identité ─────────────────────────────────────────────────────
+    company_name = models.CharField(_("Nom de l'entreprise"), max_length=200)
+    country_code = models.CharField(
+        _('Code pays'),
+        max_length=5,
+        help_text=_('Code ISO du pays (MA, CI, SN, FR...)'),
+    )
+    locale_pack = models.CharField(
+        _('Pack de localisation'),
+        max_length=10,
+        choices=[
+            ('MA', _('Maroc')),
+            ('OHADA', _('OHADA — Afrique francophone')),
+            ('FR', _('France')),
+        ],
+    )
+
+    # ── Adresse ──────────────────────────────────────────────────────
+    address_line1 = models.CharField(_('Adresse ligne 1'), max_length=200, blank=True)
+    address_line2 = models.CharField(_('Adresse ligne 2'), max_length=200, blank=True)
+    city = models.CharField(_('Ville'), max_length=100, blank=True)
+    postal_code = models.CharField(_('Code postal'), max_length=20, blank=True)
+    country = models.CharField(_('Pays'), max_length=100, blank=True)
+
+    # ── Contact ──────────────────────────────────────────────────────
+    phone = models.CharField(_('Téléphone'), max_length=50, blank=True)
+    email = models.EmailField(_('Email'), blank=True)
+    website = models.URLField(_('Site web'), blank=True)
+
+    # ── Identifiants légaux (dynamiques selon le pays) ───────────────
+    legal_id_1_label = models.CharField(
+        _('Label identifiant 1'), max_length=50, blank=True
+    )
+    legal_id_1_value = models.CharField(
+        _('Valeur identifiant 1'), max_length=100, blank=True
+    )
+    legal_id_2_label = models.CharField(
+        _('Label identifiant 2'), max_length=50, blank=True
+    )
+    legal_id_2_value = models.CharField(
+        _('Valeur identifiant 2'), max_length=100, blank=True
+    )
+    legal_id_3_label = models.CharField(
+        _('Label identifiant 3'), max_length=50, blank=True
+    )
+    legal_id_3_value = models.CharField(
+        _('Valeur identifiant 3'), max_length=100, blank=True
+    )
+    legal_id_4_label = models.CharField(
+        _('Label identifiant 4'), max_length=50, blank=True
+    )
+    legal_id_4_value = models.CharField(
+        _('Valeur identifiant 4'), max_length=100, blank=True
+    )
+
+    # ── Logo ─────────────────────────────────────────────────────────
+    logo = models.ImageField(_('Logo'), upload_to='company/', blank=True, null=True)
+
+    # ── Coordonnées bancaires ────────────────────────────────────────
+    bank_name = models.CharField(_('Banque'), max_length=100, blank=True)
+    bank_account = models.CharField(_('Compte bancaire'), max_length=50, blank=True)
+    bank_swift = models.CharField(_('Code SWIFT/BIC'), max_length=20, blank=True)
+
+    # ── État du setup ────────────────────────────────────────────────
+    setup_completed = models.BooleanField(_('Setup terminé'), default=False)
+    setup_date = models.DateTimeField(_('Date du setup'), null=True, blank=True)
+    is_locked = models.BooleanField(
+        _('Verrouillé'),
+        default=False,
+        help_text=_('Verrouillé après la première écriture comptable.'),
+    )
+
+    # ── Audit ────────────────────────────────────────────────────────
+    created_at = models.DateTimeField(_('Créé le'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Modifié le'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Configuration entreprise')
+        verbose_name_plural = _('Configurations entreprise')
+
+    def __str__(self):
+        return f'{self.company_name} ({self.locale_pack})'
+
+    def get_legal_ids(self):
+        """Retourne la liste des identifiants légaux non vides."""
+        ids = []
+        for i in range(1, 5):
+            label = getattr(self, f'legal_id_{i}_label', '')
+            value = getattr(self, f'legal_id_{i}_value', '')
+            if label and value:
+                ids.append({'label': label, 'value': value})
+        return ids

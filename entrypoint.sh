@@ -40,12 +40,19 @@ for f in favicon.ico manifest.json logo192.png logo512.png robots.txt; do
     cp /app/frontend/build/$f /data/static/ 2>/dev/null || true
 done
 
-# ── Initialisation des données de base ───────────────────────
-echo "📊 Initialisation des données..."
-python manage.py init_accounting --default-currency ${DEFAULT_CURRENCY_CODE:-MAD} 2>/dev/null || echo "  init_accounting : déjà initialisé ou non disponible"
-python manage.py init_payroll_data 2>/dev/null || echo "  init_payroll_data : déjà initialisé ou non disponible"
-python manage.py create_custom_permissions 2>/dev/null || echo "  create_custom_permissions : déjà initialisé ou non disponible"
-python manage.py create_default_roles 2>/dev/null || echo "  create_default_roles : déjà initialisé ou non disponible"
+# ── Setup initial (Localization Packs v2.0) ──────────────────
+if [ -n "${DEFAULT_COUNTRY}" ]; then
+    echo "🌍 Mode headless : chargement du pack ${DEFAULT_COUNTRY}..."
+    python manage.py init_setup \
+        --country "${DEFAULT_COUNTRY}" \
+        --company-name "${COMPANY_NAME:-Mon Entreprise}" \
+        ${INSTALL_DEMO_DATA:+--demo} \
+        2>/dev/null || echo "  init_setup : déjà initialisé ou non disponible"
+else
+    echo "🧙 Mode wizard : configuration via navigateur"
+    python manage.py init_setup --check-only \
+        2>/dev/null || echo "  En attente de configuration"
+fi
 
 # ── Superuser ────────────────────────────────────────────────
 echo "👤 Vérification du superuser..."

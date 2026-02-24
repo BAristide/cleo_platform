@@ -40,11 +40,11 @@ def load_demo_data():
         return
 
     bank, _ = BankAccount.objects.get_or_create(
-        account_number='CI005 01234 012345678901 23',
+        rib='CI005 01234 012345678901 23',
         defaults={
             'bank_name': "Société Générale Côte d'Ivoire",
-            'account_holder': 'AgroTech Abidjan SARL',
-            'swift_code': 'SGCICIAB',
+            'name': 'Compte Principal XOF',
+            'swift': 'SGCICIAB',
             'currency': xof,
             'is_default': True,
         },

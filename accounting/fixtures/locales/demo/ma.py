@@ -40,11 +40,11 @@ def load_demo_data():
         return
 
     bank, _ = BankAccount.objects.get_or_create(
-        account_number='021 780 000 1234 5678 9012 34',
+        rib='021 780 000 1234 5678 9012 34',
         defaults={
             'bank_name': 'Attijariwafa Bank',
-            'account_holder': 'TechnoSolaire Maroc SARL',
-            'swift_code': 'BCMAMAMC',
+            'name': 'Compte Principal MAD',
+            'swift': 'BCMAMAMC',
             'currency': mad,
             'is_default': True,
         },

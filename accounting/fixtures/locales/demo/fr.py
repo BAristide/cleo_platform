@@ -40,11 +40,12 @@ def load_demo_data():
         return
 
     bank, _ = BankAccount.objects.get_or_create(
-        account_number='FR76 3000 6000 0012 3456 7890 189',
+        iban='FR76 3000 6000 0012 3456 7890 189',
         defaults={
             'bank_name': 'Société Générale',
-            'account_holder': 'InnoVert SAS',
-            'swift_code': 'SOGEFRPP',
+            'name': 'Compte Principal EUR',
+            'swift': 'SOGEFRPP',
+            'rib': '30006000001234567890189',
             'currency': eur,
             'is_default': True,
         },

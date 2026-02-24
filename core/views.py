@@ -255,17 +255,16 @@ class SetupCreateView(APIView):
         # Créer le BankAccount dans le module Sales
         if setup.bank_name and setup.bank_account:
             try:
-                from core.models import Currency
                 from sales.models import BankAccount
 
-                currency = Currency.objects.filter(
-                    code=setup.default_currency_code
-                ).first()
+                pack_currencies = {'MA': 'MAD', 'OHADA': 'XOF', 'FR': 'EUR'}
+                currency_code = pack_currencies.get(setup.locale_pack, 'MAD')
+                currency = Currency.objects.filter(code=currency_code).first()
                 if currency:
                     BankAccount.objects.get_or_create(
                         rib=setup.bank_account,
                         defaults={
-                            'name': f'Compte Principal {setup.default_currency_code}',
+                            'name': f'Compte Principal {currency_code}',
                             'bank_name': setup.bank_name,
                             'swift': setup.bank_swift or '',
                             'currency': currency,

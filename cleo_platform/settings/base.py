@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     'accounting',
     'users',
     'recruitment',
+    'inventory',
 ]
 
 REST_FRAMEWORK = {

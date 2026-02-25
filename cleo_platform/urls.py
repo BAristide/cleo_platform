@@ -22,6 +22,7 @@ urlpatterns = [
     path('api/accounting/', include('accounting.urls')),
     path('api/users/', include('users.urls')),
     path('api/recruitment/', include('recruitment.urls')),
+    path('api/inventory/', include('inventory.urls')),
     # Routes pour le frontend (nécessitent une authentification)
     path('crm/', login_required(TemplateView.as_view(template_name='index.html'))),
     path(
@@ -62,7 +63,13 @@ urlpatterns = [
         'recruitment/<path:path>',
         login_required(TemplateView.as_view(template_name='index.html')),
     ),
+    path(
+        'inventory/', login_required(TemplateView.as_view(template_name='index.html'))
+    ),
+    path(
+        'inventory/<path:path>',
+        login_required(TemplateView.as_view(template_name='index.html')),
+    ),
 ]
-
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

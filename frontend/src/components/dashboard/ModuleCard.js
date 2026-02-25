@@ -1,54 +1,54 @@
-// src/components/dashboard/ModuleCard.js
 import React from 'react';
-import { Card, Typography, Statistic, Button } from 'antd';
 import { Link } from 'react-router-dom';
-import { 
-  TeamOutlined, 
-  ShoppingCartOutlined, 
-  UserOutlined, 
-  DollarOutlined, 
-  BankOutlined, 
-  SolutionOutlined 
+import {
+  TeamOutlined,
+  ShoppingCartOutlined,
+  UserOutlined,
+  DollarOutlined,
+  BankOutlined,
+  SolutionOutlined,
+  InboxOutlined,
+  ArrowRightOutlined,
 } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
-
-const ModuleCard = ({ title, icon, description, path, stats }) => {
-  // Mapper les icônes par nom
+const ModuleCard = ({ title, icon, description, path, stats, colorClass, color }) => {
   const iconMap = {
     'team': <TeamOutlined />,
     'shopping-cart': <ShoppingCartOutlined />,
     'user': <UserOutlined />,
     'dollar': <DollarOutlined />,
     'bank': <BankOutlined />,
-    'solution': <SolutionOutlined />
+    'solution': <SolutionOutlined />,
+    'inbox': <InboxOutlined />,
   };
 
   return (
-    <Card 
-      hoverable 
-      className="module-card"
-      actions={[
-        <Link to={path}><Button type="primary">Accéder</Button></Link>
-      ]}
-    >
-      <div className="icon-container">
-        {iconMap[icon]}
+    <Link to={path} className={`module-card-v2 ${colorClass || ''}`} style={{ textDecoration: 'none' }}>
+      <div className="module-header">
+        <div className="module-icon-wrap" style={{ background: color || '#3b82f6' }}>
+          {iconMap[icon]}
+        </div>
+        <ArrowRightOutlined style={{ color: '#cbd5e1', fontSize: 14 }} />
       </div>
-      <Title level={4}>{title}</Title>
-      <Text>{description}</Text>
-      
-      {stats && Object.keys(stats).length > 0 && (
-        <div className="stats-container">
+      <div className="module-title">{title}</div>
+      <div className="module-desc">{description}</div>
+      {stats && (
+        <div className="module-stats">
           {stats.count !== undefined && (
-            <Statistic title="Total" value={stats.count} />
+            <div className="module-stat-item">
+              <span className="module-stat-value">{stats.count}</span>
+              <span className="module-stat-label">Total</span>
+            </div>
           )}
           {stats.recent !== undefined && (
-            <Statistic title="Récents" value={stats.recent} />
+            <div className="module-stat-item">
+              <span className="module-stat-value">{stats.recent}</span>
+              <span className="module-stat-label">Récents</span>
+            </div>
           )}
         </div>
       )}
-    </Card>
+    </Link>
   );
 };
 

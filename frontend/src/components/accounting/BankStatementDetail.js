@@ -148,7 +148,7 @@ const BankStatementDetail = () => {
     setAutoReconciling(true);
     try {
       const response = await axios.post(
-        \`/api/accounting/bank-statements/\${id}/auto_reconcile/\`
+        `/api/accounting/bank-statements/\${id}/auto_reconcile/`
       );
       if (response.data.success) {
         message.success(response.data.message);
@@ -166,7 +166,7 @@ const BankStatementDetail = () => {
   const handleUnreconcileLine = async (lineId) => {
     try {
       const response = await axios.post(
-        \`/api/accounting/bank-statements/\${id}/lines/\${lineId}/unreconcile/\`
+        `/api/accounting/bank-statements/\${id}/lines/\${lineId}/unreconcile/`
       );
       if (response.data.success) {
         message.success('Rapprochement annulé');

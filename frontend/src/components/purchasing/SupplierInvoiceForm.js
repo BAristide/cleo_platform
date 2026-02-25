@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 export default function SupplierInvoiceForm() {
   const navigate = useNavigate();
@@ -15,10 +15,10 @@ export default function SupplierInvoiceForm() {
   const [items, setItems] = useState([{ product: '', description: '', quantity: 1, unit_price: 0, tax_rate: 20 }]);
 
   useEffect(() => {
-    api.get('/api/purchasing/suppliers/?is_active=true').then(r => setSuppliers(r.data.results || r.data)).catch(console.error);
-    api.get('/api/sales/currencies/').then(r => setCurrencies(r.data.results || r.data)).catch(console.error);
-    api.get('/api/sales/products/').then(r => setProducts(r.data.results || r.data)).catch(console.error);
-    api.get('/api/purchasing/purchase-orders/').then(r => setOrders(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/purchasing/suppliers/?is_active=true').then(r => setSuppliers(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/sales/currencies/').then(r => setCurrencies(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/sales/products/').then(r => setProducts(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/purchasing/purchase-orders/').then(r => setOrders(r.data.results || r.data)).catch(console.error);
   }, []);
 
   const addItem = () => setItems([...items, { product: '', description: '', quantity: 1, unit_price: 0, tax_rate: 20 }]);
@@ -32,13 +32,13 @@ export default function SupplierInvoiceForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const invRes = await api.post('/api/purchasing/supplier-invoices/', {
+      const invRes = await axios.post('/api/purchasing/supplier-invoices/', {
         ...form, purchase_order: form.purchase_order || null
       });
       const invId = invRes.data.id;
       for (const item of items) {
         if (item.product || item.description) {
-          await api.post('/api/purchasing/supplier-invoice-items/', { ...item, invoice: invId });
+          await axios.post('/api/purchasing/supplier-invoice-items/', { ...item, invoice: invId });
         }
       }
       navigate(`/purchasing/invoices/${invId}`);

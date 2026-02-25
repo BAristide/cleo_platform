@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 export default function PaymentForm() {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ export default function PaymentForm() {
   });
 
   useEffect(() => {
-    api.get('/api/purchasing/supplier-invoices/?state=validated').then(r => {
+    axios.get('/api/purchasing/supplier-invoices/?state=validated').then(r => {
       setInvoices(r.data.results || r.data);
     }).catch(console.error);
   }, []);
@@ -29,7 +29,7 @@ export default function PaymentForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    api.post('/api/purchasing/supplier-payments/', form)
+    axios.post('/api/purchasing/supplier-payments/', form)
       .then(() => navigate('/purchasing/payments'))
       .catch(err => alert(JSON.stringify(err.response?.data)));
   };

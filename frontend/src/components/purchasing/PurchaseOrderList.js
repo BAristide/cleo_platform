@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 const stateLabels = {
   draft: { label: 'Brouillon', bg: '#e2e8f0', color: '#4a5568' },
@@ -16,7 +16,7 @@ export default function PurchaseOrderList() {
 
   useEffect(() => {
     const url = filter ? `/api/purchasing/purchase-orders/?state=${filter}` : '/api/purchasing/purchase-orders/';
-    api.get(url).then(r => setOrders(r.data.results || r.data)).catch(console.error);
+    axios.get(url).then(r => setOrders(r.data.results || r.data)).catch(console.error);
   }, [filter]);
 
   return (

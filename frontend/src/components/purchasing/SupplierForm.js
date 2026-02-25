@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 export default function SupplierForm() {
   const { id } = useParams();
@@ -12,13 +12,13 @@ export default function SupplierForm() {
   });
 
   useEffect(() => {
-    api.get('/api/sales/currencies/').then(r => setCurrencies(r.data.results || r.data)).catch(console.error);
-    if (id) api.get(`/api/purchasing/suppliers/${id}/`).then(r => setForm(r.data)).catch(console.error);
+    axios.get('/api/sales/currencies/').then(r => setCurrencies(r.data.results || r.data)).catch(console.error);
+    if (id) axios.get(`/api/purchasing/suppliers/${id}/`).then(r => setForm(r.data)).catch(console.error);
   }, [id]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const req = id ? api.put(`/api/purchasing/suppliers/${id}/`, form) : api.post('/api/purchasing/suppliers/', form);
+    const req = id ? axios.put(`/api/purchasing/suppliers/${id}/`, form) : axios.post('/api/purchasing/suppliers/', form);
     req.then(() => navigate('/purchasing/suppliers')).catch(e => alert(JSON.stringify(e.response?.data)));
   };
 

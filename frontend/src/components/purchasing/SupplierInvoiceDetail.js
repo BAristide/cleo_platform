@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 const stateLabels = {
   draft: { label: 'Brouillon', bg: '#e2e8f0', color: '#4a5568' },
@@ -13,18 +13,18 @@ export default function SupplierInvoiceDetail() {
   const { id } = useParams();
   const [invoice, setInvoice] = useState(null);
 
-  const load = () => api.get(`/api/purchasing/supplier-invoices/${id}/`).then(r => setInvoice(r.data)).catch(console.error);
+  const load = () => axios.get(`/api/purchasing/supplier-invoices/${id}/`).then(r => setInvoice(r.data)).catch(console.error);
   useEffect(() => { load(); }, [id]);
 
   const handleValidate = () => {
     if (window.confirm('Valider cette facture fournisseur ?')) {
-      api.post(`/api/purchasing/supplier-invoices/${id}/validate/`).then(() => load()).catch(e => alert(e.response?.data?.detail || 'Erreur'));
+      axios.post(`/api/purchasing/supplier-invoices/${id}/validate/`).then(() => load()).catch(e => alert(e.response?.data?.detail || 'Erreur'));
     }
   };
 
   const handleCancel = () => {
     if (window.confirm('Annuler cette facture ?')) {
-      api.post(`/api/purchasing/supplier-invoices/${id}/cancel/`).then(() => load()).catch(e => alert(e.response?.data?.detail || 'Erreur'));
+      axios.post(`/api/purchasing/supplier-invoices/${id}/cancel/`).then(() => load()).catch(e => alert(e.response?.data?.detail || 'Erreur'));
     }
   };
 

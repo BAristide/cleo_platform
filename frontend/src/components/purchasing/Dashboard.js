@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 const kpiConfig = [
   { key: 'suppliers_count', label: 'Fournisseurs actifs', icon: '🏭', color: '#3182ce' },
@@ -15,7 +15,7 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
 
   useEffect(() => {
-    api.get('/api/purchasing/dashboard/').then(r => setData(r.data)).catch(console.error);
+    axios.get('/api/purchasing/dashboard/').then(r => setData(r.data)).catch(console.error);
   }, []);
 
   if (!data) return <p>Chargement...</p>;

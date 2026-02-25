@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 export default function ReceptionForm() {
   const navigate = useNavigate();
@@ -16,13 +16,13 @@ export default function ReceptionForm() {
   const [items, setItems] = useState([]);
 
   useEffect(() => {
-    api.get('/api/purchasing/purchase-orders/?state=confirmed').then(r => setOrders(r.data.results || r.data)).catch(console.error);
-    api.get('/api/inventory/warehouses/?is_active=true').then(r => setWarehouses(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/purchasing/purchase-orders/?state=confirmed').then(r => setOrders(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/inventory/warehouses/?is_active=true').then(r => setWarehouses(r.data.results || r.data)).catch(console.error);
   }, []);
 
   useEffect(() => {
     if (form.purchase_order) {
-      api.get(`/api/purchasing/purchase-orders/${form.purchase_order}/`).then(r => {
+      axios.get(`/api/purchasing/purchase-orders/${form.purchase_order}/`).then(r => {
         setSelectedOrder(r.data);
         setItems((r.data.items || []).map(item => ({
           purchase_order_item: item.id,
@@ -40,11 +40,11 @@ export default function ReceptionForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const recRes = await api.post('/api/purchasing/receptions/', form);
+      const recRes = await axios.post('/api/purchasing/receptions/', form);
       const recId = recRes.data.id;
       for (const item of items) {
         if (item.quantity_received > 0) {
-          await api.post('/api/purchasing/reception-items/', {
+          await axios.post('/api/purchasing/reception-items/', {
             reception: recId, purchase_order_item: item.purchase_order_item,
             product: item.product, quantity_received: item.quantity_received
           });

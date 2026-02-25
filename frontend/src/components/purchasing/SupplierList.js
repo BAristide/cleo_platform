@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 export default function SupplierList() {
   const [suppliers, setSuppliers] = useState([]);
 
   useEffect(() => {
-    api.get('/api/purchasing/suppliers/').then(r => setSuppliers(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/purchasing/suppliers/').then(r => setSuppliers(r.data.results || r.data)).catch(console.error);
   }, []);
 
   return (

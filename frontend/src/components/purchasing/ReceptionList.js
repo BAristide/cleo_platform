@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 const stateLabels = {
   draft: { label: 'Brouillon', bg: '#e2e8f0', color: '#4a5568' },
@@ -12,7 +12,7 @@ export default function ReceptionList() {
   const [receptions, setReceptions] = useState([]);
 
   useEffect(() => {
-    api.get('/api/purchasing/receptions/').then(r => setReceptions(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/purchasing/receptions/').then(r => setReceptions(r.data.results || r.data)).catch(console.error);
   }, []);
 
   return (

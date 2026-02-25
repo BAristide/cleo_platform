@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 export default function ReceptionDetail() {
   const { id } = useParams();
   const [reception, setReception] = useState(null);
 
-  const load = () => api.get(`/api/purchasing/receptions/${id}/`).then(r => setReception(r.data)).catch(console.error);
+  const load = () => axios.get(`/api/purchasing/receptions/${id}/`).then(r => setReception(r.data)).catch(console.error);
   useEffect(() => { load(); }, [id]);
 
   const handleValidate = () => {
     if (window.confirm('Valider cette réception ? Les stocks seront mis à jour.')) {
-      api.post(`/api/purchasing/receptions/${id}/validate/`).then(r => {
+      axios.post(`/api/purchasing/receptions/${id}/validate/`).then(r => {
         alert(r.data.detail + ` (${r.data.moves_created} mouvement(s) créé(s))`);
         load();
       }).catch(e => alert(e.response?.data?.detail || 'Erreur'));

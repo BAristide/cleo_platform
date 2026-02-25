@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 const stateLabels = {
   draft: { label: 'Brouillon', bg: '#e2e8f0', color: '#4a5568' },
@@ -15,18 +15,18 @@ export default function PurchaseOrderDetail() {
   const navigate = useNavigate();
   const [order, setOrder] = useState(null);
 
-  const load = () => api.get(`/api/purchasing/purchase-orders/${id}/`).then(r => setOrder(r.data)).catch(console.error);
+  const load = () => axios.get(`/api/purchasing/purchase-orders/${id}/`).then(r => setOrder(r.data)).catch(console.error);
   useEffect(() => { load(); }, [id]);
 
   const handleConfirm = () => {
     if (window.confirm('Confirmer ce bon de commande ?')) {
-      api.post(`/api/purchasing/purchase-orders/${id}/confirm/`).then(() => load()).catch(e => alert(e.response?.data?.detail || 'Erreur'));
+      axios.post(`/api/purchasing/purchase-orders/${id}/confirm/`).then(() => load()).catch(e => alert(e.response?.data?.detail || 'Erreur'));
     }
   };
 
   const handleCancel = () => {
     if (window.confirm('Annuler ce bon de commande ?')) {
-      api.post(`/api/purchasing/purchase-orders/${id}/cancel/`).then(() => load()).catch(e => alert(e.response?.data?.detail || 'Erreur'));
+      axios.post(`/api/purchasing/purchase-orders/${id}/cancel/`).then(() => load()).catch(e => alert(e.response?.data?.detail || 'Erreur'));
     }
   };
 

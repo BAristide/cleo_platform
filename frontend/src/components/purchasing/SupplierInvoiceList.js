@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 const stateLabels = {
   draft: { label: 'Brouillon', bg: '#e2e8f0', color: '#4a5568' },
@@ -15,7 +15,7 @@ export default function SupplierInvoiceList() {
 
   useEffect(() => {
     const url = filter ? `/api/purchasing/supplier-invoices/?state=${filter}` : '/api/purchasing/supplier-invoices/';
-    api.get(url).then(r => setInvoices(r.data.results || r.data)).catch(console.error);
+    axios.get(url).then(r => setInvoices(r.data.results || r.data)).catch(console.error);
   }, [filter]);
 
   return (

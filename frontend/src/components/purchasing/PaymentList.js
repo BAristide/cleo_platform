@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../../api';
+import axios from '../../utils/axiosConfig';
 
 const methodLabels = { bank_transfer: 'Virement', check: 'Chèque', cash: 'Espèces', lcn: 'LCN', other: 'Autre' };
 
@@ -8,7 +8,7 @@ export default function PaymentList() {
   const [payments, setPayments] = useState([]);
 
   useEffect(() => {
-    api.get('/api/purchasing/supplier-payments/').then(r => setPayments(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/purchasing/supplier-payments/').then(r => setPayments(r.data.results || r.data)).catch(console.error);
   }, []);
 
   return (

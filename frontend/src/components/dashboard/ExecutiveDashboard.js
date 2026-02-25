@@ -49,14 +49,16 @@ const ExecutiveDashboard = () => {
 
     // Fetch module stats indépendamment
     try {
-      const [crm, sales, hr, inv, purch] = await Promise.all([
+      const [crm, sales, hr, inv, purch, acct] = await Promise.all([
         axios.get('/api/crm/dashboard/').catch(() => ({ data: {} })),
         axios.get('/api/sales/invoices/').catch(() => ({ data: { results: [] } })),
         axios.get('/api/hr/dashboard/').catch(() => ({ data: {} })),
         axios.get('/api/inventory/dashboard/').catch(() => ({ data: {} })),
         axios.get('/api/purchasing/dashboard/').catch(() => ({ data: {} })),
+        axios.get('/api/accounting/accounts/').catch(() => ({ data: { results: [] } })),
       ]);
-      setModuleStats({ crm: crm.data, sales: sales.data, hr: hr.data, inventory: inv.data, purchasing: purch.data });
+      const acctData = acct.data?.results || acct.data || [];
+      setModuleStats({ crm: crm.data, sales: sales.data, hr: hr.data, inventory: inv.data, purchasing: purch.data, accounting: { total: Array.isArray(acctData) ? acctData.length : 0 } });
     } catch (err) {
       console.error('Module stats error:', err);
     } finally {
@@ -98,7 +100,7 @@ const ExecutiveDashboard = () => {
     { title: 'RH', icon: 'user', description: 'Employés, départements, missions', path: '/hr', colorClass: 'module-hr', color: '#f59e0b',
       stats: { count: moduleStats.hr?.general?.total_employees || 0, recent: 0 } },
     { title: 'Comptabilité', icon: 'bank', description: 'Plan comptable, journaux, écritures', path: '/accounting', colorClass: 'module-accounting', color: '#6366f1',
-      stats: { count: 0, recent: 0 } },
+      stats: { count: moduleStats.accounting?.total || 0, recent: 0 } },
     { title: 'Paie', icon: 'dollar', description: 'Bulletins de paie, acomptes, composants', path: '/payroll', colorClass: 'module-payroll', color: '#8b5cf6',
       stats: { count: 0, recent: 0 } },
     { title: 'Recrutement', icon: 'solution', description: 'Offres, candidatures, évaluations', path: '/recruitment', colorClass: 'module-recruitment', color: '#ec4899',

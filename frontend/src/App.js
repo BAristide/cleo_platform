@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Spin } from 'antd';
 import './App.css';
-import MainDashboard from './components/dashboard/MainDashboard';
+import ExecutiveDashboard from './components/dashboard/ExecutiveDashboard';
 import CRMRoutes from './components/crm/Routes';
 import SalesRoutes from './components/sales/Routes';
 import HRRoutes from './components/hr/Routes';
@@ -76,7 +76,7 @@ function App() {
           <Routes>
             <Route path="/" element={
               <PrivateRoute>
-                <MainDashboard />
+                <ExecutiveDashboard />
               </PrivateRoute>
             } />
             <Route path="/profile" element={

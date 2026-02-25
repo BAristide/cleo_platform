@@ -22,6 +22,7 @@ const MainDashboard = () => {
     accounting: {},
     recruitment: {},
     inventory: {},
+    purchasing: {},
   });
   const [recentActivity, setRecentActivity] = useState([]);
 
@@ -42,6 +43,7 @@ const MainDashboard = () => {
         accounting: {},
         recruitment: {},
         inventory: {},
+    purchasing: {},
       };
 
       // CRM
@@ -164,6 +166,14 @@ const MainDashboard = () => {
         console.error('Error fetching Inventory dashboard:', err);
       }
 
+
+      // Purchasing
+      try {
+        const purchasingResponse = await axios.get('/api/purchasing/dashboard/');
+        dashboardData.purchasing = purchasingResponse.data || {};
+      } catch (err) {
+        console.error('Error fetching Purchasing dashboard:', err);
+      }
       // Recent Activities
       try {
         const activitiesResponse = await axios.get('/api/users/activity-logs/', {
@@ -206,6 +216,11 @@ const MainDashboard = () => {
       title: 'Stocks', icon: 'inbox', description: 'Entrepôts, mouvements, niveaux de stock',
       path: '/inventory', colorClass: 'module-inventory', color: '#14b8a6',
       stats: { count: stats.inventory?.total_products || 0, recent: stats.inventory?.alerts_count || 0 },
+    },
+    {
+      title: 'Achats', icon: 'shopping', description: 'Fournisseurs, commandes, réceptions, factures',
+      path: '/purchasing', colorClass: 'module-purchasing', color: '#f97316',
+      stats: { count: stats.purchasing?.suppliers_count || 0, recent: stats.purchasing?.pending_orders || 0 },
     },
     {
       title: 'Ressources Humaines', icon: 'user', description: 'Employés, départements, missions',

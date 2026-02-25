@@ -1,117 +1,99 @@
-// src/components/dashboard/KPISummary.js
 import React from 'react';
-import { Row, Col, Card, Statistic } from 'antd';
 import {
   TeamOutlined,
   ShoppingCartOutlined,
   FileTextOutlined,
   BankOutlined,
   UserOutlined,
-  DollarOutlined
+  DollarOutlined,
+  InboxOutlined,
+  SolutionOutlined,
 } from '@ant-design/icons';
 import { useCurrency } from '../../context/CurrencyContext';
 
 const KPISummary = ({ stats }) => {
   const { currencyCode } = useCurrency();
-  // Formats des données extraites des différents modules basés sur les components Dashboard.js
 
-  // CRM: stats.crm contient { contacts, companies, opportunities, pipeline }
-  const crmOpportunities = stats.crm?.opportunities || 0;
-  const crmPipeline = stats.crm?.pipeline || 0;
+  const formatNumber = (val, precision = 0) => {
+    if (val === null || val === undefined) return '0';
+    return Number(val).toLocaleString('fr-FR', {
+      minimumFractionDigits: precision,
+      maximumFractionDigits: precision,
+    });
+  };
 
-  // Sales: stats.sales contient { quotes: {count, amount}, orders: {count, amount}, invoices: {count, amount, paid, overdue} }
-  const salesRevenue = stats.sales?.invoices?.amount || 0;
-  const unpaidInvoices = stats.sales?.invoices?.count - (stats.sales?.invoices?.paid || 0) || 0;
-
-  // HR: stats.general contient { total_employees, employees_by_department, employees_by_job_title }
-  const hrEmployees = stats.hr?.general?.total_employees || 0;
-
-  // Payroll
-  const payrollTotal = stats.payroll?.current_period?.total_gross || 0;
-
-  // Accounting
-  const accountingActive = stats.accounting?.accounts?.active || 0;
-  const accountingEntries = stats.accounting?.entries?.amount || 0;
-
-  // Recruitment
-  const recruitmentOpenings = stats.recruitment?.active_job_openings_count || 0;
-
-  // Définir les KPIs qui seront affichés
   const kpis = [
     {
-      title: "Opportunités (CRM)",
-      value: crmOpportunities,
-      prefix: <TeamOutlined />,
-      suffix: "opportunités",
-      precision: 0
-    },
-    {
-      title: "Pipeline (CRM)",
-      value: crmPipeline,
-      prefix: <DollarOutlined />,
+      label: 'Chiffre d\'affaires',
+      value: formatNumber(stats.sales?.invoices?.amount || 0, 2),
       suffix: currencyCode,
-      precision: 2
+      color: 'kpi-green',
+      icon: <ShoppingCartOutlined className="kpi-icon" />,
     },
     {
-      title: "Chiffre d'affaires (Ventes)",
-      value: salesRevenue,
-      prefix: <ShoppingCartOutlined />,
+      label: 'Factures impayées',
+      value: formatNumber((stats.sales?.invoices?.count || 0) - (stats.sales?.invoices?.paid || 0)),
+      suffix: '',
+      color: 'kpi-red',
+      icon: <FileTextOutlined className="kpi-icon" />,
+    },
+    {
+      label: 'Pipeline CRM',
+      value: formatNumber(stats.crm?.pipeline || 0, 2),
       suffix: currencyCode,
-      precision: 2
+      color: 'kpi-blue',
+      icon: <DollarOutlined className="kpi-icon" />,
     },
     {
-      title: "Factures impayées",
-      value: unpaidInvoices,
-      prefix: <FileTextOutlined />,
-      suffix: "factures",
-      precision: 0
+      label: 'Opportunités',
+      value: formatNumber(stats.crm?.opportunities || 0),
+      suffix: '',
+      color: 'kpi-blue',
+      icon: <TeamOutlined className="kpi-icon" />,
     },
     {
-      title: "Employés actifs (RH)",
-      value: hrEmployees,
-      prefix: <UserOutlined />,
-      suffix: "employés",
-      precision: 0
+      label: 'Employés actifs',
+      value: formatNumber(stats.hr?.general?.total_employees || 0),
+      suffix: '',
+      color: 'kpi-orange',
+      icon: <UserOutlined className="kpi-icon" />,
     },
     {
-      title: "Masse salariale (Paie)",
-      value: payrollTotal,
-      prefix: <DollarOutlined />,
+      label: 'Masse salariale',
+      value: formatNumber(stats.payroll?.current_period?.total_gross || 0, 2),
       suffix: currencyCode,
-      precision: 2
+      color: 'kpi-purple',
+      icon: <DollarOutlined className="kpi-icon" />,
     },
     {
-      title: "Écritures (Comptabilité)",
-      value: accountingEntries,
-      prefix: <BankOutlined />,
+      label: 'Écritures comptables',
+      value: formatNumber(stats.accounting?.entries?.amount || 0, 2),
       suffix: currencyCode,
-      precision: 2
+      color: 'kpi-indigo',
+      icon: <BankOutlined className="kpi-icon" />,
     },
     {
-      title: "Offres d'emploi actives",
-      value: recruitmentOpenings,
-      prefix: <TeamOutlined />,
-      suffix: "offres",
-      precision: 0
-    }
+      label: 'Produits en stock',
+      value: formatNumber(stats.inventory?.total_products || 0),
+      suffix: stats.inventory?.alerts_count > 0 ? `⚠ ${stats.inventory.alerts_count} alertes` : '',
+      color: 'kpi-teal',
+      icon: <InboxOutlined className="kpi-icon" />,
+    },
   ];
 
   return (
-    <Card title="Indicateurs clés de performance">
-      <Row gutter={16}>
-        {kpis.map((kpi, index) => (
-          <Col span={6} key={index} style={{ marginBottom: 16 }}>
-            <Statistic
-              title={kpi.title}
-              value={kpi.value}
-              precision={kpi.precision}
-              prefix={kpi.prefix}
-              suffix={kpi.suffix}
-            />
-          </Col>
-        ))}
-      </Row>
-    </Card>
+    <div className="kpi-grid">
+      {kpis.map((kpi, i) => (
+        <div key={i} className={`kpi-card ${kpi.color}`}>
+          {kpi.icon}
+          <div className="kpi-label">{kpi.label}</div>
+          <div>
+            <span className="kpi-value">{kpi.value}</span>
+            {kpi.suffix && <span className="kpi-suffix">{kpi.suffix}</span>}
+          </div>
+        </div>
+      ))}
+    </div>
   );
 };
 

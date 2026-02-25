@@ -126,6 +126,11 @@ function App() {
                 <RecruitmentRoutes />
               </PrivateRoute>
             } />
+            <Route path="/purchasing/*" element={
+              <PrivateRoute>
+                <PurchasingRoutes />
+              </PrivateRoute>
+            } />
             <Route path="/inventory/*" element={
               <PrivateRoute>
                 <InventoryRoutes />

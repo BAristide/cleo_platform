@@ -9,6 +9,7 @@ import HRRoutes from './components/hr/Routes';
 import PayrollRoutes from './components/payroll/Routes';
 import AccountingRoutes from './components/accounting/Routes';
 import RecruitmentRoutes from './components/recruitment/Routes';
+import InventoryRoutes from './components/inventory/Routes';
 import SetupWizard from './components/setup/SetupWizard';
 import { AuthProvider } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';
@@ -122,6 +123,11 @@ function App() {
             <Route path="/recruitment/*" element={
               <PrivateRoute>
                 <RecruitmentRoutes />
+              </PrivateRoute>
+            } />
+            <Route path="/inventory/*" element={
+              <PrivateRoute>
+                <InventoryRoutes />
               </PrivateRoute>
             } />
             <Route path="/setup" element={<Navigate to="/" replace />} />

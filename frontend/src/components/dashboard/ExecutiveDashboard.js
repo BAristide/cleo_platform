@@ -94,6 +94,10 @@ const ExecutiveDashboard = () => {
       stats: { count: moduleStats.hr?.general?.total_employees || 0, recent: 0 } },
     { title: 'Comptabilité', icon: 'bank', description: 'Plan comptable, journaux, écritures', path: '/accounting', colorClass: 'module-accounting', color: '#6366f1',
       stats: { count: 0, recent: 0 } },
+    { title: 'Paie', icon: 'dollar', description: 'Bulletins de paie, acomptes, composants', path: '/payroll', colorClass: 'module-payroll', color: '#8b5cf6',
+      stats: { count: 0, recent: 0 } },
+    { title: 'Recrutement', icon: 'solution', description: 'Offres, candidatures, évaluations', path: '/recruitment', colorClass: 'module-recruitment', color: '#ec4899',
+      stats: { count: 0, recent: 0 } },
   ];
 
   return (

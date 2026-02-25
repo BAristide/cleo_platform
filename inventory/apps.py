@@ -9,3 +9,8 @@ class InventoryConfig(AppConfig):
 
     def ready(self):
         import inventory.signals  # noqa: F401
+
+        # Connecter les signaux Sales → Stocks (import différé pour éviter les circulaires)
+        from inventory.signals import connect_sales_signals
+
+        connect_sales_signals()

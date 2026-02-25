@@ -6,6 +6,7 @@ import {
   SearchOutlined,
   EditOutlined,
   LockOutlined,
+  SafetyCertificateOutlined,
   StopOutlined,
   CheckCircleOutlined,
   ArrowLeftOutlined,
@@ -220,6 +221,12 @@ const UserList = () => {
                 setFormVisible(true);
               }}
             >
+            <Button
+              icon={<SafetyCertificateOutlined />}
+              onClick={() => navigate("/users/roles")}
+            >
+              Matrice des rôles
+            </Button>
               Nouvel utilisateur
             </Button>
           </div>

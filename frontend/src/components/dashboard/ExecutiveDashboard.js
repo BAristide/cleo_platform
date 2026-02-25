@@ -53,7 +53,7 @@ const ExecutiveDashboard = () => {
       ]);
       setModuleStats({ crm: crm.data, sales: sales.data, hr: hr.data, inventory: inv.data, purchasing: purch.data });
     } catch (err) {
-      setError('Impossible de charger le tableau de bord');
+      console.error('Dashboard partial error:', err);
     } finally {
       setLoading(false);
     }

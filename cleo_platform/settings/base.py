@@ -28,6 +28,8 @@ INSTALLED_APPS = [
     'inventory',
     'purchasing',
     'dashboard',
+    'django_celery_beat',
+    'notifications',
 ]
 
 REST_FRAMEWORK = {
@@ -164,3 +166,16 @@ SERVER_EMAIL = config('DEFAULT_FROM_EMAIL')
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# =========================
+# Celery (v3.2.0)
+# =========================
+CELERY_BROKER_URL = config('CELERY_BROKER_URL', default='redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = config(
+    'CELERY_RESULT_BACKEND', default='redis://localhost:6379/0'
+)
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'UTC'
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'

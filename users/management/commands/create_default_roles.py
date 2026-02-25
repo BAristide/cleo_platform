@@ -26,6 +26,7 @@ class Command(BaseCommand):
                     'purchasing': 'admin',
                     'recruitment': 'admin',
                     'dashboard': 'admin',
+                    'notifications': 'admin',
                 },
             },
             {
@@ -42,6 +43,7 @@ class Command(BaseCommand):
                     'purchasing': 'read',
                     'recruitment': 'read',
                     'dashboard': 'admin',
+                    'notifications': 'read',
                 },
             },
             {
@@ -58,6 +60,7 @@ class Command(BaseCommand):
                     'purchasing': 'read',
                     'recruitment': 'no_access',
                     'dashboard': 'read',
+                    'notifications': 'read',
                 },
             },
             {
@@ -74,6 +77,7 @@ class Command(BaseCommand):
                     'purchasing': 'read',
                     'recruitment': 'admin',
                     'dashboard': 'read',
+                    'notifications': 'read',
                 },
             },
             {
@@ -90,6 +94,7 @@ class Command(BaseCommand):
                     'purchasing': 'read',
                     'recruitment': 'read',
                     'dashboard': 'admin',
+                    'notifications': 'read',
                 },
             },
             {
@@ -106,6 +111,7 @@ class Command(BaseCommand):
                     'purchasing': 'admin',
                     'recruitment': 'no_access',
                     'dashboard': 'read',
+                    'notifications': 'read',
                 },
             },
             {
@@ -122,6 +128,7 @@ class Command(BaseCommand):
                     'purchasing': 'no_access',
                     'recruitment': 'read',
                     'dashboard': 'read',
+                    'notifications': 'read',
                 },
             },
         ]

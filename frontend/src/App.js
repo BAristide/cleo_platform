@@ -20,6 +20,8 @@ import ProfilePage from './components/profile/ProfilePage';
 import ChangePassword from './components/profile/ChangePassword';
 import UserRoutes from './components/users/UserRoutes';
 import AdminRoute from './components/common/AdminRoute';
+import NotificationCenter from './components/notifications/NotificationCenter';
+import NotificationPreferences from './components/notifications/NotificationPreferences';
 import axios from './utils/axiosConfig';
 
 function App() {
@@ -148,6 +150,16 @@ function App() {
                 <PermissionRoute module="inventory">
                   <InventoryRoutes />
                 </PermissionRoute>
+              </PrivateRoute>
+            } />
+            <Route path="/notifications" element={
+              <PrivateRoute>
+                <NotificationCenter />
+              </PrivateRoute>
+            } />
+            <Route path="/notifications/preferences" element={
+              <PrivateRoute>
+                <NotificationPreferences />
               </PrivateRoute>
             } />
             <Route path="/setup" element={<Navigate to="/" replace />} />

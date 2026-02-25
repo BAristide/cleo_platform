@@ -69,6 +69,7 @@ class ModulePermission(models.Model):
         ('purchasing', _('Achats')),
         ('recruitment', _('Recrutement')),
         ('dashboard', _('Tableau de bord')),
+        ('notifications', _('Notifications')),
     ]
 
     ACCESS_LEVELS = [

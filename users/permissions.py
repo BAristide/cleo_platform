@@ -121,6 +121,9 @@ class HasModulePermission(permissions.BasePermission):
         'recruitment': 'recruitment',
         # Dashboard
         'dashboard': 'dashboard',
+        # Notifications
+        'notification': 'notifications',
+        'notifications': 'notifications',
     }
 
     # Mapping HTTP method → access level requis

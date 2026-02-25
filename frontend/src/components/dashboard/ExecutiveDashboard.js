@@ -43,7 +43,12 @@ const ExecutiveDashboard = () => {
       setData(execRes.data);
       setRecentActivity(activityRes.data?.results || []);
 
-      // Fetch module stats en parallèle
+    } catch (err) {
+      console.error('Dashboard executive error:', err);
+    }
+
+    // Fetch module stats indépendamment
+    try {
       const [crm, sales, hr, inv, purch] = await Promise.all([
         axios.get('/api/crm/dashboard/').catch(() => ({ data: {} })),
         axios.get('/api/sales/invoices/').catch(() => ({ data: { results: [] } })),
@@ -53,7 +58,7 @@ const ExecutiveDashboard = () => {
       ]);
       setModuleStats({ crm: crm.data, sales: sales.data, hr: hr.data, inventory: inv.data, purchasing: purch.data });
     } catch (err) {
-      console.error('Dashboard partial error:', err);
+      console.error('Module stats error:', err);
     } finally {
       setLoading(false);
     }

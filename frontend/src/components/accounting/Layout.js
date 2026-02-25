@@ -40,6 +40,7 @@ const Layout = ({ children }) => {
     if (path.includes('/accounting/fiscal-years')) return '4-1';
     if (path.includes('/accounting/fiscal-periods')) return '4-2';
     if (path.includes('/accounting/bank-statements')) return '5';
+    if (path.includes('/accounting/cash-forecast')) return '5b';
     if (path.includes('/accounting/assets')) return '6-1';
     if (path.includes('/accounting/asset-depreciations')) return '6-2';
     if (path.includes('/accounting/taxes')) return '7';
@@ -88,6 +89,12 @@ const Layout = ({ children }) => {
       icon: <BankOutlined />,
       label: 'Relevés bancaires',
       onClick: () => navigateToPath('/accounting/bank-statements'),
+    },
+    {
+      key: '5b',
+      icon: <BankOutlined />,
+      label: 'Prévision trésorerie',
+      onClick: () => navigateToPath('/accounting/cash-forecast'),
     },
     {
       key: '6',

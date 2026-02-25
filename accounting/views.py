@@ -668,6 +668,245 @@ class BankStatementViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+    @action(detail=True, methods=['post'])
+    def import_from_ofx(self, request, pk=None):
+        """Importe un relevé bancaire depuis un fichier OFX/QFX."""
+        statement = self.get_object()
+
+        if statement.state != 'draft':
+            return Response(
+                {
+                    'success': False,
+                    'message': 'Le relevé doit être en brouillon pour importer',
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        ofx_file = request.FILES.get('file')
+        if not ofx_file:
+            return Response(
+                {'success': False, 'message': 'Aucun fichier fourni'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            from io import BytesIO
+
+            from ofxtools.Parser import OFXTree
+
+            raw = ofx_file.read()
+            parser = OFXTree()
+            parser.parse(BytesIO(raw))
+            ofx = parser.convert()
+
+            lines_created = 0
+            duplicates_skipped = 0
+
+            for stmt in ofx.statements:
+                for txn in stmt.transactions:
+                    # Dédoublonnage par fitid (identifiant unique OFX)
+                    if (
+                        txn.fitid
+                        and BankStatementLine.objects.filter(
+                            statement_id=statement,
+                            ref=txn.fitid,
+                        ).exists()
+                    ):
+                        duplicates_skipped += 1
+                        continue
+
+                    txn_date = txn.dtposted
+                    if hasattr(txn_date, 'date'):
+                        txn_date = txn_date.date()
+
+                    BankStatementLine.objects.create(
+                        statement_id=statement,
+                        date=txn_date,
+                        name=txn.memo or txn.name or 'Transaction OFX',
+                        ref=txn.fitid or '',
+                        amount=txn.trnamt,
+                    )
+                    lines_created += 1
+
+            # Recalculer le solde final
+            if lines_created > 0:
+                total = sum(line.amount for line in statement.lines.all())
+                statement.balance_end = statement.balance_start + total
+                statement.save(update_fields=['balance_end'])
+
+            msg = f'{lines_created} lignes importées'
+            if duplicates_skipped:
+                msg += f', {duplicates_skipped} doublons ignorés'
+
+            return Response(
+                {
+                    'success': True,
+                    'message': msg,
+                    'lines_created': lines_created,
+                    'duplicates_skipped': duplicates_skipped,
+                }
+            )
+
+        except Exception as e:
+            return Response(
+                {'success': False, 'message': f'Erreur import OFX: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @action(detail=True, methods=['post'])
+    def auto_reconcile(self, request, pk=None):
+        """Rapprochement automatique des lignes du relevé."""
+        statement = self.get_object()
+
+        if statement.state == 'confirm':
+            return Response(
+                {
+                    'success': False,
+                    'message': 'Impossible de modifier un relevé confirmé',
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from accounting.services.reconciliation_service import BankReconciliationService
+
+        service = BankReconciliationService()
+        reconciled_count = service.auto_reconcile(statement)
+
+        return Response(
+            {
+                'success': True,
+                'message': f'{reconciled_count} lignes rapprochées automatiquement',
+                'reconciled_count': reconciled_count,
+            }
+        )
+
+    @action(
+        detail=True, methods=['post'], url_path='lines/(?P<line_id>[0-9]+)/suggestions'
+    )
+    def line_suggestions(self, request, pk=None, line_id=None):
+        """Suggestions de rapprochement pour une ligne donnée."""
+        statement = self.get_object()
+
+        try:
+            line = statement.lines.get(id=line_id)
+        except BankStatementLine.DoesNotExist:
+            return Response(
+                {'success': False, 'message': 'Ligne non trouvée'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if line.is_reconciled:
+            return Response(
+                {'success': False, 'message': 'Ligne déjà rapprochée'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from accounting.services.reconciliation_service import BankReconciliationService
+
+        service = BankReconciliationService()
+        account_ids = service.get_bank_account_ids(statement)
+        suggestions = service.get_suggestions(line, account_ids)
+
+        return Response(
+            {
+                'success': True,
+                'suggestions': suggestions,
+                'statement_line': {
+                    'id': line.id,
+                    'date': line.date.isoformat(),
+                    'name': line.name,
+                    'ref': line.ref,
+                    'amount': float(line.amount),
+                    'partner_name': line.partner_id.name if line.partner_id else None,
+                },
+            }
+        )
+
+    @action(
+        detail=True, methods=['post'], url_path='lines/(?P<line_id>[0-9]+)/reconcile'
+    )
+    def reconcile_line(self, request, pk=None, line_id=None):
+        """Rapproche une ligne de relevé avec des lignes d'écritures sélectionnées."""
+        statement = self.get_object()
+
+        if statement.state == 'confirm':
+            return Response(
+                {
+                    'success': False,
+                    'message': 'Impossible de modifier un relevé confirmé',
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            line = statement.lines.get(id=line_id)
+        except BankStatementLine.DoesNotExist:
+            return Response(
+                {'success': False, 'message': 'Ligne non trouvée'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        entry_line_ids = request.data.get('entry_line_ids', [])
+        if not entry_line_ids:
+            return Response(
+                {'success': False, 'message': "Aucune ligne d'écriture sélectionnée"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from accounting.services.reconciliation_service import BankReconciliationService
+
+        service = BankReconciliationService()
+
+        try:
+            service.reconcile_line(line, entry_line_ids)
+            return Response(
+                {
+                    'success': True,
+                    'message': 'Ligne rapprochée avec succès',
+                }
+            )
+        except ValueError as e:
+            return Response(
+                {'success': False, 'message': str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @action(
+        detail=True, methods=['post'], url_path='lines/(?P<line_id>[0-9]+)/unreconcile'
+    )
+    def unreconcile_line(self, request, pk=None, line_id=None):
+        """Annule le rapprochement d'une ligne de relevé."""
+        statement = self.get_object()
+
+        if statement.state == 'confirm':
+            return Response(
+                {
+                    'success': False,
+                    'message': 'Impossible de modifier un relevé confirmé',
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            line = statement.lines.get(id=line_id)
+        except BankStatementLine.DoesNotExist:
+            return Response(
+                {'success': False, 'message': 'Ligne non trouvée'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        from accounting.services.reconciliation_service import BankReconciliationService
+
+        service = BankReconciliationService()
+        service.unreconcile_line(line)
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Rapprochement annulé',
+            }
+        )
+
 
 class AnalyticAccountViewSet(viewsets.ModelViewSet):
     """API pour les comptes analytiques."""
@@ -1717,5 +1956,203 @@ def journal_officiel(request):
             'entries_count': len(result),
             'entries': result,
             'totals': {'debit': str(total_debit), 'credit': str(total_credit)},
+        }
+    )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def cash_forecast(request):
+    """
+    Prévision de trésorerie sur 12 semaines.
+    Calcul : solde actuel + encaissements prévus - décaissements prévus - salaires.
+    """
+    from datetime import timedelta
+    from decimal import Decimal
+
+    from django.db.models import Sum
+
+    from sales.models import BankAccount, Invoice
+
+    try:
+        from purchasing.models import SupplierInvoice
+    except ImportError:
+        SupplierInvoice = None
+    try:
+        from payroll.models import PayrollRun, PaySlip
+    except ImportError:
+        PayrollRun = None
+        PaySlip = None
+
+    today = timezone.now().date()
+    weeks = int(request.GET.get('weeks', 12))
+    weeks = min(weeks, 26)  # Max 6 mois
+
+    # ── 1. Solde actuel (somme des comptes bancaires) ──
+    bank_accounts = BankAccount.objects.all()
+    bank_accounts_data = []
+
+    for ba in bank_accounts:
+        # Chercher le dernier relevé confirmé pour ce compte
+        # On utilise les journaux liés au compte bancaire
+        last_statement = (
+            BankStatement.objects.filter(state='confirm').order_by('-date').first()
+        )
+
+        balance = last_statement.balance_end if last_statement else Decimal('0.00')
+
+        bank_accounts_data.append(
+            {
+                'id': ba.id,
+                'name': f'{ba.bank_name} - {ba.name}',
+                'rib': ba.rib,
+                'balance': float(balance),
+            }
+        )
+
+    current_balance = sum(ba['balance'] for ba in bank_accounts_data)
+
+    # ── 2. Encaissements prévus (factures clients non payées) ──
+    receivables = Invoice.objects.filter(
+        payment_status__in=['unpaid', 'partial', 'overdue'],
+        due_date__gte=today,
+        due_date__lte=today + timedelta(weeks=weeks),
+    ).values('id', 'number', 'company__name', 'due_date', 'total', 'amount_paid')
+
+    # ── 3. Décaissements prévus (factures fournisseurs non payées) ──
+    payables = []
+    if SupplierInvoice:
+        payables = list(
+            SupplierInvoice.objects.filter(
+                state='validated',
+                due_date__gte=today,
+                due_date__lte=today + timedelta(weeks=weeks),
+            ).values(
+                'id', 'number', 'supplier__name', 'due_date', 'total', 'amount_paid'
+            )
+        )
+
+    # ── 4. Salaires prévus ──
+    salary_forecasts = []
+    if PayrollRun and PaySlip:
+        upcoming_runs = PayrollRun.objects.filter(
+            status__in=['draft', 'in_progress', 'calculated', 'validated'],
+        ).select_related('period')
+
+        for run in upcoming_runs:
+            total_net = run.payslip_set.aggregate(total=Sum('net_salary'))[
+                'total'
+            ] or Decimal('0.00')
+            if total_net > 0:
+                salary_forecasts.append(
+                    {
+                        'id': run.id,
+                        'name': run.name,
+                        'period': str(run.period),
+                        'date': run.period.end_date.isoformat()
+                        if hasattr(run.period, 'end_date')
+                        else today.isoformat(),
+                        'amount': float(total_net),
+                        'status': run.status,
+                    }
+                )
+
+    # ── 5. Construire la prévision semaine par semaine ──
+    weekly_forecast = []
+    running_balance = Decimal(str(current_balance))
+
+    for week_num in range(weeks):
+        week_start = today + timedelta(weeks=week_num)
+        week_end = week_start + timedelta(days=6)
+
+        # Encaissements de la semaine
+        week_inflows = Decimal('0.00')
+        for inv in receivables:
+            if inv['due_date'] and week_start <= inv['due_date'] <= week_end:
+                remaining = (inv['total'] or Decimal('0')) - (
+                    inv['amount_paid'] or Decimal('0')
+                )
+                week_inflows += remaining
+
+        # Décaissements de la semaine
+        week_outflows = Decimal('0.00')
+        for inv in payables:
+            if inv['due_date'] and week_start <= inv['due_date'] <= week_end:
+                remaining = (inv['total'] or Decimal('0')) - (
+                    inv['amount_paid'] or Decimal('0')
+                )
+                week_outflows += remaining
+
+        # Salaires de la semaine
+        week_salaries = Decimal('0.00')
+        for sal in salary_forecasts:
+            sal_date = sal['date']
+            if isinstance(sal_date, str):
+                from datetime import datetime as dt
+
+                try:
+                    sal_date = dt.strptime(sal_date, '%Y-%m-%d').date()
+                except (ValueError, TypeError):
+                    continue
+            if week_start <= sal_date <= week_end:
+                week_salaries += Decimal(str(sal['amount']))
+
+        running_balance += week_inflows - week_outflows - week_salaries
+
+        weekly_forecast.append(
+            {
+                'week': week_num + 1,
+                'start_date': week_start.isoformat(),
+                'end_date': week_end.isoformat(),
+                'label': f'S{week_start.isocalendar()[1]}',
+                'inflows': float(week_inflows),
+                'outflows': float(week_outflows),
+                'salaries': float(week_salaries),
+                'net': float(week_inflows - week_outflows - week_salaries),
+                'balance': float(running_balance),
+            }
+        )
+
+    # ── 6. Résumé ──
+    total_inflows = sum(w['inflows'] for w in weekly_forecast)
+    total_outflows = sum(w['outflows'] for w in weekly_forecast)
+    total_salaries = sum(w['salaries'] for w in weekly_forecast)
+    final_balance = (
+        weekly_forecast[-1]['balance'] if weekly_forecast else current_balance
+    )
+
+    # Factures échues (déjà en retard)
+    overdue_receivables = float(
+        Invoice.objects.filter(
+            payment_status__in=['unpaid', 'partial', 'overdue'],
+            due_date__lt=today,
+        ).aggregate(total=Sum('total') - Sum('amount_paid'))['total']
+        or 0
+    )
+
+    overdue_payables = 0.0
+    if SupplierInvoice:
+        overdue_payables = float(
+            SupplierInvoice.objects.filter(
+                state='validated',
+                due_date__lt=today,
+            ).aggregate(total=Sum('total') - Sum('amount_paid'))['total']
+            or 0
+        )
+
+    return Response(
+        {
+            'current_balance': float(current_balance),
+            'bank_accounts': bank_accounts_data,
+            'weekly_forecast': weekly_forecast,
+            'summary': {
+                'total_inflows': total_inflows,
+                'total_outflows': total_outflows,
+                'total_salaries': total_salaries,
+                'projected_balance': float(final_balance),
+                'overdue_receivables': overdue_receivables,
+                'overdue_payables': overdue_payables,
+            },
+            'weeks': weeks,
         }
     )

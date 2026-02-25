@@ -30,12 +30,16 @@ import {
   ExclamationCircleOutlined,
   BankOutlined,
   LinkOutlined,
-  SearchOutlined
+  SearchOutlined,
+  UploadOutlined,
+  ThunderboltOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
+import OFXImportModal from './OFXImportModal';
+import ReconciliationModal from './ReconciliationModal';
 
 const { Title, Text, Paragraph } = Typography;
 const { confirm } = Modal;
@@ -51,6 +55,8 @@ const BankStatementDetail = () => {
   const [reconciledCount, setReconciledCount] = useState(0);
   const [showReconcileModal, setShowReconcileModal] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
+  const [showOFXModal, setShowOFXModal] = useState(false);
+  const [autoReconciling, setAutoReconciling] = useState(false);
 
   useEffect(() => {
     fetchStatementDetails();
@@ -136,6 +142,39 @@ const BankStatementDetail = () => {
     message.success('Ligne rapprochée avec succès.');
     setShowReconcileModal(false);
     fetchStatementDetails();
+  };
+
+  const handleAutoReconcile = async () => {
+    setAutoReconciling(true);
+    try {
+      const response = await axios.post(
+        \`/api/accounting/bank-statements/\${id}/auto_reconcile/\`
+      );
+      if (response.data.success) {
+        message.success(response.data.message);
+        fetchStatementDetails();
+      } else {
+        message.error(response.data.message);
+      }
+    } catch (error) {
+      message.error('Erreur lors du rapprochement automatique');
+    } finally {
+      setAutoReconciling(false);
+    }
+  };
+
+  const handleUnreconcileLine = async (lineId) => {
+    try {
+      const response = await axios.post(
+        \`/api/accounting/bank-statements/\${id}/lines/\${lineId}/unreconcile/\`
+      );
+      if (response.data.success) {
+        message.success('Rapprochement annulé');
+        fetchStatementDetails();
+      }
+    } catch (error) {
+      message.error('Erreur lors de l\'annulation du rapprochement');
+    }
   };
 
   // Demo data for bank statements
@@ -263,7 +302,7 @@ const BankStatementDetail = () => {
       align: 'right',
       render: (text) => (
         <span style={{ color: parseFloat(text) >= 0 ? '#3f8600' : '#cf1322' }}>
-          {parseFloat(text).toFixed(2)} MAD
+          {parseFloat(text).toFixed(2)} {currencyCode}
         </span>
       ),
       sorter: (a, b) => a.amount - b.amount,
@@ -275,20 +314,19 @@ const BankStatementDetail = () => {
       align: 'center',
       render: (reconciled, record) => (
         reconciled ? (
-          <Badge
-            status="success"
-            text={
-              <Link
-                to={`/accounting/entries/${record.journal_entry_line_ids[0]}`}
-                style={{ marginLeft: 8 }}
+          <Space>
+            <Badge status="success" text="Rapproché" />
+            {displayedStatement.state !== 'confirm' && (
+              <Button
+                type="link"
+                size="small"
+                danger
+                onClick={() => handleUnreconcileLine(record.id)}
               >
-                <Space>
-                  <LinkOutlined />
-                  Voir l'écriture
-                </Space>
-              </Link>
-            }
-          />
+                Annuler
+              </Button>
+            )}
+          </Space>
         ) : (
           <Button
             type="link"
@@ -355,6 +393,20 @@ const BankStatementDetail = () => {
         <Space>
           {displayedStatement.state === 'draft' && (
             <>
+              <Button
+                icon={<UploadOutlined />}
+                onClick={() => setShowOFXModal(true)}
+              >
+                Importer OFX
+              </Button>
+              <Button
+                icon={<ThunderboltOutlined />}
+                onClick={handleAutoReconcile}
+                loading={autoReconciling}
+                style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: '#fff' }}
+              >
+                Rapprochement auto
+              </Button>
               <Link to={`/accounting/bank-statements/${id}/edit`}>
                 <Button icon={<EditOutlined />}>Modifier</Button>
               </Link>
@@ -426,7 +478,7 @@ const BankStatementDetail = () => {
             </Row>
             {!isBalanced && (
               <Alert
-                message={`Différence de ${Math.abs(difference).toFixed(2)} MAD entre le solde calculé et le solde réel`}
+                message={`Différence de ${Math.abs(difference).toFixed(2)} ${currencyCode} entre le solde calculé et le solde réel`}
                 type="warning"
                 showIcon
                 style={{ marginTop: 16 }}
@@ -470,7 +522,7 @@ const BankStatementDetail = () => {
                 <Table.Summary.Cell index={0} colSpan={4}><strong>Total</strong></Table.Summary.Cell>
                 <Table.Summary.Cell index={4} align="right">
                   <strong style={{ color: totalAmount >= 0 ? '#3f8600' : '#cf1322' }}>
-                    {totalAmount.toFixed(2)} MAD
+                    {totalAmount.toFixed(2)} {currencyCode}
                   </strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={5}></Table.Summary.Cell>
@@ -480,77 +532,27 @@ const BankStatementDetail = () => {
         />
       </Card>
 
-      {/* Modal for reconciliation - simplified placeholder */}
-      <Modal
-        title="Rapprocher la ligne de relevé"
+      {/* Modal de rapprochement */}
+      <ReconciliationModal
         visible={showReconcileModal}
-        onCancel={() => setShowReconcileModal(false)}
-        footer={[
-          <Button key="cancel" onClick={() => setShowReconcileModal(false)}>
-            Annuler
-          </Button>,
-          <Button
-            key="reconcile"
-            type="primary"
-            onClick={() => handleReconcileLine(selectedLine?.id, [305])}
-          >
-            Rapprocher
-          </Button>
-        ]}
-        width={800}
-      >
-        {selectedLine && (
-          <div>
-            <Paragraph>
-              <strong>Ligne de relevé :</strong> {selectedLine.name} - {parseFloat(selectedLine.amount).toFixed(2)} MAD
-            </Paragraph>
-            <p>Sélectionnez les écritures comptables à rapprocher :</p>
-
-            {/* Placeholder for matching entries table */}
-            <Table
-              columns={[
-                {
-                  title: 'Date',
-                  dataIndex: 'date',
-                  key: 'date',
-                  render: (text) => moment(text).format('DD/MM/YYYY'),
-                },
-                {
-                  title: 'Journal',
-                  dataIndex: 'journal_code',
-                  key: 'journal_code',
-                },
-                {
-                  title: 'Libellé',
-                  dataIndex: 'name',
-                  key: 'name',
-                },
-                {
-                  title: 'Montant',
-                  dataIndex: 'amount',
-                  key: 'amount',
-                  align: 'right',
-                  render: (amount) => `${parseFloat(amount).toFixed(2)} MAD`,
-                }
-              ]}
-              dataSource={[
-                {
-                  key: 1,
-                  date: '2025-05-05',
-                  journal_code: 'BNK',
-                  name: 'Paiement client ABC',
-                  amount: 12500
-                }
-              ]}
-              pagination={false}
-              rowSelection={{
-                type: 'checkbox',
-                defaultSelectedRowKeys: [1]
-              }}
-            />
-          </div>
-        )}
-      </Modal>
+        statementId={id}
+        line={selectedLine}
+        onClose={() => setShowReconcileModal(false)}
+        onSuccess={() => {
+          setShowReconcileModal(false);
+          fetchStatementDetails();
+        }}
+      />
+      {/* Modal import OFX */}
+      <OFXImportModal
+        visible={showOFXModal}
+        statementId={id}
+        onClose={() => setShowOFXModal(false)}
+        onSuccess={() => {
+          setShowOFXModal(false);
+          fetchStatementDetails();
+        }}
+      />
     </div>
   );
 };

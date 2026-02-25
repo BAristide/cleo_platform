@@ -20,6 +20,7 @@ import TaxList from './TaxList';
 import ReportsList from './ReportsList';
 import { JournalEntryForm, BankStatementForm, AssetForm } from './forms';
 import CurrencyList from './CurrencyList';
+import CashForecastChart from './CashForecastChart';
 const AccountingRoutes = () => {
   return (
     <Layout>
@@ -57,6 +58,9 @@ const AccountingRoutes = () => {
         <Route path="/assets/:id" element={<AssetDetail />} />
         <Route path="/assets/:id/edit" element={<AssetForm />} />
         <Route path="/asset-depreciations" element={<AssetDepreciationList />} />
+        {/* Trésorerie */}
+        <Route path="/cash-forecast" element={<CashForecastChart />} />
+
         {/* Devises */}
         <Route path="/currencies" element={<CurrencyList />} />
 

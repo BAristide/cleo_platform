@@ -55,4 +55,9 @@ urlpatterns = [
         views.import_journal_entries,
         name='import_journal_entries',
     ),
+    # Rapports réglementaires additionnels
+    path('reports/esg/', views.esg_report, name='esg_report'),
+    path('reports/asset-schedule/', views.asset_schedule, name='asset_schedule'),
+    path('reports/journal/', views.journal_officiel, name='journal_officiel'),
 ]
+# Rapports réglementaires additionnels

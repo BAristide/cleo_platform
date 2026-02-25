@@ -1388,3 +1388,334 @@ def import_journal_entries(request):
         return Response(result)
     except Exception as e:
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# ── Rapports réglementaires additionnels ──────────────────────────────
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def esg_report(request):
+    """État des Soldes de Gestion (ESG) — spécifique Maroc."""
+    today = timezone.now().date()
+    start_date = request.query_params.get(
+        'start_date', datetime(today.year, 1, 1).date().isoformat()
+    )
+    end_date = request.query_params.get('end_date', today.isoformat())
+
+    try:
+        from core.models import CompanySetup
+
+        setup = CompanySetup.objects.first()
+        locale_pack = setup.locale_pack if setup else 'MA'
+    except Exception:
+        locale_pack = 'MA'
+
+    def account_balance(prefix, sd=start_date, ed=end_date):
+        """Somme des soldes des comptes commençant par prefix."""
+        total = Decimal('0')
+        for acct in Account.objects.filter(code__startswith=prefix):
+            total += acct.get_balance(start_date=sd, end_date=ed)
+        return total
+
+    # Calcul ESG selon PCGE marocain
+    # I. Tableau de formation des résultats (TFR)
+    ventes_marchandises = abs(account_balance('711'))
+    achats_marchandises = abs(account_balance('611'))
+    marge_brute = ventes_marchandises - achats_marchandises
+
+    production = (
+        abs(account_balance('712'))
+        + abs(account_balance('713'))
+        + abs(account_balance('714'))
+    )
+    consommation = (
+        abs(account_balance('612'))
+        + abs(account_balance('613'))
+        + abs(account_balance('614'))
+    )
+    valeur_ajoutee = marge_brute + production - consommation
+    subventions = abs(account_balance('716'))
+    impots_taxes = abs(account_balance('616'))
+    charges_personnel = abs(account_balance('617'))
+    ebe = valeur_ajoutee + subventions - impots_taxes - charges_personnel
+
+    autres_produits_exploit = abs(account_balance('718')) + abs(account_balance('719'))
+    autres_charges_exploit = abs(account_balance('618')) + abs(account_balance('619'))
+    resultat_exploitation = ebe + autres_produits_exploit - autres_charges_exploit
+
+    produits_financiers = abs(account_balance('73'))
+    charges_financieres = abs(account_balance('63'))
+    resultat_financier = produits_financiers - charges_financieres
+
+    resultat_courant = resultat_exploitation + resultat_financier
+
+    produits_non_courants = abs(account_balance('75'))
+    charges_non_courantes = abs(account_balance('65'))
+    resultat_non_courant = produits_non_courants - charges_non_courantes
+
+    impot_sur_resultat = abs(account_balance('670'))
+    resultat_net = resultat_courant + resultat_non_courant - impot_sur_resultat
+
+    # II. Capacité d'autofinancement
+    dotations_total = (
+        abs(account_balance('619'))
+        + abs(account_balance('639'))
+        + abs(account_balance('659'))
+    )
+    reprises_total = (
+        abs(account_balance('719'))
+        + abs(account_balance('739'))
+        + abs(account_balance('759'))
+    )
+    caf = resultat_net + dotations_total - reprises_total
+
+    return Response(
+        {
+            'locale_pack': locale_pack,
+            'period': {'start_date': start_date, 'end_date': end_date},
+            'tfr': [
+                {'label': 'Ventes de marchandises', 'value': str(ventes_marchandises)},
+                {
+                    'label': 'Achats revendus de marchandises',
+                    'value': str(achats_marchandises),
+                    'sign': '-',
+                },
+                {
+                    'label': "MARGE BRUTE SUR VENTES EN L'ÉTAT",
+                    'value': str(marge_brute),
+                    'is_total': True,
+                },
+                {'label': "Production de l'exercice", 'value': str(production)},
+                {
+                    'label': "Consommation de l'exercice",
+                    'value': str(consommation),
+                    'sign': '-',
+                },
+                {
+                    'label': 'VALEUR AJOUTÉE',
+                    'value': str(valeur_ajoutee),
+                    'is_total': True,
+                },
+                {'label': "Subventions d'exploitation", 'value': str(subventions)},
+                {'label': 'Impôts et taxes', 'value': str(impots_taxes), 'sign': '-'},
+                {
+                    'label': 'Charges de personnel',
+                    'value': str(charges_personnel),
+                    'sign': '-',
+                },
+                {
+                    'label': "EXCÉDENT BRUT D'EXPLOITATION (EBE)",
+                    'value': str(ebe),
+                    'is_total': True,
+                },
+                {
+                    'label': "Autres produits d'exploitation",
+                    'value': str(autres_produits_exploit),
+                },
+                {
+                    'label': "Autres charges d'exploitation",
+                    'value': str(autres_charges_exploit),
+                    'sign': '-',
+                },
+                {
+                    'label': "RÉSULTAT D'EXPLOITATION",
+                    'value': str(resultat_exploitation),
+                    'is_total': True,
+                },
+                {'label': 'Produits financiers', 'value': str(produits_financiers)},
+                {
+                    'label': 'Charges financières',
+                    'value': str(charges_financieres),
+                    'sign': '-',
+                },
+                {
+                    'label': 'RÉSULTAT FINANCIER',
+                    'value': str(resultat_financier),
+                    'is_total': True,
+                },
+                {
+                    'label': 'RÉSULTAT COURANT',
+                    'value': str(resultat_courant),
+                    'is_total': True,
+                },
+                {'label': 'Produits non courants', 'value': str(produits_non_courants)},
+                {
+                    'label': 'Charges non courantes',
+                    'value': str(charges_non_courantes),
+                    'sign': '-',
+                },
+                {
+                    'label': 'RÉSULTAT NON COURANT',
+                    'value': str(resultat_non_courant),
+                    'is_total': True,
+                },
+                {
+                    'label': 'Impôt sur les résultats',
+                    'value': str(impot_sur_resultat),
+                    'sign': '-',
+                },
+                {
+                    'label': "RÉSULTAT NET DE L'EXERCICE",
+                    'value': str(resultat_net),
+                    'is_total': True,
+                },
+            ],
+            'caf': {
+                'resultat_net': str(resultat_net),
+                'dotations': str(dotations_total),
+                'reprises': str(reprises_total),
+                'caf': str(caf),
+            },
+        }
+    )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def asset_schedule(request):
+    """Tableau des immobilisations et amortissements."""
+    today = timezone.now().date()
+    date = request.query_params.get('date', today.isoformat())
+
+    from .models import Asset, AssetDepreciation
+
+    assets = (
+        Asset.objects.select_related('category_id')
+        .filter(state__in=['open', 'close'])
+        .order_by('category_id__name', 'code')
+    )
+
+    categories = {}
+    for asset in assets:
+        cat_name = asset.category_id.name if asset.category_id else 'Sans catégorie'
+        if cat_name not in categories:
+            categories[cat_name] = {
+                'name': cat_name,
+                'method': asset.category_id.method if asset.category_id else 'linear',
+                'duration': asset.category_id.duration_years
+                if asset.category_id
+                else 0,
+                'assets': [],
+                'totals': {
+                    'acquisition_value': Decimal('0'),
+                    'cumulated_depreciation': Decimal('0'),
+                    'net_value': Decimal('0'),
+                    'year_depreciation': Decimal('0'),
+                },
+            }
+
+        # Amortissements cumulés
+        cumulated = AssetDepreciation.objects.filter(
+            asset_id=asset, state='posted', date__lte=date
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        # Dotation de l'exercice en cours
+        year_start = datetime.strptime(date, '%Y-%m-%d').date().replace(month=1, day=1)
+        year_dep = AssetDepreciation.objects.filter(
+            asset_id=asset, state='posted', date__gte=year_start, date__lte=date
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+        net_value = asset.acquisition_value - cumulated
+
+        asset_data = {
+            'id': asset.id,
+            'code': asset.code,
+            'name': asset.name,
+            'acquisition_date': asset.acquisition_date.isoformat()
+            if asset.acquisition_date
+            else None,
+            'acquisition_value': str(asset.acquisition_value),
+            'cumulated_depreciation': str(cumulated),
+            'year_depreciation': str(year_dep),
+            'net_value': str(net_value),
+            'state': asset.state,
+        }
+        categories[cat_name]['assets'].append(asset_data)
+        categories[cat_name]['totals']['acquisition_value'] += asset.acquisition_value
+        categories[cat_name]['totals']['cumulated_depreciation'] += cumulated
+        categories[cat_name]['totals']['net_value'] += net_value
+        categories[cat_name]['totals']['year_depreciation'] += year_dep
+
+    # Totaux généraux
+    grand_totals = {
+        'acquisition_value': Decimal('0'),
+        'cumulated_depreciation': Decimal('0'),
+        'net_value': Decimal('0'),
+        'year_depreciation': Decimal('0'),
+    }
+    for cat in categories.values():
+        for key in grand_totals:
+            grand_totals[key] += cat['totals'][key]
+        cat['totals'] = {k: str(v) for k, v in cat['totals'].items()}
+
+    return Response(
+        {
+            'date': date,
+            'categories': list(categories.values()),
+            'grand_totals': {k: str(v) for k, v in grand_totals.items()},
+        }
+    )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def journal_officiel(request):
+    """Journal centralisé officiel (toutes écritures validées)."""
+    today = timezone.now().date()
+    start_date = request.query_params.get(
+        'start_date', datetime(today.year, 1, 1).date().isoformat()
+    )
+    end_date = request.query_params.get('end_date', today.isoformat())
+    journal_id = request.query_params.get('journal_id')
+
+    entries = (
+        JournalEntry.objects.filter(
+            state='posted', date__gte=start_date, date__lte=end_date
+        )
+        .select_related('journal_id', 'period_id')
+        .order_by('date', 'journal_id__code', 'name')
+    )
+
+    if journal_id:
+        entries = entries.filter(journal_id=journal_id)
+
+    result = []
+    total_debit = Decimal('0')
+    total_credit = Decimal('0')
+
+    for entry in entries:
+        lines = entry.lines.select_related('account_id').order_by('account_id__code')
+        entry_lines = []
+        for line in lines:
+            entry_lines.append(
+                {
+                    'account_code': line.account_id.code,
+                    'account_name': line.account_id.name,
+                    'label': line.name or '',
+                    'debit': str(line.debit),
+                    'credit': str(line.credit),
+                }
+            )
+            total_debit += line.debit
+            total_credit += line.credit
+
+        result.append(
+            {
+                'date': entry.date.isoformat(),
+                'journal': entry.journal_id.code,
+                'number': entry.name,
+                'ref': entry.ref or '',
+                'narration': entry.narration or '',
+                'lines': entry_lines,
+            }
+        )
+
+    return Response(
+        {
+            'period': {'start_date': start_date, 'end_date': end_date},
+            'entries_count': len(result),
+            'entries': result,
+            'totals': {'debit': str(total_debit), 'credit': str(total_credit)},
+        }
+    )

@@ -65,6 +65,10 @@ class ModulePermission(models.Model):
         ('hr', _('Ressources Humaines')),
         ('payroll', _('Paie')),
         ('accounting', _('Comptabilité')),
+        ('inventory', _('Stocks')),
+        ('purchasing', _('Achats')),
+        ('recruitment', _('Recrutement')),
+        ('dashboard', _('Tableau de bord')),
     ]
 
     ACCESS_LEVELS = [

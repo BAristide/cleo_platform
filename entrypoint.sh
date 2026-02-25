@@ -73,6 +73,11 @@ else:
     print('  ℹ️  Un superuser existe déjà.')
 "
 
+# ── Rôles et permissions par défaut ────────────────────────────
+echo "🔐 Vérification des rôles et permissions..."
+python manage.py create_default_roles 2>/dev/null || echo "  Rôles : commande non disponible"
+python manage.py create_custom_permissions 2>/dev/null || echo "  Permissions : commande non disponible"
+
 # ── Démarrage ────────────────────────────────────────────────
 echo "🚀 Démarrage de Cleo ERP..."
 exec "$@"

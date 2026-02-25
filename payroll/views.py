@@ -8,6 +8,8 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
+from users.permissions import HasModulePermission, module_permission_required
+
 from .models import (
     AdvanceSalary,
     ContractType,
@@ -41,7 +43,8 @@ class PayrollPeriodViewSet(viewsets.ModelViewSet):
 
     queryset = PayrollPeriod.objects.all()
     serializer_class = PayrollPeriodSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'payroll'
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
     ordering_fields = ['start_date', 'end_date', 'name']
@@ -76,7 +79,8 @@ class PayrollParameterViewSet(viewsets.ModelViewSet):
 
     queryset = PayrollParameter.objects.all()
     serializer_class = PayrollParameterSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'payroll'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -93,7 +97,8 @@ class ContractTypeViewSet(viewsets.ModelViewSet):
 
     queryset = ContractType.objects.all()
     serializer_class = ContractTypeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'payroll'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -110,7 +115,8 @@ class SalaryComponentViewSet(viewsets.ModelViewSet):
 
     queryset = SalaryComponent.objects.all()
     serializer_class = SalaryComponentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'payroll'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -127,7 +133,8 @@ class TaxBracketViewSet(viewsets.ModelViewSet):
 
     queryset = TaxBracket.objects.all()
     serializer_class = TaxBracketSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'payroll'
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['min_amount', 'effective_date']
     ordering = ['min_amount']
@@ -138,7 +145,8 @@ class EmployeePayrollViewSet(viewsets.ModelViewSet):
 
     queryset = EmployeePayroll.objects.all()
     serializer_class = EmployeePayrollSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'payroll'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -181,7 +189,8 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
 
     queryset = PayrollRun.objects.all()
     serializer_class = PayrollRunSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'payroll'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -424,7 +433,8 @@ class PaySlipViewSet(viewsets.ModelViewSet):
 
     queryset = PaySlip.objects.all()
     serializer_class = PaySlipSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'payroll'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -513,7 +523,8 @@ class PaySlipLineViewSet(viewsets.ModelViewSet):
 
     queryset = PaySlipLine.objects.all()
     serializer_class = PaySlipLineSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'payroll'
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['payslip', 'component', 'is_employer_contribution']
     ordering_fields = ['display_order', 'component__code']
@@ -525,7 +536,8 @@ class AdvanceSalaryViewSet(viewsets.ModelViewSet):
 
     queryset = AdvanceSalary.objects.all()
     serializer_class = AdvanceSalarySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'payroll'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -557,6 +569,7 @@ class AdvanceSalaryViewSet(viewsets.ModelViewSet):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('payroll')
 def payroll_dashboard(request):
     """Tableau de bord du module Paie."""
     # Période en cours

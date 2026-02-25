@@ -9,6 +9,8 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
+from users.permissions import HasModulePermission, module_permission_required
+
 from .models import (
     Availability,
     Department,
@@ -97,7 +99,8 @@ class DepartmentViewSet(viewsets.ModelViewSet):
 
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'code', 'description']
     ordering_fields = ['name', 'code']
@@ -125,7 +128,8 @@ class JobTitleViewSet(viewsets.ModelViewSet):
 
     queryset = JobTitle.objects.all()
     serializer_class = JobTitleSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -158,7 +162,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
     queryset = Employee.objects.all()
     serializer_class = EmployeeListSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -299,7 +304,8 @@ class MissionViewSet(viewsets.ModelViewSet):
 
     queryset = Mission.objects.all()
     serializer_class = MissionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -521,7 +527,8 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
 
     queryset = Availability.objects.all()
     serializer_class = AvailabilitySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -636,7 +643,8 @@ class SkillViewSet(viewsets.ModelViewSet):
 
     queryset = Skill.objects.all()
     serializer_class = SkillSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -689,7 +697,8 @@ class TrainingCourseViewSet(viewsets.ModelViewSet):
 
     queryset = TrainingCourse.objects.all()
     serializer_class = TrainingCourseSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -744,7 +753,8 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
 
     queryset = TrainingPlan.objects.all()
     serializer_class = TrainingPlanSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -960,7 +970,8 @@ class TrainingPlanItemViewSet(viewsets.ModelViewSet):
 
     queryset = TrainingPlanItem.objects.all()
     serializer_class = TrainingPlanItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -1082,6 +1093,7 @@ class TrainingPlanItemViewSet(viewsets.ModelViewSet):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('hr')
 def dashboard_view(request):
     """Vue du tableau de bord RH avec statistiques et informations importantes."""
     # Statistiques de base

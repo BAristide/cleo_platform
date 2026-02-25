@@ -11,6 +11,8 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from users.permissions import HasModulePermission
+
 from .models import (
     BankAccount,
     Invoice,
@@ -100,7 +102,8 @@ class BankAccountViewSet(viewsets.ModelViewSet):
 
     queryset = BankAccount.objects.all()
     serializer_class = BankAccountSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'sales'
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name', 'bank_name', 'rib', 'iban']
     ordering_fields = ['name', 'bank_name', 'currency']
@@ -152,7 +155,8 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'sales'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -169,7 +173,8 @@ class QuoteViewSet(viewsets.ModelViewSet):
 
     queryset = Quote.objects.all()
     serializer_class = QuoteSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'sales'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -412,7 +417,8 @@ class QuoteItemViewSet(viewsets.ModelViewSet):
 
     queryset = QuoteItem.objects.all()
     serializer_class = QuoteItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'sales'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['quote']
 
@@ -438,7 +444,8 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     queryset = Order.objects.all()
     serializer_class = OrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'sales'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -722,7 +729,8 @@ class OrderItemViewSet(viewsets.ModelViewSet):
 
     queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'sales'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['order']
 
@@ -748,7 +756,8 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
     queryset = Invoice.objects.all()
     serializer_class = InvoiceSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'sales'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -1027,7 +1036,8 @@ class InvoiceItemViewSet(viewsets.ModelViewSet):
 
     queryset = InvoiceItem.objects.all()
     serializer_class = InvoiceItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'sales'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['invoice']
 
@@ -1057,7 +1067,8 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'sales'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,

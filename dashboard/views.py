@@ -7,6 +7,8 @@ from rest_framework import permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
+from users.permissions import module_permission_required
+
 
 def _parse_period(request):
     """Parse les paramètres de période depuis la requête."""
@@ -44,6 +46,7 @@ def _parse_period(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('dashboard')
 def executive_dashboard(request):
     """Dashboard décisionnel consolidé pour la direction."""
     from hr.models import Employee

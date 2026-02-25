@@ -8,6 +8,8 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from users.permissions import HasModulePermission
+
 from .filters import ApplicationFilter, JobOpeningFilter
 from .models import (
     Application,
@@ -20,7 +22,6 @@ from .models import (
     RecruitmentNotification,
     RecruitmentStats,
 )
-from .permissions import IsHROrReadOnly
 from .serializers import (
     ApplicationCreateSerializer,
     ApplicationSerializer,
@@ -39,7 +40,8 @@ from .serializers import (
 class JobOpeningViewSet(viewsets.ModelViewSet):
     queryset = JobOpening.objects.all()
     serializer_class = JobOpeningSerializer
-    permission_classes = [permissions.IsAuthenticated, IsHROrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'recruitment'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -133,7 +135,8 @@ class JobOpeningViewSet(viewsets.ModelViewSet):
 class CandidateViewSet(viewsets.ModelViewSet):
     queryset = Candidate.objects.all()
     serializer_class = CandidateSerializer
-    permission_classes = [permissions.IsAuthenticated, IsHROrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'recruitment'
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = [
         'first_name',
@@ -162,7 +165,8 @@ class CandidateViewSet(viewsets.ModelViewSet):
 
 class ApplicationViewSet(viewsets.ModelViewSet):
     queryset = Application.objects.all()
-    permission_classes = [permissions.IsAuthenticated, IsHROrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'recruitment'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -328,7 +332,8 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 class InterviewPanelViewSet(viewsets.ModelViewSet):
     queryset = InterviewPanel.objects.all()
     serializer_class = InterviewPanelSerializer
-    permission_classes = [permissions.IsAuthenticated, IsHROrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'recruitment'
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['job_opening']
     search_fields = ['name', 'job_opening__title']
@@ -394,7 +399,8 @@ class InterviewPanelViewSet(viewsets.ModelViewSet):
 class InterviewerViewSet(viewsets.ModelViewSet):
     queryset = Interviewer.objects.all()
     serializer_class = InterviewerSerializer
-    permission_classes = [permissions.IsAuthenticated, IsHROrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'recruitment'
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['panel', 'employee']
 
@@ -402,7 +408,8 @@ class InterviewerViewSet(viewsets.ModelViewSet):
 class EvaluationCriterionViewSet(viewsets.ModelViewSet):
     queryset = EvaluationCriterion.objects.all()
     serializer_class = EvaluationCriterionSerializer
-    permission_classes = [permissions.IsAuthenticated, IsHROrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'recruitment'
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['category']
     ordering_fields = ['category', 'display_order', 'name']
@@ -412,7 +419,8 @@ class EvaluationCriterionViewSet(viewsets.ModelViewSet):
 class CandidateEvaluationViewSet(viewsets.ModelViewSet):
     queryset = CandidateEvaluation.objects.all()
     serializer_class = CandidateEvaluationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'recruitment'
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['application', 'interviewer', 'evaluation_date']
     ordering_fields = ['evaluation_date']
@@ -452,7 +460,8 @@ class CandidateEvaluationViewSet(viewsets.ModelViewSet):
 class RecruitmentStatsViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = RecruitmentStats.objects.all()
     serializer_class = RecruitmentStatsSerializer
-    permission_classes = [permissions.IsAuthenticated, IsHROrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'recruitment'
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['period_start', 'period_end']
     ordering = ['-period_end']
@@ -616,7 +625,8 @@ class RecruitmentStatsViewSet(viewsets.ReadOnlyModelViewSet):
 class RecruitmentNotificationViewSet(viewsets.ModelViewSet):
     queryset = RecruitmentNotification.objects.all()
     serializer_class = RecruitmentNotificationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'recruitment'
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['recipient', 'is_read', 'type']
     ordering_fields = ['created_at']

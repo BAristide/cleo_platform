@@ -27,16 +27,26 @@ const UserForm = ({ visible, user, onCancel, onSuccess }) => {
         form.setFieldsValue({ is_active: true });
       }
     }
-  }, [visible, user]);
+  }, [visible, user, form]);
 
   const fetchRoles = async () => {
     try {
       const res = await axios.get('/api/users/roles/');
+      // Support paginated and non-paginated responses
       const data = res.data.results || res.data || [];
-      setRoles(data.map((r) => ({ label: r.name, value: r.name })));
+      const roleList = Array.isArray(data) ? data : [];
+      setRoles(roleList.map((r) => ({ label: r.name, value: r.name })));
     } catch (error) {
-      // Les rôles peuvent ne pas être configurés — pas bloquant
-      setRoles([]);
+      console.error('Erreur chargement rôles:', error);
+      // Fallback : charger les groupes Django directement
+      try {
+        const res = await axios.get('/api/users/roles/?format=json');
+        const data = res.data.results || res.data || [];
+        const roleList = Array.isArray(data) ? data : [];
+        setRoles(roleList.map((r) => ({ label: r.name, value: r.name })));
+      } catch {
+        setRoles([]);
+      }
     }
   };
 
@@ -49,7 +59,7 @@ const UserForm = ({ visible, user, onCancel, onSuccess }) => {
         email: values.email,
         first_name: values.first_name,
         last_name: values.last_name,
-        is_active: values.is_active,
+        is_active: values.is_active !== false,
         groups: values.groups || [],
         profile: {
           phone: values.phone || '',
@@ -69,14 +79,13 @@ const UserForm = ({ visible, user, onCancel, onSuccess }) => {
     } catch (error) {
       if (error.response?.data) {
         const errors = error.response.data;
-        // Afficher les erreurs du backend dans le formulaire
         const fieldErrors = [];
         Object.keys(errors).forEach((key) => {
           const msg = Array.isArray(errors[key]) ? errors[key][0] : errors[key];
           if (['email', 'first_name', 'last_name', 'password', 'phone'].includes(key)) {
             fieldErrors.push({ name: key, errors: [msg] });
           } else {
-            message.error(msg);
+            message.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
           }
         });
         if (fieldErrors.length > 0) {
@@ -151,6 +160,10 @@ const UserForm = ({ visible, user, onCancel, onSuccess }) => {
             placeholder="Sélectionner des rôles"
             options={roles}
             allowClear
+            showSearch
+            filterOption={(input, option) =>
+              (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+            }
           />
         </Form.Item>
 

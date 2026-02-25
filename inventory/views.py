@@ -7,6 +7,8 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
+from users.permissions import HasModulePermission, module_permission_required
+
 from .models import (
     ProductCategory,
     StockInventory,
@@ -31,7 +33,8 @@ class WarehouseViewSet(viewsets.ModelViewSet):
 
     queryset = Warehouse.objects.all()
     serializer_class = WarehouseSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'inventory'
     search_fields = ['name', 'code']
     filterset_fields = ['is_active', 'is_default']
 
@@ -43,7 +46,8 @@ class ProductCategoryViewSet(viewsets.ModelViewSet):
         'parent', 'accounting_account'
     ).all()
     serializer_class = ProductCategorySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'inventory'
     search_fields = ['name', 'code']
     filterset_fields = ['parent']
 
@@ -55,7 +59,8 @@ class StockMoveViewSet(viewsets.ModelViewSet):
         'product', 'warehouse', 'created_by'
     ).all()
     serializer_class = StockMoveSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'inventory'
     search_fields = ['product__name', 'product__reference', 'reference']
     filterset_fields = ['move_type', 'warehouse', 'product']
 
@@ -68,7 +73,8 @@ class StockLevelViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = StockLevel.objects.select_related('product', 'warehouse').all()
     serializer_class = StockLevelSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'inventory'
     search_fields = ['product__name', 'product__reference']
     filterset_fields = ['warehouse', 'product']
 
@@ -89,7 +95,8 @@ class StockInventoryViewSet(viewsets.ModelViewSet):
 
     queryset = StockInventory.objects.select_related('warehouse', 'validated_by').all()
     serializer_class = StockInventorySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'inventory'
     search_fields = ['reference']
     filterset_fields = ['state', 'warehouse']
 
@@ -155,12 +162,14 @@ class StockInventoryLineViewSet(viewsets.ModelViewSet):
 
     queryset = StockInventoryLine.objects.select_related('product', 'inventory').all()
     serializer_class = StockInventoryLineSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'inventory'
     filterset_fields = ['inventory']
 
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('inventory')
 def dashboard_view(request):
     """KPIs du module stock."""
     from sales.models import Product

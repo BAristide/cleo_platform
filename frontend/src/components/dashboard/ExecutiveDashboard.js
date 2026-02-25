@@ -7,6 +7,7 @@ import {
 import axios from '../../utils/axiosConfig';
 import { useCurrency } from '../../context/CurrencyContext';
 import UserMenu from '../common/UserMenu';
+import { useModuleAccess } from '../common/PermissionRoute';
 import RevenueChart from './RevenueChart';
 import TopProductsChart from './TopProductsChart';
 import TopClientsChart from './TopClientsChart';
@@ -28,6 +29,7 @@ const ExecutiveDashboard = () => {
   const [recentActivity, setRecentActivity] = useState([]);
   const [moduleStats, setModuleStats] = useState({});
   const { currencyCode } = useCurrency();
+  const { hasAccess } = useModuleAccess();
 
   useEffect(() => {
     fetchData();
@@ -97,21 +99,21 @@ const ExecutiveDashboard = () => {
   ];
 
   const modules = [
-    { title: 'CRM', icon: 'team', description: 'Contacts, opportunités, pipeline', path: '/crm', colorClass: 'module-crm', color: '#3b82f6',
+    { title: 'CRM', module: 'crm', icon: 'team', description: 'Contacts, opportunités, pipeline', path: '/crm', colorClass: 'module-crm', color: '#3b82f6',
       stats: { count: moduleStats.crm?.contacts || 0, recent: moduleStats.crm?.opportunities || 0 } },
-    { title: 'Ventes', icon: 'shopping-cart', description: 'Devis, commandes, factures', path: '/sales', colorClass: 'module-sales', color: '#10b981',
+    { title: 'Ventes', module: 'sales', icon: 'shopping-cart', description: 'Devis, commandes, factures', path: '/sales', colorClass: 'module-sales', color: '#10b981',
       stats: { count: moduleStats.sales?.quotes || 0, recent: 0 } },
-    { title: 'Stocks', icon: 'inbox', description: 'Entrepôts, mouvements, niveaux', path: '/inventory', colorClass: 'module-inventory', color: '#14b8a6',
+    { title: 'Stocks', module: 'inventory', icon: 'inbox', description: 'Entrepôts, mouvements, niveaux', path: '/inventory', colorClass: 'module-inventory', color: '#14b8a6',
       stats: { count: moduleStats.inventory?.total_products || 0, recent: moduleStats.inventory?.alerts_count || 0 } },
-    { title: 'Achats', icon: 'shopping', description: 'Fournisseurs, commandes, réceptions', path: '/purchasing', colorClass: 'module-purchasing', color: '#f97316',
+    { title: 'Achats', module: 'purchasing', icon: 'shopping', description: 'Fournisseurs, commandes, réceptions', path: '/purchasing', colorClass: 'module-purchasing', color: '#f97316',
       stats: { count: moduleStats.purchasing?.suppliers_count || 0, recent: moduleStats.purchasing?.pending_orders || 0 } },
-    { title: 'RH', icon: 'user', description: 'Employés, départements, missions', path: '/hr', colorClass: 'module-hr', color: '#f59e0b',
+    { title: 'RH', module: 'hr', icon: 'user', description: 'Employés, départements, missions', path: '/hr', colorClass: 'module-hr', color: '#f59e0b',
       stats: { count: moduleStats.hr?.general?.total_employees || 0, recent: moduleStats.hr?.missions?.upcoming?.length || 0 } },
-    { title: 'Comptabilité', icon: 'bank', description: 'Plan comptable, journaux, écritures', path: '/accounting', colorClass: 'module-accounting', color: '#6366f1',
+    { title: 'Comptabilité', module: 'accounting', icon: 'bank', description: 'Plan comptable, journaux, écritures', path: '/accounting', colorClass: 'module-accounting', color: '#6366f1',
       stats: { count: moduleStats.accounting?.total || 0, recent: 0 } },
-    { title: 'Paie', icon: 'dollar', description: 'Bulletins de paie, acomptes, composants', path: '/payroll', colorClass: 'module-payroll', color: '#8b5cf6',
+    { title: 'Paie', module: 'payroll', icon: 'dollar', description: 'Bulletins de paie, acomptes, composants', path: '/payroll', colorClass: 'module-payroll', color: '#8b5cf6',
       stats: { count: moduleStats.payroll?.totals?.employees || 0, recent: moduleStats.payroll?.totals?.payslips || 0 } },
-    { title: 'Recrutement', icon: 'solution', description: 'Offres, candidatures, évaluations', path: '/recruitment', colorClass: 'module-recruitment', color: '#ec4899',
+    { title: 'Recrutement', module: 'recruitment', icon: 'solution', description: 'Offres, candidatures, évaluations', path: '/recruitment', colorClass: 'module-recruitment', color: '#ec4899',
       stats: { count: moduleStats.recruitment?.total || 0, recent: 0 } },
   ];
 
@@ -170,7 +172,7 @@ const ExecutiveDashboard = () => {
           Modules
         </div>
         <div className="modules-grid">
-          {modules.map((mod, i) => <ModuleCard key={i} {...mod} />)}
+          {modules.filter((mod) => hasAccess(mod.module)).map((mod, i) => <ModuleCard key={i} {...mod} />)}
         </div>
 
         {/* Bottom Row */}

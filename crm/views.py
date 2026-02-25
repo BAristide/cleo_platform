@@ -6,6 +6,8 @@ from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from users.permissions import HasModulePermission
+
 from .filters import ActivityFilter, CompanyFilter, ContactFilter, OpportunityFilter
 from .models import (
     Activity,
@@ -64,7 +66,8 @@ def dashboard_view(request):
 class TagViewSet(viewsets.ModelViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'crm'
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
     ordering_fields = ['name']
@@ -74,7 +77,8 @@ class TagViewSet(viewsets.ModelViewSet):
 class IndustryViewSet(viewsets.ModelViewSet):
     queryset = Industry.objects.all()
     serializer_class = IndustrySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'crm'
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
     ordering_fields = ['name']
@@ -83,7 +87,8 @@ class IndustryViewSet(viewsets.ModelViewSet):
 
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'crm'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -140,7 +145,8 @@ class CompanyViewSet(viewsets.ModelViewSet):
 
 class ContactViewSet(viewsets.ModelViewSet):
     queryset = Contact.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'crm'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -191,7 +197,8 @@ class ContactViewSet(viewsets.ModelViewSet):
 class SalesStageViewSet(viewsets.ModelViewSet):
     queryset = SalesStage.objects.all()
     serializer_class = SalesStageSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'crm'
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['order', 'name']
     ordering = ['order']
@@ -200,7 +207,8 @@ class SalesStageViewSet(viewsets.ModelViewSet):
 class ActivityTypeViewSet(viewsets.ModelViewSet):
     queryset = ActivityType.objects.all()
     serializer_class = ActivityTypeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'crm'
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['name']
     ordering_fields = ['name']
@@ -209,7 +217,8 @@ class ActivityTypeViewSet(viewsets.ModelViewSet):
 
 class OpportunityViewSet(viewsets.ModelViewSet):
     queryset = Opportunity.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'crm'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -334,7 +343,8 @@ class OpportunityViewSet(viewsets.ModelViewSet):
 
 class ActivityViewSet(viewsets.ModelViewSet):
     queryset = Activity.objects.all()
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'crm'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -433,7 +443,8 @@ class ActivityViewSet(viewsets.ModelViewSet):
 class StageHistoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = StageHistory.objects.all()
     serializer_class = StageHistorySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'crm'
     filter_backends = [filters.OrderingFilter, DjangoFilterBackend]
     filterset_fields = ['opportunity', 'to_stage', 'from_stage']
     ordering_fields = ['changed_at']
@@ -441,7 +452,8 @@ class StageHistoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class DashboardViewSet(viewsets.ViewSet):
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'crm'
 
     def list(self, request):
         """Return dashboard statistics and recent items."""

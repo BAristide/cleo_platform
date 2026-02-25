@@ -10,6 +10,8 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
+from users.permissions import HasModulePermission, module_permission_required
+
 from .models import (
     Account,
     AccountType,
@@ -59,7 +61,8 @@ class AccountTypeViewSet(viewsets.ModelViewSet):
 
     queryset = AccountType.objects.all()
     serializer_class = AccountTypeSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -75,7 +78,8 @@ class AccountViewSet(viewsets.ModelViewSet):
 
     queryset = Account.objects.all()
     serializer_class = AccountSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -127,7 +131,8 @@ class JournalViewSet(viewsets.ModelViewSet):
 
     queryset = Journal.objects.all()
     serializer_class = JournalSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -167,7 +172,8 @@ class JournalEntryViewSet(viewsets.ModelViewSet):
 
     queryset = JournalEntry.objects.all()
     serializer_class = JournalEntrySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -301,7 +307,8 @@ class FiscalYearViewSet(viewsets.ModelViewSet):
 
     queryset = FiscalYear.objects.all()
     serializer_class = FiscalYearSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -384,7 +391,8 @@ class FiscalPeriodViewSet(viewsets.ModelViewSet):
 
     queryset = FiscalPeriod.objects.all()
     serializer_class = FiscalPeriodSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -440,7 +448,8 @@ class ReconciliationViewSet(viewsets.ModelViewSet):
 
     queryset = Reconciliation.objects.all()
     serializer_class = ReconciliationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -560,7 +569,8 @@ class BankStatementViewSet(viewsets.ModelViewSet):
 
     queryset = BankStatement.objects.all()
     serializer_class = BankStatementSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -913,7 +923,8 @@ class AnalyticAccountViewSet(viewsets.ModelViewSet):
 
     queryset = AnalyticAccount.objects.all()
     serializer_class = AnalyticAccountSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -930,7 +941,8 @@ class TaxViewSet(viewsets.ModelViewSet):
 
     queryset = Tax.objects.all()
     serializer_class = TaxSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -947,7 +959,8 @@ class AssetCategoryViewSet(viewsets.ModelViewSet):
 
     queryset = AssetCategory.objects.all()
     serializer_class = AssetCategorySerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -964,7 +977,8 @@ class AssetViewSet(viewsets.ModelViewSet):
 
     queryset = Asset.objects.all()
     serializer_class = AssetSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -1112,7 +1126,8 @@ class AssetDepreciationViewSet(viewsets.ModelViewSet):
 
     queryset = AssetDepreciation.objects.all().order_by('date')
     serializer_class = AssetDepreciationSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'accounting'
     filterset_fields = ['asset_id', 'state']
     search_fields = ['name']
 
@@ -1133,6 +1148,7 @@ class AssetDepreciationViewSet(viewsets.ModelViewSet):
 # Vues pour le Dashboard et les rapports
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def dashboard_view(request):
     """Vue du tableau de bord comptable avec les indicateurs clés."""
     # Période par défaut: l'année en cours
@@ -1253,6 +1269,7 @@ def dashboard_view(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def general_ledger(request):
     """Vue du grand livre comptable."""
     account_id = request.query_params.get('account_id')
@@ -1282,6 +1299,7 @@ def general_ledger(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def general_ledger_export(request):
     """Exportation du grand livre comptable."""
     account_id = request.query_params.get('account_id')
@@ -1342,6 +1360,7 @@ def general_ledger_export(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def trial_balance(request):
     """Vue de la balance des comptes."""
     # Date par défaut: aujourd'hui
@@ -1364,6 +1383,7 @@ def trial_balance(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def trial_balance_export(request):
     """Exportation de la balance des comptes."""
     # Date par défaut: aujourd'hui
@@ -1417,6 +1437,7 @@ def trial_balance_export(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def balance_sheet(request):
     """Vue du bilan comptable."""
     # Date par défaut: aujourd'hui
@@ -1434,6 +1455,7 @@ def balance_sheet(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def income_statement(request):
     """Vue du compte de résultat."""
     # Dates par défaut: l'année en cours
@@ -1459,6 +1481,7 @@ def income_statement(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def financial_statements_export(request):
     """Exportation des états financiers."""
     # Type d'état financier
@@ -1533,6 +1556,7 @@ def financial_statements_export(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def vat_declaration(request):
     """Vue de la déclaration de TVA."""
     # Période fiscale
@@ -1554,6 +1578,7 @@ def vat_declaration(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def vat_declaration_export(request):
     """Exportation de la déclaration de TVA."""
     # Période fiscale
@@ -1606,6 +1631,7 @@ def vat_declaration_export(request):
 
 @api_view(['POST'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def import_journal_entries(request):
     """Import d'écritures comptables."""
     # Récupérer le fichier
@@ -1634,6 +1660,7 @@ def import_journal_entries(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def esg_report(request):
     """État des Soldes de Gestion (ESG) — spécifique Maroc."""
     today = timezone.now().date()
@@ -1812,6 +1839,7 @@ def esg_report(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def asset_schedule(request):
     """Tableau des immobilisations et amortissements."""
     today = timezone.now().date()
@@ -1899,6 +1927,7 @@ def asset_schedule(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def journal_officiel(request):
     """Journal centralisé officiel (toutes écritures validées)."""
     today = timezone.now().date()
@@ -1962,6 +1991,7 @@ def journal_officiel(request):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('accounting')
 def cash_forecast(request):
     """
     Prévision de trésorerie sur 12 semaines.

@@ -7,6 +7,8 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
+from users.permissions import HasModulePermission, module_permission_required
+
 from .models import (
     PurchaseOrder,
     PurchaseOrderItem,
@@ -35,7 +37,8 @@ from .serializers import (
 class SupplierViewSet(viewsets.ModelViewSet):
     queryset = Supplier.objects.select_related('currency', 'company').all()
     serializer_class = SupplierSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'purchasing'
     search_fields = ['name', 'code', 'email', 'contact_name']
     filterset_fields = ['is_active', 'currency']
 
@@ -45,7 +48,8 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         'supplier', 'currency', 'created_by'
     ).all()
     serializer_class = PurchaseOrderSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'purchasing'
     search_fields = ['number', 'supplier__name']
     filterset_fields = ['state', 'supplier']
 
@@ -95,7 +99,8 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
 class PurchaseOrderItemViewSet(viewsets.ModelViewSet):
     queryset = PurchaseOrderItem.objects.select_related('product', 'order').all()
     serializer_class = PurchaseOrderItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'purchasing'
     filterset_fields = ['order']
 
     def perform_create(self, serializer):
@@ -124,7 +129,8 @@ class ReceptionViewSet(viewsets.ModelViewSet):
         'created_by',
     ).all()
     serializer_class = ReceptionSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'purchasing'
     search_fields = ['number']
     filterset_fields = ['state', 'warehouse', 'purchase_order']
 
@@ -210,7 +216,8 @@ class ReceptionViewSet(viewsets.ModelViewSet):
 class ReceptionItemViewSet(viewsets.ModelViewSet):
     queryset = ReceptionItem.objects.select_related('product', 'reception').all()
     serializer_class = ReceptionItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'purchasing'
     filterset_fields = ['reception']
 
 
@@ -219,7 +226,8 @@ class SupplierInvoiceViewSet(viewsets.ModelViewSet):
         'supplier', 'currency', 'purchase_order', 'created_by'
     ).all()
     serializer_class = SupplierInvoiceSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'purchasing'
     search_fields = ['number', 'supplier__name', 'supplier_reference']
     filterset_fields = ['state', 'supplier']
 
@@ -275,7 +283,8 @@ class SupplierInvoiceViewSet(viewsets.ModelViewSet):
 class SupplierInvoiceItemViewSet(viewsets.ModelViewSet):
     queryset = SupplierInvoiceItem.objects.select_related('product', 'invoice').all()
     serializer_class = SupplierInvoiceItemSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'purchasing'
     filterset_fields = ['invoice']
 
     def perform_create(self, serializer):
@@ -304,7 +313,8 @@ class SupplierPaymentViewSet(viewsets.ModelViewSet):
         'invoice', 'invoice__supplier', 'created_by'
     ).all()
     serializer_class = SupplierPaymentSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'purchasing'
     search_fields = ['invoice__number', 'reference']
     filterset_fields = ['invoice', 'method']
 
@@ -314,6 +324,7 @@ class SupplierPaymentViewSet(viewsets.ModelViewSet):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+@module_permission_required('purchasing')
 def dashboard_view(request):
     """KPIs du module achats."""
     # Fournisseurs actifs

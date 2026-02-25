@@ -15,6 +15,7 @@ import SetupWizard from './components/setup/SetupWizard';
 import { AuthProvider } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import PrivateRoute from './components/PrivateRoute';
+import PermissionRoute from './components/common/PermissionRoute';
 import ProfilePage from './components/profile/ProfilePage';
 import ChangePassword from './components/profile/ChangePassword';
 import UserRoutes from './components/users/UserRoutes';
@@ -31,7 +32,6 @@ function App() {
         const res = await axios.get('/api/core/setup/status/');
         setSetupStatus(res.data);
       } catch (err) {
-        // Si l'API échoue, on suppose que le setup est fait (mode dégradé)
         setSetupStatus({ setup_completed: true });
       } finally {
         setCheckingSetup(false);
@@ -48,7 +48,6 @@ function App() {
     );
   }
 
-  // Si le setup n'est pas fait, afficher le wizard
   if (!setupStatus?.setup_completed) {
     return (
       <AuthProvider>
@@ -68,7 +67,6 @@ function App() {
     );
   }
 
-  // Setup fait : application normale
   return (
     <AuthProvider>
       <CurrencyProvider>
@@ -98,42 +96,58 @@ function App() {
             } />
             <Route path="/crm/*" element={
               <PrivateRoute>
-                <CRMRoutes />
+                <PermissionRoute module="crm">
+                  <CRMRoutes />
+                </PermissionRoute>
               </PrivateRoute>
             } />
             <Route path="/sales/*" element={
               <PrivateRoute>
-                <SalesRoutes />
+                <PermissionRoute module="sales">
+                  <SalesRoutes />
+                </PermissionRoute>
               </PrivateRoute>
             } />
             <Route path="/hr/*" element={
               <PrivateRoute>
-                <HRRoutes />
+                <PermissionRoute module="hr">
+                  <HRRoutes />
+                </PermissionRoute>
               </PrivateRoute>
             } />
             <Route path="/payroll/*" element={
               <PrivateRoute>
-                <PayrollRoutes />
+                <PermissionRoute module="payroll">
+                  <PayrollRoutes />
+                </PermissionRoute>
               </PrivateRoute>
             } />
             <Route path="/accounting/*" element={
               <PrivateRoute>
-                <AccountingRoutes />
+                <PermissionRoute module="accounting">
+                  <AccountingRoutes />
+                </PermissionRoute>
               </PrivateRoute>
             } />
             <Route path="/recruitment/*" element={
               <PrivateRoute>
-                <RecruitmentRoutes />
+                <PermissionRoute module="recruitment">
+                  <RecruitmentRoutes />
+                </PermissionRoute>
               </PrivateRoute>
             } />
             <Route path="/purchasing/*" element={
               <PrivateRoute>
-                <PurchasingRoutes />
+                <PermissionRoute module="purchasing">
+                  <PurchasingRoutes />
+                </PermissionRoute>
               </PrivateRoute>
             } />
             <Route path="/inventory/*" element={
               <PrivateRoute>
-                <InventoryRoutes />
+                <PermissionRoute module="inventory">
+                  <InventoryRoutes />
+                </PermissionRoute>
               </PrivateRoute>
             } />
             <Route path="/setup" element={<Navigate to="/" replace />} />

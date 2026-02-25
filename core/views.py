@@ -9,6 +9,8 @@ from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from users.permissions import HasModulePermission
+
 from .models import Company, CompanySetup, CoreSettings, Currency
 from .serializers import (
     CompanyInfoSerializer,
@@ -59,7 +61,8 @@ AVAILABLE_PACKS = {
 class CurrencyViewSet(viewsets.ModelViewSet):
     queryset = Currency.objects.all()
     serializer_class = CurrencySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasModulePermission]
+    module_name = 'core'
 
     def update(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -111,13 +114,15 @@ class CurrencyViewSet(viewsets.ModelViewSet):
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
     serializer_class = CompanySerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasModulePermission]
+    module_name = 'core'
 
 
 class CoreSettingsViewSet(viewsets.ModelViewSet):
     queryset = CoreSettings.objects.all()
     serializer_class = CoreSettingsSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, HasModulePermission]
+    module_name = 'core'
 
     @action(detail=False, methods=['get'])
     def current(self, request):

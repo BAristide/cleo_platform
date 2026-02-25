@@ -49,9 +49,9 @@ const ExecutiveDashboard = () => {
 
     // Fetch module stats indépendamment
     try {
-      const [crm, sales, hr, inv, purch, acct, payroll, recruit] = await Promise.all([
+      const [crm, quotes, hr, inv, purch, acct, payroll, recruit] = await Promise.all([
         axios.get('/api/crm/dashboard/').catch(() => ({ data: {} })),
-        axios.get('/api/sales/invoices/').catch(() => ({ data: { results: [] } })),
+        axios.get('/api/sales/quotes/').catch(() => ({ data: { results: [] } })),
         axios.get('/api/hr/dashboard/').catch(() => ({ data: {} })),
         axios.get('/api/inventory/dashboard/').catch(() => ({ data: {} })),
         axios.get('/api/purchasing/dashboard/').catch(() => ({ data: {} })),
@@ -62,7 +62,7 @@ const ExecutiveDashboard = () => {
       const acctList = acct.data?.results || (Array.isArray(acct.data) ? acct.data : []);
       const recruitList = recruit.data?.results || (Array.isArray(recruit.data) ? recruit.data : []);
       setModuleStats({
-        crm: crm.data, sales: sales.data, hr: hr.data, inventory: inv.data, purchasing: purch.data,
+        crm: crm.data, sales: { quotes: (quotes.data?.results || []).length }, hr: hr.data, inventory: inv.data, purchasing: purch.data,
         accounting: { total: acctList.length },
         payroll: payroll.data,
         recruitment: { total: recruitList.length },
@@ -100,7 +100,7 @@ const ExecutiveDashboard = () => {
     { title: 'CRM', icon: 'team', description: 'Contacts, opportunités, pipeline', path: '/crm', colorClass: 'module-crm', color: '#3b82f6',
       stats: { count: moduleStats.crm?.contacts || 0, recent: moduleStats.crm?.opportunities || 0 } },
     { title: 'Ventes', icon: 'shopping-cart', description: 'Devis, commandes, factures', path: '/sales', colorClass: 'module-sales', color: '#10b981',
-      stats: { count: (moduleStats.sales?.results || []).length || 0, recent: 0 } },
+      stats: { count: moduleStats.sales?.quotes || 0, recent: 0 } },
     { title: 'Stocks', icon: 'inbox', description: 'Entrepôts, mouvements, niveaux', path: '/inventory', colorClass: 'module-inventory', color: '#14b8a6',
       stats: { count: moduleStats.inventory?.total_products || 0, recent: moduleStats.inventory?.alerts_count || 0 } },
     { title: 'Achats', icon: 'shopping', description: 'Fournisseurs, commandes, réceptions', path: '/purchasing', colorClass: 'module-purchasing', color: '#f97316',

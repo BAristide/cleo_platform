@@ -10,6 +10,7 @@ import PayrollRoutes from './components/payroll/Routes';
 import AccountingRoutes from './components/accounting/Routes';
 import RecruitmentRoutes from './components/recruitment/Routes';
 import InventoryRoutes from './components/inventory/Routes';
+import PurchasingRoutes from './components/purchasing/Routes';
 import SetupWizard from './components/setup/SetupWizard';
 import { AuthProvider } from './context/AuthContext';
 import { CurrencyProvider } from './context/CurrencyContext';

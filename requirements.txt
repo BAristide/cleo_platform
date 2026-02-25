@@ -34,3 +34,5 @@ urllib3==2.4.0
 weasyprint==65.1
 webencodings==0.5.1
 zopfli==0.2.3.post1
+openpyxl>=3.1.0
+xlsxwriter>=3.1.0

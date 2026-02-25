@@ -7,6 +7,7 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
+from inventory.services.credit_note_stock import process_supplier_credit_note_returns
 from users.permissions import HasModulePermission, module_permission_required
 
 from .models import (
@@ -278,6 +279,220 @@ class SupplierInvoiceViewSet(viewsets.ModelViewSet):
         invoice.state = 'cancelled'
         invoice.save(update_fields=['state'])
         return Response({'detail': _('Facture fournisseur annulée.')})
+
+    @action(detail=True, methods=['post'])
+    def create_credit_note(self, request, pk=None):
+        """
+        Créer un avoir pour une facture fournisseur.
+
+        Supporte 2 modes :
+        - Mode proportionnel : {amount, reason, return_to_stock}
+        - Mode par lignes : {items: [{supplier_invoice_item_id, quantity, return_to_stock}], reason}
+        """
+        invoice = self.get_object()
+
+        if invoice.type == 'credit_note':
+            return Response(
+                {'detail': _('Impossible de créer un avoir sur un avoir.')},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if invoice.state not in ('validated', 'paid'):
+            return Response(
+                {
+                    'detail': _(
+                        'La facture doit être validée ou payée pour créer un avoir.'
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            items_data = request.data.get('items', None)
+            reason = request.data.get('reason', 'Avoir fournisseur')
+            global_return_to_stock = request.data.get('return_to_stock', False)
+
+            if items_data:
+                credit_note = self._create_supplier_cn_by_items(
+                    invoice, items_data, reason, request.user
+                )
+            else:
+                credit_note = self._create_supplier_cn_proportional(
+                    invoice, request.data, reason, global_return_to_stock, request.user
+                )
+
+            serializer = self.get_serializer(credit_note)
+            return Response(
+                {
+                    'success': True,
+                    'detail': _('Avoir fournisseur créé avec succès.'),
+                    'credit_note': serializer.data,
+                }
+            )
+        except ValueError as e:
+            return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    def _create_supplier_cn_proportional(
+        self, invoice, data, reason, return_to_stock, user
+    ):
+        """Avoir fournisseur proportionnel."""
+        if 'amount' in data:
+            credit_amount = Decimal(str(data.get('amount')))
+            if credit_amount <= 0 or credit_amount > abs(invoice.total):
+                raise ValueError(
+                    'Le montant doit être positif et ne pas dépasser le total de la facture'
+                )
+            proportion = credit_amount / abs(invoice.total)
+        else:
+            credit_amount = abs(invoice.total)
+            proportion = Decimal('1.0')
+
+        credit_note = SupplierInvoice.objects.create(
+            type='credit_note',
+            supplier=invoice.supplier,
+            purchase_order=invoice.purchase_order,
+            date=timezone.now().date(),
+            currency=invoice.currency,
+            subtotal=-abs(invoice.subtotal * proportion),
+            tax_amount=-abs(invoice.tax_amount * proportion),
+            total=-abs(credit_amount),
+            amount_paid=0,
+            amount_due=-abs(credit_amount),
+            parent_invoice=invoice,
+            credit_note_reason=reason,
+            notes=f'Avoir pour la facture fournisseur {invoice.number}',
+            created_by=user,
+        )
+
+        return_items = []
+        for item in invoice.items.all():
+            SupplierInvoiceItem.objects.create(
+                invoice=credit_note,
+                product=item.product,
+                description=f'Avoir: {item.description or item.product.name}',
+                quantity=item.quantity * proportion,
+                unit_price=-abs(item.unit_price),
+                tax_rate=item.tax_rate,
+            )
+            if return_to_stock and item.product:
+                return_items.append(
+                    {
+                        'product': item.product,
+                        'quantity': item.quantity * proportion,
+                        'unit_cost': abs(item.unit_price),
+                        'supplier_invoice_item_id': item.pk,
+                    }
+                )
+
+        if return_to_stock and return_items:
+            process_supplier_credit_note_returns(credit_note, return_items, user=user)
+
+        # Mettre à jour la facture d'origine si avoir total
+        if proportion >= Decimal('0.99'):
+            invoice.amount_due = Decimal('0')
+            invoice.save(update_fields=['amount_due'])
+
+        return credit_note
+
+    def _create_supplier_cn_by_items(self, invoice, items_data, reason, user):
+        """Avoir fournisseur par sélection de lignes."""
+        invoice_items = {item.pk: item for item in invoice.items.all()}
+        validated_items = []
+
+        for item_req in items_data:
+            item_id = item_req.get('supplier_invoice_item_id')
+            qty = Decimal(str(item_req.get('quantity', 0)))
+            rts = item_req.get('return_to_stock', False)
+
+            if item_id not in invoice_items:
+                raise ValueError(
+                    f'Ligne {item_id} introuvable dans la facture {invoice.number}'
+                )
+
+            original_item = invoice_items[item_id]
+            if qty <= 0 or qty > original_item.quantity:
+                raise ValueError(
+                    f'Quantité invalide {qty} pour la ligne {item_id} (max: {original_item.quantity})'
+                )
+
+            validated_items.append(
+                {
+                    'original_item': original_item,
+                    'quantity': qty,
+                    'return_to_stock': rts,
+                }
+            )
+
+        if not validated_items:
+            raise ValueError('Aucune ligne valide fournie')
+
+        credit_subtotal = Decimal('0')
+        credit_tax = Decimal('0')
+        for vi in validated_items:
+            item = vi['original_item']
+            line_subtotal = vi['quantity'] * abs(item.unit_price)
+            line_tax = line_subtotal * item.tax_rate / 100
+            credit_subtotal += line_subtotal
+            credit_tax += line_tax
+
+        credit_total = credit_subtotal + credit_tax
+
+        credit_note = SupplierInvoice.objects.create(
+            type='credit_note',
+            supplier=invoice.supplier,
+            purchase_order=invoice.purchase_order,
+            date=timezone.now().date(),
+            currency=invoice.currency,
+            subtotal=-abs(credit_subtotal),
+            tax_amount=-abs(credit_tax),
+            total=-abs(credit_total),
+            amount_paid=0,
+            amount_due=-abs(credit_total),
+            parent_invoice=invoice,
+            credit_note_reason=reason,
+            notes=f'Avoir par lignes pour la facture fournisseur {invoice.number}',
+            created_by=user,
+        )
+
+        return_items = []
+        for vi in validated_items:
+            item = vi['original_item']
+            SupplierInvoiceItem.objects.create(
+                invoice=credit_note,
+                product=item.product,
+                description=f'Avoir: {item.description or item.product.name}',
+                quantity=vi['quantity'],
+                unit_price=-abs(item.unit_price),
+                tax_rate=item.tax_rate,
+            )
+            if vi['return_to_stock'] and item.product:
+                return_items.append(
+                    {
+                        'product': item.product,
+                        'quantity': vi['quantity'],
+                        'unit_cost': abs(item.unit_price),
+                        'supplier_invoice_item_id': item.pk,
+                    }
+                )
+
+        if return_items:
+            process_supplier_credit_note_returns(credit_note, return_items, user=user)
+
+        return credit_note
+
+    @action(detail=True, methods=['get'])
+    def credit_notes(self, request, pk=None):
+        """Lister les avoirs associés à une facture fournisseur."""
+        invoice = self.get_object()
+        credit_notes = SupplierInvoice.objects.filter(
+            parent_invoice=invoice, type='credit_note'
+        ).order_by('-date')
+        serializer = SupplierInvoiceSerializer(credit_notes, many=True)
+        return Response(serializer.data)
 
 
 class SupplierInvoiceItemViewSet(viewsets.ModelViewSet):

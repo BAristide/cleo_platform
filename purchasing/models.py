@@ -270,7 +270,15 @@ class SupplierInvoice(models.Model):
         ('cancelled', _('Annulée')),
     ]
 
+    INVOICE_TYPES = [
+        ('standard', _('Standard')),
+        ('credit_note', _('Avoir fournisseur')),
+    ]
+
     number = models.CharField(_('Numéro'), max_length=50, unique=True)
+    type = models.CharField(
+        _('Type'), max_length=20, choices=INVOICE_TYPES, default='standard'
+    )
     supplier = models.ForeignKey(
         Supplier,
         on_delete=models.PROTECT,
@@ -323,6 +331,15 @@ class SupplierInvoice(models.Model):
         verbose_name=_('Écriture comptable'),
     )
     notes = models.TextField(_('Notes'), blank=True)
+    parent_invoice = models.ForeignKey(
+        'self',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name='credit_notes',
+        verbose_name=_("Facture d'origine"),
+    )
+    credit_note_reason = models.TextField(_("Motif de l'avoir"), blank=True, default='')
     created_by = models.ForeignKey(
         'auth.User',
         on_delete=models.SET_NULL,

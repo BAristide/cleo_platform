@@ -13,6 +13,7 @@ import ProductList from './ProductList';
 import ProductDetail from './ProductDetail';
 import BankAccountList from './BankAccountList';
 import PaymentList from './PaymentList';
+import CreditNoteList from './CreditNoteList';
 import { QuoteForm, OrderForm, InvoiceForm } from './forms';
 
 const SalesRoutes = () => {
@@ -39,6 +40,9 @@ const SalesRoutes = () => {
         <Route path="/invoices/new" element={<InvoiceForm />} />
         <Route path="/invoices/:id" element={<InvoiceDetail />} />
         <Route path="/invoices/:id/edit" element={<InvoiceForm />} />
+
+        {/* Credit Notes (Avoirs) */}
+        <Route path="/credit-notes" element={<CreditNoteList />} />
 
         {/* Products (Produits) */}
         <Route path="/products" element={<ProductList />} />

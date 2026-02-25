@@ -116,7 +116,9 @@ class SupplierInvoiceSerializer(serializers.ModelSerializer):
     supplier_name = serializers.CharField(source='supplier.name', read_only=True)
     currency_code = serializers.CharField(source='currency.code', read_only=True)
     state_display = serializers.CharField(source='get_state_display', read_only=True)
+    type_display = serializers.CharField(source='get_type_display', read_only=True)
     items_count = serializers.IntegerField(source='items.count', read_only=True)
+    parent_invoice_number = serializers.SerializerMethodField()
 
     class Meta:
         model = SupplierInvoice
@@ -131,9 +133,40 @@ class SupplierInvoiceSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
 
+    def get_parent_invoice_number(self, obj):
+        return obj.parent_invoice.number if obj.parent_invoice else None
+
 
 class SupplierInvoiceDetailSerializer(SupplierInvoiceSerializer):
     items = SupplierInvoiceItemSerializer(many=True, read_only=True)
+    parent_invoice_details = serializers.SerializerMethodField()
+    credit_notes_list = serializers.SerializerMethodField()
+
+    def get_parent_invoice_details(self, obj):
+        if obj.parent_invoice:
+            return {
+                'id': obj.parent_invoice.id,
+                'number': obj.parent_invoice.number,
+                'total': str(obj.parent_invoice.total),
+            }
+        return None
+
+    def get_credit_notes_list(self, obj):
+        """Liste des avoirs enfants de cette facture."""
+        if obj.type == 'credit_note':
+            return []
+        credit_notes = obj.credit_notes.all().order_by('-date')
+        return [
+            {
+                'id': cn.id,
+                'number': cn.number,
+                'total': str(cn.total),
+                'date': str(cn.date),
+                'state': cn.state,
+                'reason': cn.credit_note_reason,
+            }
+            for cn in credit_notes
+        ]
 
 
 class SupplierPaymentSerializer(serializers.ModelSerializer):

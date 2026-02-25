@@ -54,6 +54,7 @@ const SalesLayout = ({ children }) => {
           payments: 'Paiements',
           products: 'Produits',
           'bank-accounts': 'Comptes bancaires',
+          'credit-notes': 'Avoirs',
         };
 
         result.push(
@@ -99,6 +100,11 @@ const SalesLayout = ({ children }) => {
       key: 'invoices',
       icon: <FileTextOutlined />,
       label: <Link to="/sales/invoices">Factures</Link>,
+    },
+    {
+      key: 'credit-notes',
+      icon: <FileTextOutlined />,
+      label: <Link to="/sales/credit-notes">Avoirs</Link>,
     },
     {
       key: 'payments',

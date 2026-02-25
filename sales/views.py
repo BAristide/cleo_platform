@@ -923,7 +923,13 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def create_credit_note(self, request, pk=None):
-        """Créer un avoir pour une facture."""
+        """
+        Créer un avoir pour une facture.
+
+        Supporte 2 modes :
+        - Mode proportionnel : {amount, reason, return_to_stock}
+        - Mode par lignes : {items: [{invoice_item_id, quantity, return_to_stock}], reason}
+        """
         invoice = self.get_object()
 
         # Vérifier que ce n'est pas déjà un avoir
@@ -934,70 +940,19 @@ class InvoiceViewSet(viewsets.ModelViewSet):
             )
 
         try:
-            # Déterminer le montant de l'avoir (total par défaut ou montant spécifié)
-            if 'amount' in request.data:
-                credit_amount = Decimal(request.data.get('amount'))
-                if credit_amount <= 0 or credit_amount > invoice.total:
-                    return Response(
-                        {
-                            'error': 'Credit amount must be positive and not exceed the invoice total'
-                        },
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-                proportion = credit_amount / invoice.total
-            else:
-                credit_amount = invoice.total
-                proportion = Decimal('1.0')
-
+            items_data = request.data.get('items', None)
             reason = request.data.get('reason', "Avoir créé via l'API")
+            global_return_to_stock = request.data.get('return_to_stock', False)
 
-            # Créer l'avoir
-            credit_note = Invoice.objects.create(
-                type='credit_note',
-                company=invoice.company,
-                contact=invoice.contact,
-                opportunity=invoice.opportunity,
-                date=timezone.now().date(),
-                currency=invoice.currency,
-                exchange_rate=invoice.exchange_rate,
-                payment_terms=invoice.payment_terms,
-                bank_account=invoice.bank_account,
-                subtotal=-abs(invoice.subtotal * proportion),
-                tax_amount=-abs(invoice.tax_amount * proportion),
-                total=-abs(credit_amount),
-                amount_paid=0,
-                amount_due=-abs(credit_amount),
-                notes=f'Avoir pour la facture {invoice.number}',
-                terms=invoice.terms,
-                parent_invoice=invoice,
-                order=invoice.order,
-                quote=invoice.quote,
-                credit_note_reason=reason,
-                is_tax_exempt=invoice.is_tax_exempt,
-                tax_exemption_reason=invoice.tax_exemption_reason,
-            )
-
-            # Copier les lignes de produits avec des montants ajustés
-            for item in invoice.get_items():
-                InvoiceItem.objects.create(
-                    invoice=credit_note,
-                    product=item.product,
-                    description=f'Avoir: {item.description}',
-                    quantity=item.quantity * proportion,
-                    unit_price=-abs(
-                        item.unit_price
-                    ),  # Montants négatifs pour les avoirs
-                    tax_rate=item.tax_rate,
+            if items_data:
+                # ── Mode par lignes ──
+                credit_note = self._create_credit_note_by_items(
+                    invoice, items_data, reason, request.user
                 )
-
-            # Si l'avoir est total et que la facture est marquée comme payée,
-            # mettre à jour le statut de paiement de la facture d'origine
-            if proportion >= Decimal('0.99') and invoice.payment_status == 'paid':
-                invoice.amount_paid = Decimal('0')
-                invoice.amount_due = invoice.total
-                invoice.payment_status = 'cancelled'
-                invoice.save(
-                    update_fields=['amount_paid', 'amount_due', 'payment_status']
+            else:
+                # ── Mode proportionnel (compatibilité existante) ──
+                credit_note = self._create_credit_note_proportional(
+                    invoice, request.data, reason, global_return_to_stock, request.user
                 )
 
             serializer = InvoiceSerializer(credit_note)
@@ -1008,10 +963,202 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                     'credit_note': serializer.data,
                 }
             )
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response(
                 {'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    def _create_credit_note_proportional(
+        self, invoice, data, reason, return_to_stock, user
+    ):
+        """Crée un avoir proportionnel (montant total ou partiel)."""
+        if 'amount' in data:
+            credit_amount = Decimal(str(data.get('amount')))
+            if credit_amount <= 0 or credit_amount > abs(invoice.total):
+                raise ValueError(
+                    'Credit amount must be positive and not exceed the invoice total'
+                )
+            proportion = credit_amount / abs(invoice.total)
+        else:
+            credit_amount = abs(invoice.total)
+            proportion = Decimal('1.0')
+
+        # Créer l'avoir
+        credit_note = Invoice.objects.create(
+            type='credit_note',
+            company=invoice.company,
+            contact=invoice.contact,
+            opportunity=invoice.opportunity,
+            date=timezone.now().date(),
+            currency=invoice.currency,
+            exchange_rate=invoice.exchange_rate,
+            payment_terms=invoice.payment_terms,
+            bank_account=invoice.bank_account,
+            subtotal=-abs(invoice.subtotal * proportion),
+            tax_amount=-abs(invoice.tax_amount * proportion),
+            total=-abs(credit_amount),
+            amount_paid=0,
+            amount_due=-abs(credit_amount),
+            notes=f'Avoir pour la facture {invoice.number}',
+            terms=invoice.terms,
+            parent_invoice=invoice,
+            order=invoice.order,
+            quote=invoice.quote,
+            credit_note_reason=reason,
+            is_tax_exempt=invoice.is_tax_exempt,
+            tax_exemption_reason=invoice.tax_exemption_reason,
+        )
+
+        # Copier les lignes de produits avec des montants ajustés
+        return_items = []
+        for item in invoice.get_items():
+            InvoiceItem.objects.create(
+                invoice=credit_note,
+                product=item.product,
+                description=f'Avoir: {item.description}',
+                quantity=item.quantity * proportion,
+                unit_price=-abs(item.unit_price),
+                tax_rate=item.tax_rate,
+            )
+            # Collecter pour retour stock
+            if return_to_stock and item.product:
+                return_items.append(
+                    {
+                        'product': item.product,
+                        'quantity': item.quantity * proportion,
+                        'unit_cost': abs(item.unit_price),
+                        'invoice_item_id': item.pk,
+                    }
+                )
+
+        # Retour en stock si demandé
+        if return_to_stock and return_items:
+            from inventory.services.credit_note_stock import process_credit_note_returns
+
+            process_credit_note_returns(credit_note, return_items, user=user)
+
+        # Mettre à jour la facture d'origine si avoir total
+        if proportion >= Decimal('0.99') and invoice.payment_status == 'paid':
+            invoice.amount_paid = Decimal('0')
+            invoice.amount_due = invoice.total
+            invoice.payment_status = 'cancelled'
+            invoice.save(update_fields=['amount_paid', 'amount_due', 'payment_status'])
+
+        return credit_note
+
+    def _create_credit_note_by_items(self, invoice, items_data, reason, user):
+        """Crée un avoir en sélectionnant des lignes spécifiques."""
+        # Valider les lignes
+        invoice_items = {item.pk: item for item in invoice.get_items()}
+        validated_items = []
+
+        for item_req in items_data:
+            item_id = item_req.get('invoice_item_id')
+            qty = Decimal(str(item_req.get('quantity', 0)))
+            rts = item_req.get('return_to_stock', False)
+
+            if item_id not in invoice_items:
+                raise ValueError(
+                    f'Invoice item {item_id} not found in invoice {invoice.number}'
+                )
+
+            original_item = invoice_items[item_id]
+            if qty <= 0 or qty > original_item.quantity:
+                raise ValueError(
+                    f'Invalid quantity {qty} for item {item_id} '
+                    f'(max: {original_item.quantity})'
+                )
+
+            validated_items.append(
+                {
+                    'original_item': original_item,
+                    'quantity': qty,
+                    'return_to_stock': rts,
+                }
+            )
+
+        if not validated_items:
+            raise ValueError('No valid items provided')
+
+        # Calculer les totaux de l'avoir
+        credit_subtotal = Decimal('0')
+        credit_tax = Decimal('0')
+        for vi in validated_items:
+            item = vi['original_item']
+            line_subtotal = vi['quantity'] * abs(item.unit_price)
+            line_tax = line_subtotal * item.tax_rate / 100
+            credit_subtotal += line_subtotal
+            credit_tax += line_tax
+
+        credit_total = credit_subtotal + credit_tax
+
+        # Créer l'avoir
+        credit_note = Invoice.objects.create(
+            type='credit_note',
+            company=invoice.company,
+            contact=invoice.contact,
+            opportunity=invoice.opportunity,
+            date=timezone.now().date(),
+            currency=invoice.currency,
+            exchange_rate=invoice.exchange_rate,
+            payment_terms=invoice.payment_terms,
+            bank_account=invoice.bank_account,
+            subtotal=-abs(credit_subtotal),
+            tax_amount=-abs(credit_tax),
+            total=-abs(credit_total),
+            amount_paid=0,
+            amount_due=-abs(credit_total),
+            notes=f'Avoir par lignes pour la facture {invoice.number}',
+            terms=invoice.terms,
+            parent_invoice=invoice,
+            order=invoice.order,
+            quote=invoice.quote,
+            credit_note_reason=reason,
+            is_tax_exempt=invoice.is_tax_exempt,
+            tax_exemption_reason=invoice.tax_exemption_reason,
+        )
+
+        # Créer les lignes d'avoir et collecter les retours stock
+        return_items = []
+        for vi in validated_items:
+            item = vi['original_item']
+            InvoiceItem.objects.create(
+                invoice=credit_note,
+                product=item.product,
+                description=f'Avoir: {item.description}',
+                quantity=vi['quantity'],
+                unit_price=-abs(item.unit_price),
+                tax_rate=item.tax_rate,
+            )
+            if vi['return_to_stock'] and item.product:
+                return_items.append(
+                    {
+                        'product': item.product,
+                        'quantity': vi['quantity'],
+                        'unit_cost': abs(item.unit_price),
+                        'invoice_item_id': item.pk,
+                    }
+                )
+
+        # Retour en stock
+        if return_items:
+            from inventory.services.credit_note_stock import process_credit_note_returns
+
+            process_credit_note_returns(credit_note, return_items, user=user)
+
+        return credit_note
+
+    @action(detail=True, methods=['get'])
+    def credit_notes(self, request, pk=None):
+        """Lister les avoirs associés à une facture."""
+        invoice = self.get_object()
+        credit_notes = Invoice.objects.filter(
+            parent_invoice=invoice, type='credit_note'
+        ).order_by('-date')
+        serializer = InvoiceSerializer(credit_notes, many=True)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):

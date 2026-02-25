@@ -16,6 +16,7 @@ import {
   Tabs,
   Timeline,
   Modal,
+  Checkbox,
   Form,
   Input,
   Divider,
@@ -71,6 +72,10 @@ const InvoiceDetail = () => {
   const [creditNoteForm] = Form.useForm();
   const [creditAmount, setCreditAmount] = useState(0);
   const [useFullAmount, setUseFullAmount] = useState(true);
+  const [creditNoteMode, setCreditNoteMode] = useState('proportional');
+  const [returnToStock, setReturnToStock] = useState(false);
+  const [selectedCreditItems, setSelectedCreditItems] = useState([]);
+  const [creditNotes, setCreditNotes] = useState([]);
 
   useEffect(() => {
     fetchInvoiceDetails();
@@ -119,6 +124,14 @@ const InvoiceDetail = () => {
 
         // Initialiser le montant de crédit pour l'avoir
         setCreditAmount(invoiceData.total);
+
+        // Charger les avoirs associés
+        try {
+          const cnResponse = await axios.get(`/api/sales/invoices/${id}/credit_notes/`);
+          setCreditNotes(cnResponse.data || []);
+        } catch (err) {
+          console.log('Pas d\'avoirs associés');
+        }
       }
     } catch (error) {
       console.error("Erreur lors de la récupération des détails de la facture:", error);
@@ -248,27 +261,50 @@ const InvoiceDetail = () => {
   const showCreateCreditNoteModal = () => {
     creditNoteForm.resetFields();
     creditNoteForm.setFieldsValue({
-      amount: invoice?.total || 0,
+      amount: Math.abs(invoice?.total || 0),
       reason: "Remboursement"
     });
     setUseFullAmount(true);
-    setCreditAmount(invoice?.total || 0);
+    setCreditAmount(Math.abs(invoice?.total || 0));
+    setCreditNoteMode('proportional');
+    setReturnToStock(false);
+    setSelectedCreditItems([]);
     setCreateCreditNoteModal(true);
   };
 
   const handleCreateCreditNote = async (values) => {
     setLoadingAction(true);
     try {
-      await axios.post(`/api/sales/invoices/${id}/create_credit_note/`, {
-        amount: useFullAmount ? invoice.total : values.amount,
-        reason: values.reason
-      });
+      let payload = { reason: values.reason };
+
+      if (creditNoteMode === 'by_items') {
+        // Mode par lignes
+        if (selectedCreditItems.length === 0) {
+          message.error('Veuillez sélectionner au moins une ligne');
+          setLoadingAction(false);
+          return;
+        }
+        payload.items = selectedCreditItems.map(si => ({
+          invoice_item_id: si.id,
+          quantity: si.creditQty || si.quantity,
+          return_to_stock: si.returnToStock || false,
+        }));
+      } else {
+        // Mode proportionnel
+        payload.amount = useFullAmount ? Math.abs(invoice.total) : values.amount;
+        payload.return_to_stock = returnToStock;
+      }
+
+      await axios.post(`/api/sales/invoices/${id}/create_credit_note/`, payload);
       message.success('Avoir créé avec succès');
       setCreateCreditNoteModal(false);
+      setSelectedCreditItems([]);
+      setReturnToStock(false);
+      setCreditNoteMode('proportional');
       fetchInvoiceDetails();
     } catch (error) {
       console.error("Erreur lors de la création de l'avoir:", error);
-      message.error("Impossible de créer l'avoir");
+      message.error(error.response?.data?.error || "Impossible de créer l'avoir");
     } finally {
       setLoadingAction(false);
     }
@@ -657,10 +693,10 @@ const InvoiceDetail = () => {
                     precision={2}
                     suffix={invoice.currency_code}
                     style={{ marginTop: 16 }}
-                    valueStyle={{ 
-                      color: invoice.amount_due > 0 
-                        ? (invoice.payment_status === 'overdue' ? '#cf1322' : '#1890ff') 
-                        : '#3f8600' 
+                    valueStyle={{
+                      color: invoice.amount_due > 0
+                        ? (invoice.payment_status === 'overdue' ? '#cf1322' : '#1890ff')
+                        : '#3f8600'
                     }}
                   />
                 </Card>
@@ -972,7 +1008,7 @@ const InvoiceDetail = () => {
                     </Descriptions.Item>
                     <Descriptions.Item label="Type">
                       {invoice.parent_invoice_type === 'standard' ? 'Facture standard' :
-                       invoice.parent_invoice_type === 'deposit' ? 'Facture d\'acompte' : 
+                       invoice.parent_invoice_type === 'deposit' ? 'Facture d\'acompte' :
                        invoice.parent_invoice_type}
                     </Descriptions.Item>
                     <Descriptions.Item label="Date">
@@ -995,7 +1031,45 @@ const InvoiceDetail = () => {
         </Tabs>
       </Card>
 
-      {/* Modal pour l'envoi d'email */}
+      {/* Section avoirs associés */}
+      {invoice.type !== 'credit_note' && creditNotes.length > 0 && (
+        <Card title={<><FileTextOutlined /> Avoirs associés ({creditNotes.length})</>} style={{ marginTop: 16 }}>
+          <Table
+            size="small"
+            dataSource={creditNotes}
+            rowKey="id"
+            pagination={false}
+            columns={[
+              {
+                title: 'Numéro', dataIndex: 'number', key: 'number',
+                render: (text, record) => <Link to={'/sales/invoices/' + record.id}>{text}</Link>,
+              },
+              { title: 'Date', dataIndex: 'date', key: 'date',
+                render: d => d ? new Date(d).toLocaleDateString('fr-FR') : '—',
+              },
+              { title: 'Montant', dataIndex: 'total', key: 'total',
+                render: (t) => <span style={{ color: '#e53e3e' }}>{parseFloat(t).toLocaleString('fr-MA', { minimumFractionDigits: 2 })} {invoice.currency_code}</span>,
+              },
+              { title: 'Motif', dataIndex: 'credit_note_reason', key: 'reason', ellipsis: true },
+            ]}
+          />
+        </Card>
+      )}
+
+      {/* Lien vers la facture d'origine si c'est un avoir */}
+      {invoice.type === 'credit_note' && invoice.parent_invoice && (
+        <Card title="Facture d'origine" style={{ marginTop: 16 }}>
+          <p>
+            Cet avoir est lié à la facture{' '}
+            <Link to={'/sales/invoices/' + invoice.parent_invoice}>
+              <strong>{invoice.parent_invoice_number || '#' + invoice.parent_invoice}</strong>
+            </Link>
+          </p>
+          {invoice.credit_note_reason && <p><strong>Motif :</strong> {invoice.credit_note_reason}</p>}
+        </Card>
+      )}
+
+            {/* Modal pour l'envoi d'email */}
       <Modal
         title="Envoyer la facture par email"
         visible={sendEmailModal}
@@ -1062,7 +1136,7 @@ const InvoiceDetail = () => {
             label="Montant"
             rules={[
               { required: true, message: 'Veuillez saisir le montant' },
-              { 
+              {
                 validator: (_, value) => {
                   if (value <= 0) {
                     return Promise.reject('Le montant doit être supérieur à 0');
@@ -1071,7 +1145,7 @@ const InvoiceDetail = () => {
                     return Promise.reject(`Le montant ne peut pas dépasser le reste à payer (${invoice.amount_due} ${invoice.currency_code})`);
                   }
                   return Promise.resolve();
-                } 
+                }
               }
             ]}
           >
@@ -1157,19 +1231,19 @@ const InvoiceDetail = () => {
             label="Montant"
             rules={[
               { required: !useFullAmount, message: 'Veuillez saisir le montant' },
-              { 
+              {
                 validator: (_, value) => {
                   if (!useFullAmount && (value <= 0 || value > invoice.total)) {
                     return Promise.reject(`Le montant doit être compris entre 0 et ${invoice.total} ${invoice.currency_code}`);
                   }
                   return Promise.resolve();
-                } 
+                }
               }
             ]}
           >
-            <Input 
-              type="number" 
-              step="0.01" 
+            <Input
+              type="number"
+              step="0.01"
               addonAfter={invoice.currency_code}
               disabled={useFullAmount}
               onChange={handleCreditAmountChange}

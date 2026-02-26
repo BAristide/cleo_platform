@@ -8,6 +8,7 @@ from django.core.mail import EmailMessage, get_connection
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import status, viewsets
+from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -104,6 +105,7 @@ class CurrencyViewSet(viewsets.ModelViewSet):
             Quote.objects.exists() or Order.objects.exists() or Invoice.objects.exists()
         )
 
+    @action(detail=False, methods=['get'], url_path='default')
     def default(self, request):
         default_currency = Currency.objects.filter(is_default=True).first()
         if default_currency:

@@ -1,13 +1,17 @@
+// src/components/dashboard/ExecutiveDashboard.js
 import React, { useEffect, useState } from 'react';
-import { Layout, Spin, Alert, Typography, Select } from 'antd';
+import { Spin, Alert, Select } from 'antd';
+import { Link } from 'react-router-dom';
 import {
   DollarOutlined, RiseOutlined, FallOutlined, BankOutlined,
   TeamOutlined, ShoppingCartOutlined, InboxOutlined, WarningOutlined,
+  DashboardOutlined, IdcardOutlined, AccountBookOutlined,
+  SolutionOutlined, ShoppingOutlined,
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import { useCurrency } from '../../context/CurrencyContext';
-import UserMenu from '../common/UserMenu';
 import { useModuleAccess } from '../common/PermissionRoute';
+import ModuleLayout from '../common/ModuleLayout';
 import RevenueChart from './RevenueChart';
 import TopProductsChart from './TopProductsChart';
 import TopClientsChart from './TopClientsChart';
@@ -17,9 +21,6 @@ import ModuleCard from './ModuleCard';
 import QuickActions from './QuickActions';
 import RecentActivity from './RecentActivity';
 import './Dashboard.css';
-
-const { Header, Content } = Layout;
-const { Title } = Typography;
 
 const ExecutiveDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -44,12 +45,10 @@ const ExecutiveDashboard = () => {
       ]);
       setData(execRes.data);
       setRecentActivity(activityRes.data?.results || []);
-
     } catch (err) {
       console.error('Dashboard executive error:', err);
     }
 
-    // Fetch module stats indépendamment
     try {
       const [crm, quotes, hr, inv, purch, acct, payroll, recruit] = await Promise.all([
         axios.get('/api/crm/dashboard/').catch(() => ({ data: {} })),
@@ -65,9 +64,7 @@ const ExecutiveDashboard = () => {
       const recruitList = recruit.data?.results || (Array.isArray(recruit.data) ? recruit.data : []);
       setModuleStats({
         crm: crm.data, sales: { quotes: (quotes.data?.results || []).length }, hr: hr.data, inventory: inv.data, purchasing: purch.data,
-        accounting: { total: acctList.length },
-        payroll: payroll.data,
-        recruitment: { total: recruitList.length },
+        accounting: { total: acctList.length }, payroll: payroll.data, recruitment: { total: recruitList.length },
       });
     } catch (err) {
       console.error('Module stats error:', err);
@@ -75,6 +72,32 @@ const ExecutiveDashboard = () => {
       setLoading(false);
     }
   };
+
+  const allModuleMenuItems = [
+    { key: 'home', icon: <DashboardOutlined />, label: <Link to="/">Tableau de bord</Link>, module: null },
+    { key: 'crm', icon: <TeamOutlined />, label: <Link to="/crm">CRM</Link>, module: 'crm' },
+    { key: 'sales', icon: <ShoppingCartOutlined />, label: <Link to="/sales">Ventes</Link>, module: 'sales' },
+    { key: 'inventory', icon: <InboxOutlined />, label: <Link to="/inventory">Stocks</Link>, module: 'inventory' },
+    { key: 'purchasing', icon: <ShoppingOutlined />, label: <Link to="/purchasing">Achats</Link>, module: 'purchasing' },
+    { key: 'hr', icon: <IdcardOutlined />, label: <Link to="/hr">Ressources Humaines</Link>, module: 'hr' },
+    { key: 'accounting', icon: <AccountBookOutlined />, label: <Link to="/accounting">Comptabilité</Link>, module: 'accounting' },
+    { key: 'payroll', icon: <DollarOutlined />, label: <Link to="/payroll">Paie</Link>, module: 'payroll' },
+    { key: 'recruitment', icon: <SolutionOutlined />, label: <Link to="/recruitment">Recrutement</Link>, module: 'recruitment' },
+  ];
+
+  const sidebarMenuItems = allModuleMenuItems
+    .filter((item) => !item.module || hasAccess(item.module))
+    .map(({ module, ...rest }) => rest);
+
+  const periodSelector = (
+    <Select value={period} onChange={setPeriod} style={{ width: 140 }}
+      options={[
+        { value: 'month', label: 'Ce mois' },
+        { value: 'quarter', label: 'Ce trimestre' },
+        { value: 'year', label: "Cette année" },
+      ]}
+    />
+  );
 
   if (loading) {
     return (
@@ -118,72 +141,51 @@ const ExecutiveDashboard = () => {
   ];
 
   return (
-    <Layout className="main-dashboard">
-      <Header className="dashboard-header">
-        <Title level={3} style={{ margin: 0, color: '#fff' }}>Cleo ERP</Title>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Select value={period} onChange={setPeriod} style={{ width: 140 }}
-            options={[
-              { value: 'month', label: 'Ce mois' },
-              { value: 'quarter', label: 'Ce trimestre' },
-              { value: 'year', label: "Cette année" },
-            ]}
-          />
-          <UserMenu />
-        </div>
-      </Header>
+    <ModuleLayout moduleTitle="Tableau de bord" basePath="/" menuItems={sidebarMenuItems} headerExtra={periodSelector}>
+      {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 20, borderRadius: 12 }} />}
 
-      <Content className="dashboard-content">
-        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: 20, borderRadius: 12 }} />}
-
-        {/* KPIs Direction */}
-        <div className="kpi-grid">
-          {kpis.map((kpi, i) => (
-            <div key={i} className={`kpi-card kpi-color-${i}`}>
-              <div className="kpi-icon" style={{ color: kpi.color }}>{kpi.icon}</div>
-              <div className="kpi-label">{kpi.label}</div>
-              <div className="kpi-value" style={{ color: kpi.color }}>
-                {kpi.value} {kpi.suffix && <span className="kpi-suffix">{kpi.suffix}</span>}
-              </div>
-              {kpi.extra && <div style={{ fontSize: 11, color: '#e53e3e', marginTop: 2 }}><WarningOutlined /> {kpi.extra}</div>}
+      <div className="kpi-grid">
+        {kpis.map((kpi, i) => (
+          <div key={i} className={`kpi-card kpi-color-${i}`}>
+            <div className="kpi-icon" style={{ color: kpi.color }}>{kpi.icon}</div>
+            <div className="kpi-label">{kpi.label}</div>
+            <div className="kpi-value" style={{ color: kpi.color }}>
+              {kpi.value} {kpi.suffix && <span className="kpi-suffix">{kpi.suffix}</span>}
             </div>
-          ))}
-        </div>
-
-        {/* Graphiques */}
-        <div style={{ marginBottom: 24 }}>
-          <RevenueChart data={data?.monthly_revenue || []} />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
-          <TopProductsChart data={data?.top_products || []} />
-          <TopClientsChart data={data?.top_clients || []} />
-        </div>
-
-        {/* Alertes */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
-          <OverdueInvoicesWidget invoices={data?.overdue_invoices || []} total={data?.overdue_total || '0'} />
-          <StockAlertsWidget alertsCount={data?.stock_alerts || 0} />
-        </div>
-
-        {/* Modules */}
-        <div className="section-title">
-          <span className="section-icon" style={{ background: '#3b82f6' }}>📦</span>
-          Modules
-        </div>
-        <div className="modules-grid">
-          {modules.filter((mod) => hasAccess(mod.module)).map((mod, i) => <ModuleCard key={i} {...mod} />)}
-        </div>
-
-        {/* Bottom Row */}
-        <div className="bottom-row">
-          <div className="activity-card">
-            <RecentActivity activities={recentActivity} />
+            {kpi.extra && <div style={{ fontSize: 11, color: '#e53e3e', marginTop: 2 }}><WarningOutlined /> {kpi.extra}</div>}
           </div>
-          <QuickActions />
+        ))}
+      </div>
+
+      <div style={{ marginBottom: 24 }}>
+        <RevenueChart data={data?.monthly_revenue || []} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+        <TopProductsChart data={data?.top_products || []} />
+        <TopClientsChart data={data?.top_clients || []} />
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+        <OverdueInvoicesWidget invoices={data?.overdue_invoices || []} total={data?.overdue_total || '0'} />
+        <StockAlertsWidget alertsCount={data?.stock_alerts || 0} />
+      </div>
+
+      <div className="section-title">
+        <span className="section-icon" style={{ background: '#3b82f6' }}><InboxOutlined /></span>
+        Modules
+      </div>
+      <div className="modules-grid">
+        {modules.filter((mod) => hasAccess(mod.module)).map((mod, i) => <ModuleCard key={i} {...mod} />)}
+      </div>
+
+      <div className="bottom-row">
+        <div className="activity-card">
+          <RecentActivity activities={recentActivity} />
         </div>
-      </Content>
-    </Layout>
+        <QuickActions />
+      </div>
+    </ModuleLayout>
   );
 };
 

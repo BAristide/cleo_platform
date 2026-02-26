@@ -1,0 +1,48 @@
+/* src/components/common/ModuleLayout.css */
+/* Layout unifié pour tous les modules Cleo ERP */
+
+.module-layout-logo {
+  height: 64px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.module-layout-logo a {
+  text-decoration: none;
+}
+
+.module-layout-header {
+  background: #fff !important;
+  padding: 0 24px !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  z-index: 1;
+}
+
+.module-layout-content {
+  margin: 16px;
+}
+
+.module-layout-inner {
+  background: #fff;
+  padding: 24px;
+  min-height: 360px;
+  border-radius: 4px;
+}
+
+.ant-layout-sider-trigger {
+  background: #001529;
+}
+
+.ant-layout-sider .ant-menu-item a {
+  color: rgba(255, 255, 255, 0.65);
+  text-decoration: none;
+}
+
+.ant-layout-sider .ant-menu-item-selected a,
+.ant-layout-sider .ant-menu-item:hover a {
+  color: #fff;
+}

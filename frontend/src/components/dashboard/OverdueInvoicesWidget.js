@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, Table, Tag } from 'antd';
-import { WarningOutlined } from '@ant-design/icons';
+import { WarningOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 
 const OverdueInvoicesWidget = ({ invoices = [], total = '0' }) => {
@@ -31,21 +31,11 @@ const OverdueInvoicesWidget = ({ invoices = [], total = '0' }) => {
 
   return (
     <Card
-      title={
-        <span>
-          <WarningOutlined style={{ color: '#e53e3e', marginRight: 8 }} />
-          Factures échues — {parseFloat(total).toLocaleString('fr-MA', { minimumFractionDigits: 2 })}
-        </span>
-      }
+      title={<span><WarningOutlined style={{ color: '#e53e3e', marginRight: 8 }} />Factures échues — {parseFloat(total).toLocaleString('fr-MA', { minimumFractionDigits: 2 })}</span>}
       style={{ borderRadius: 12 }}
     >
-      <Table
-        columns={columns}
-        dataSource={invoices}
-        rowKey="id"
-        pagination={false}
-        size="small"
-        locale={{ emptyText: 'Aucune facture échue 🎉' }}
+      <Table columns={columns} dataSource={invoices} rowKey="id" pagination={false} size="small"
+        locale={{ emptyText: <span><CheckCircleOutlined style={{ marginRight: 6, color: '#38a169' }} />Aucune facture échue</span> }}
       />
     </Card>
   );

@@ -22,6 +22,7 @@ import UserRoutes from './components/users/UserRoutes';
 import AdminRoute from './components/common/AdminRoute';
 import NotificationCenter from './components/notifications/NotificationCenter';
 import NotificationPreferences from './components/notifications/NotificationPreferences';
+import PlatformSettings from './components/settings/PlatformSettings';
 import axios from './utils/axiosConfig';
 
 function App() {
@@ -152,6 +153,15 @@ function App() {
                 </PermissionRoute>
               </PrivateRoute>
             } />
+
+            <Route path="/settings" element={
+              <PrivateRoute>
+                <AdminRoute>
+                  <PlatformSettings />
+                </AdminRoute>
+              </PrivateRoute>
+            } />
+
             <Route path="/notifications" element={
               <PrivateRoute>
                 <NotificationCenter />

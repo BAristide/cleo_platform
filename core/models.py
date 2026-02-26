@@ -1,3 +1,5 @@
+from decimal import ROUND_HALF_UP, Decimal
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -12,7 +14,10 @@ class Currency(models.Model):
 
     # Taux de change par rapport à la devise de base (habituellement 1.0 pour la devise par défaut)
     exchange_rate = models.DecimalField(
-        _('Taux de change'), max_digits=10, decimal_places=6, default=1.0
+        _('Taux de change'),
+        max_digits=10,
+        decimal_places=6,
+        default=Decimal('1.0'),
     )
 
     # Paramètres de formatage
@@ -64,25 +69,41 @@ class Currency(models.Model):
 
     def format_amount(self, amount):
         """Formater un montant selon les paramètres de la devise."""
-        amount = round(amount, self.decimal_places)
+        if amount is None:
+            amount = Decimal('0')
+
+        # Convertir en Decimal de manière sûre
+        try:
+            amount = amount if isinstance(amount, Decimal) else Decimal(str(amount))
+        except Exception:
+            amount = Decimal('0')
+
+        # Arrondi selon decimal_places (ROUND_HALF_UP)
+        quant = Decimal('1').scaleb(-int(self.decimal_places))
+        amount = amount.quantize(quant, rounding=ROUND_HALF_UP)
+
+        # Format canonique avec '.' comme séparateur décimal
         amount_str = f'{amount:.{self.decimal_places}f}'
+        integer_part, decimal_part = amount_str.split('.')
 
-        if self.decimal_separator != '.':
-            amount_str = amount_str.replace('.', self.decimal_separator)
-
+        # Séparateur de milliers
         if self.thousand_separator:
-            integer_part, decimal_part = amount_str.split(self.decimal_separator)
-            integer_part = ''
-            for i, char in enumerate(reversed(integer_part)):
-                if i > 0 and i % 3 == 0:
-                    integer_part = self.thousand_separator + integer_part
-                integer_part = char + integer_part
-            amount_str = integer_part + self.decimal_separator + decimal_part
+            grouped = []
+            s = integer_part
+            while s:
+                grouped.append(s[-3:])
+                s = s[:-3]
+            integer_part = self.thousand_separator.join(reversed(grouped))
 
+        # Appliquer séparateur décimal personnalisé
+        dec_sep = self.decimal_separator or '.'
+        amount_str = f'{integer_part}{dec_sep}{decimal_part}'
+
+        # Position du symbole
+        sym = self.symbol or ''
         if self.symbol_position == 'before':
-            return f'{self.symbol}{amount_str}'
-        else:
-            return f'{amount_str} {self.symbol}'
+            return f'{sym}{amount_str}'
+        return f'{amount_str} {sym}'.rstrip()
 
 
 class Company(models.Model):
@@ -133,11 +154,7 @@ class Company(models.Model):
 
 
 class CoreSettings(models.Model):
-    """Paramètres globaux de l'ERP."""
-
-    company = models.OneToOneField(
-        Company, on_delete=models.CASCADE, related_name='settings'
-    )
+    """Paramètres globaux de l'ERP — Singleton (pk=1 toujours)."""
 
     language = models.CharField(_('Langue'), max_length=10, default='fr')
     timezone = models.CharField(
@@ -175,7 +192,72 @@ class CoreSettings(models.Model):
         verbose_name_plural = _('Paramètres')
 
     def __str__(self):
-        return f'Paramètres de {self.company.name}'
+        return 'Paramètres Cleo ERP'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        pass  # Singleton — suppression interdite
+
+    @classmethod
+    def load(cls):
+        """Charge l'instance unique, la crée si elle n'existe pas."""
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+class EmailSettings(models.Model):
+    """Configuration SMTP — Singleton (pk=1 toujours)."""
+
+    email_host = models.CharField(
+        _('Serveur SMTP'), max_length=200, default='', blank=True
+    )
+    email_port = models.PositiveIntegerField(_('Port'), default=587)
+    email_use_tls = models.BooleanField(_('Utiliser TLS'), default=True)
+    email_host_user = models.CharField(
+        _('Utilisateur SMTP'), max_length=200, default='', blank=True
+    )
+    email_host_password = models.CharField(
+        _('Mot de passe SMTP'), max_length=200, default='', blank=True
+    )
+    default_from_email = models.EmailField(
+        _('Adresse expéditeur'), default='', blank=True
+    )
+
+    class Meta:
+        verbose_name = _('Configuration email')
+        verbose_name_plural = _('Configuration email')
+
+    def __str__(self):
+        host = self.email_host or 'non configuré'
+        return f'Configuration email ({host})'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        pass  # Singleton — suppression interdite
+
+    @classmethod
+    def load(cls):
+        """Charge l'instance unique. Si première création, initialise depuis .env."""
+        obj, created = cls.objects.get_or_create(pk=1)
+        if created:
+            from django.conf import settings as django_settings
+
+            obj.email_host = getattr(django_settings, 'EMAIL_HOST', '')
+            obj.email_port = getattr(django_settings, 'EMAIL_PORT', 587)
+            obj.email_use_tls = getattr(django_settings, 'EMAIL_USE_TLS', True)
+            obj.email_host_user = getattr(django_settings, 'EMAIL_HOST_USER', '')
+            obj.email_host_password = getattr(
+                django_settings, 'EMAIL_HOST_PASSWORD', ''
+            )
+            obj.default_from_email = getattr(django_settings, 'DEFAULT_FROM_EMAIL', '')
+            obj.save()
+        return obj
 
 
 # ── Localization Packs — Configuration initiale ─────────────────────

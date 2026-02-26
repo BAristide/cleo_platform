@@ -73,6 +73,16 @@ else:
     print('  ℹ️  Un superuser existe déjà.')
 "
 
+# ── Paramètres système (singletons) ───────────────────────────
+echo "⚙️ Initialisation des paramètres système..."
+python manage.py shell -c "
+from core.models import CoreSettings, EmailSettings
+cs = CoreSettings.load()
+print(f'  CoreSettings OK (langue={cs.language}, timezone={cs.timezone})')
+es = EmailSettings.load()
+print(f'  EmailSettings OK (host={es.email_host or \"non configuré\"})')
+" 2>/dev/null || echo "  Paramètres : non disponible"
+
 # ── Rôles et permissions par défaut ────────────────────────────
 echo "🔐 Vérification des rôles et permissions..."
 python manage.py create_default_roles 2>/dev/null || echo "  Rôles : commande non disponible"

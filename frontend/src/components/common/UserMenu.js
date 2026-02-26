@@ -2,7 +2,14 @@
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dropdown, Avatar, Typography } from 'antd';
-import { UserOutlined, KeyOutlined, TeamOutlined, LogoutOutlined, BellOutlined } from '@ant-design/icons';
+import {
+  UserOutlined,
+  KeyOutlined,
+  TeamOutlined,
+  LogoutOutlined,
+  BellOutlined,
+  SettingOutlined,
+} from '@ant-design/icons';
 import { AuthContext } from '../../context/AuthContext';
 import NotificationBell from '../notifications/NotificationBell';
 
@@ -66,7 +73,11 @@ const UserMenu = () => {
     { key: 'password', icon: <KeyOutlined />, label: 'Changer mot de passe', onClick: () => navigate('/profile/password') },
     { key: 'notifications', icon: <BellOutlined />, label: 'Notifications', onClick: () => navigate('/notifications') },
     ...(isAdmin
-      ? [{ type: 'divider' }, { key: 'users', icon: <TeamOutlined />, label: 'Gestion utilisateurs', onClick: () => navigate('/users') }]
+      ? [
+          { type: 'divider' },
+          { key: 'settings', icon: <SettingOutlined />, label: 'Configuration', onClick: () => navigate('/settings') },
+          { key: 'users', icon: <TeamOutlined />, label: 'Gestion utilisateurs', onClick: () => navigate('/users') },
+        ]
       : []),
     { type: 'divider' },
     { key: 'logout', icon: <LogoutOutlined />, label: 'Deconnexion', danger: true, onClick: () => { window.location.href = '/logout/'; } },

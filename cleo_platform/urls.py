@@ -79,6 +79,13 @@ urlpatterns = [
         'purchasing/<path:path>',
         login_required(TemplateView.as_view(template_name='index.html')),
     ),
+    # ✅ Nouveau : routes frontend pour Settings
+    path('settings/', login_required(TemplateView.as_view(template_name='index.html'))),
+    path(
+        'settings/<path:path>',
+        login_required(TemplateView.as_view(template_name='index.html')),
+    ),
 ]
+
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

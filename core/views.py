@@ -1,23 +1,27 @@
 import importlib
 import logging
+import os
+import shutil
 
+from django.conf import settings as django_settings
+from django.core.mail import EmailMessage, get_connection
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import status, viewsets
-from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from users.permissions import HasModulePermission
 
-from .models import Company, CompanySetup, CoreSettings, Currency
+from .models import Company, CompanySetup, CoreSettings, Currency, EmailSettings
 from .serializers import (
     CompanyInfoSerializer,
     CompanySerializer,
     CompanySetupSerializer,
     CoreSettingsSerializer,
     CurrencySerializer,
+    EmailSettingsSerializer,
     LocalePackInfoSerializer,
     SetupStatusSerializer,
 )
@@ -100,7 +104,6 @@ class CurrencyViewSet(viewsets.ModelViewSet):
             Quote.objects.exists() or Order.objects.exists() or Invoice.objects.exists()
         )
 
-    @action(detail=False, methods=['get'])
     def default(self, request):
         default_currency = Currency.objects.filter(is_default=True).first()
         if default_currency:
@@ -118,19 +121,164 @@ class CompanyViewSet(viewsets.ModelViewSet):
     module_name = 'core'
 
 
-class CoreSettingsViewSet(viewsets.ModelViewSet):
-    queryset = CoreSettings.objects.all()
-    serializer_class = CoreSettingsSerializer
-    permission_classes = [IsAuthenticated, HasModulePermission]
-    module_name = 'core'
+class CoreSettingsView(APIView):
+    """GET/PUT /api/core/settings/ — Paramètres système (singleton)."""
 
-    @action(detail=False, methods=['get'])
-    def current(self, request):
-        settings = CoreSettings.objects.first()
-        if settings:
-            serializer = self.get_serializer(settings)
-            return Response(serializer.data)
-        return Response({'error': 'No settings found'}, status=404)
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [IsAuthenticated()]
+        return [IsAdminUser()]
+
+    def get(self, request):
+        obj = CoreSettings.load()
+        serializer = CoreSettingsSerializer(obj)
+        return Response(serializer.data)
+
+    def put(self, request):
+        obj = CoreSettings.load()
+        serializer = CoreSettingsSerializer(obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class EmailSettingsView(APIView):
+    """GET/PUT /api/core/settings/email/ — Configuration SMTP (admin)."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        obj = EmailSettings.load()
+        serializer = EmailSettingsSerializer(obj)
+        return Response(serializer.data)
+
+    def put(self, request):
+        obj = EmailSettings.load()
+        serializer = EmailSettingsSerializer(obj, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+class EmailTestView(APIView):
+    """POST /api/core/settings/email/test/ — Envoi d'un email de test."""
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        recipient = request.data.get('recipient', request.user.email)
+        if not recipient:
+            return Response(
+                {'error': 'Aucune adresse email destinataire.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        es = EmailSettings.load()
+        if not es.email_host:
+            return Response(
+                {'error': "Le serveur SMTP n'est pas configuré."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            connection = get_connection(
+                host=es.email_host,
+                port=es.email_port,
+                username=es.email_host_user,
+                password=es.email_host_password,
+                use_tls=es.email_use_tls,
+                fail_silently=False,
+                timeout=15,
+            )
+            email = EmailMessage(
+                subject='[Cleo ERP] Test de configuration email',
+                body=(
+                    'Ceci est un email de test envoyé depuis Cleo ERP.\n\n'
+                    'Si vous recevez ce message, la configuration SMTP '
+                    'est fonctionnelle.\n\n'
+                    f'Serveur : {es.email_host}:{es.email_port}\n'
+                    f'TLS : {"Oui" if es.email_use_tls else "Non"}'
+                ),
+                from_email=es.default_from_email or es.email_host_user,
+                to=[recipient],
+                connection=connection,
+            )
+            email.send()
+            return Response(
+                {
+                    'status': 'success',
+                    'message': f'Email de test envoyé à {recipient}',
+                }
+            )
+        except Exception as e:
+            logger.error(f'Email test failed: {e}')
+            return Response(
+                {'error': f"Échec de l'envoi : {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class SystemInfoView(APIView):
+    """GET /api/core/system-info/ — Informations système (lecture seule, admin)."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        from django.contrib.auth.models import User
+
+        from accounting.models import Account, Journal
+
+        setup = CompanySetup.objects.first()
+
+        # Espace disque média
+        media_root = django_settings.MEDIA_ROOT
+        media_size = 0
+        if os.path.exists(media_root):
+            for dirpath, dirnames, filenames in os.walk(media_root):
+                for f in filenames:
+                    fp = os.path.join(dirpath, f)
+                    if os.path.isfile(fp):
+                        media_size += os.path.getsize(fp)
+
+        # Espace disque total du volume
+        try:
+            disk = shutil.disk_usage(media_root)
+            disk_info = {
+                'total_gb': round(disk.total / (1024**3), 2),
+                'used_gb': round(disk.used / (1024**3), 2),
+                'free_gb': round(disk.free / (1024**3), 2),
+                'usage_percent': round(disk.used / disk.total * 100, 1),
+            }
+        except Exception:
+            disk_info = None
+
+        data = {
+            'version': django_settings.VERSION,
+            'locale_pack': setup.locale_pack if setup else None,
+            'company_name': setup.company_name if setup else None,
+            'is_locked': setup.is_locked if setup else False,
+            'setup_date': setup.setup_date if setup else None,
+            'accounts_count': Account.objects.count(),
+            'journals_count': Journal.objects.count(),
+            'users_count': User.objects.count(),
+            'superusers_count': User.objects.filter(is_superuser=True).count(),
+            'currencies_count': Currency.objects.count(),
+            'media_size_mb': round(media_size / (1024**2), 2),
+            'disk_info': disk_info,
+            'debug_mode': django_settings.DEBUG,
+            'python_version': None,
+            'django_version': None,
+        }
+
+        # Versions techniques
+        import sys
+
+        import django
+
+        data['python_version'] = sys.version.split()[0]
+        data['django_version'] = django.get_version()
+
+        return Response(data)
 
 
 # ── Localization Packs — Setup API ───────────────────────────────────
@@ -195,7 +343,10 @@ class SetupCreateView(APIView):
         if locale_pack not in AVAILABLE_PACKS:
             return Response(
                 {
-                    'error': f'Pack inconnu : {locale_pack}. Disponibles : {list(AVAILABLE_PACKS.keys())}'
+                    'error': (
+                        f'Pack inconnu : {locale_pack}. Disponibles : '
+                        f'{list(AVAILABLE_PACKS.keys())}'
+                    )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )

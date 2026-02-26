@@ -5,6 +5,9 @@ from decouple import Csv, config
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+# ── Version de la plateforme ────────────────────────────────────
+VERSION = '3.4.0'
+
 SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
 INSTALLED_APPS = [

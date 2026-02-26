@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Company, CoreSettings, Currency
+from .models import Company, CoreSettings, Currency, EmailSettings
 
 
 @admin.register(Currency)
@@ -56,9 +56,8 @@ class CompanyAdmin(admin.ModelAdmin):
 
 @admin.register(CoreSettings)
 class CoreSettingsAdmin(admin.ModelAdmin):
-    list_display = ('company', 'language', 'timezone')
+    list_display = ('__str__', 'language', 'timezone', 'invoice_prefix')
     fieldsets = (
-        ('Entreprise', {'fields': ('company',)}),
         (
             'Préférences système',
             {'fields': ('language', 'timezone', 'date_format', 'time_format')},
@@ -80,3 +79,35 @@ class CoreSettingsAdmin(admin.ModelAdmin):
             {'fields': ('auto_archive_documents', 'archive_after_days')},
         ),
     )
+
+    def has_add_permission(self, request):
+        # Singleton — un seul enregistrement autorisé
+        return not CoreSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(EmailSettings)
+class EmailSettingsAdmin(admin.ModelAdmin):
+    list_display = ('__str__', 'email_host', 'email_port', 'email_use_tls')
+    fieldsets = (
+        (
+            'Serveur SMTP',
+            {'fields': ('email_host', 'email_port', 'email_use_tls')},
+        ),
+        (
+            'Authentification',
+            {'fields': ('email_host_user', 'email_host_password')},
+        ),
+        (
+            'Expéditeur',
+            {'fields': ('default_from_email',)},
+        ),
+    )
+
+    def has_add_permission(self, request):
+        return not EmailSettings.objects.exists()
+
+    def has_delete_permission(self, request, obj=None):
+        return False

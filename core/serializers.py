@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Company, CompanySetup, CoreSettings, Currency
+from .models import Company, CompanySetup, CoreSettings, Currency, EmailSettings
 
 
 class CurrencySerializer(serializers.ModelSerializer):
@@ -25,7 +25,56 @@ class CompanySerializer(serializers.ModelSerializer):
 class CoreSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CoreSettings
-        fields = '__all__'
+        fields = [
+            'id',
+            'language',
+            'timezone',
+            'date_format',
+            'time_format',
+            'default_payment_term',
+            'invoice_prefix',
+            'quote_prefix',
+            'order_prefix',
+            'decimal_precision',
+            'auto_archive_documents',
+            'archive_after_days',
+        ]
+        read_only_fields = ['id']
+
+
+class EmailSettingsSerializer(serializers.ModelSerializer):
+    """Serializer pour la configuration SMTP. Le mot de passe est masqué en lecture."""
+
+    email_host_password = serializers.CharField(
+        write_only=True, required=False, allow_blank=True
+    )
+    password_is_set = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EmailSettings
+        fields = [
+            'id',
+            'email_host',
+            'email_port',
+            'email_use_tls',
+            'email_host_user',
+            'email_host_password',
+            'default_from_email',
+            'password_is_set',
+        ]
+        read_only_fields = ['id']
+
+    def get_password_is_set(self, obj):
+        return bool(obj.email_host_password)
+
+    def update(self, instance, validated_data):
+        # Si le mot de passe n'est pas fourni, on conserve l'existant
+        if 'email_host_password' not in validated_data:
+            validated_data.pop('email_host_password', None)
+        elif validated_data.get('email_host_password') == '':
+            # Chaîne vide = pas de changement
+            validated_data.pop('email_host_password')
+        return super().update(instance, validated_data)
 
 
 # ── Localization Packs — Serializers ─────────────────────────────────

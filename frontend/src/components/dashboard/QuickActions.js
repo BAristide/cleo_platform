@@ -1,12 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FileTextOutlined,
-  BankOutlined,
-  UserOutlined,
-  DollarOutlined,
-  InboxOutlined,
-  PlusOutlined,
+  FileTextOutlined, BankOutlined, UserOutlined,
+  DollarOutlined, InboxOutlined, ThunderboltOutlined,
 } from '@ant-design/icons';
 
 const QuickActions = () => {
@@ -22,15 +18,13 @@ const QuickActions = () => {
   return (
     <div>
       <div className="section-title">
-        <span className="section-icon" style={{ background: '#6366f1' }}>⚡</span>
+        <span className="section-icon" style={{ background: '#6366f1' }}><ThunderboltOutlined /></span>
         Actions rapides
       </div>
       <div className="quick-actions-grid">
         {actions.map((action, i) => (
           <Link to={action.path} key={i} className="quick-action-btn">
-            <span className="qa-icon" style={{ background: action.color }}>
-              {action.icon}
-            </span>
+            <span className="qa-icon" style={{ background: action.color }}>{action.icon}</span>
             {action.title}
           </Link>
         ))}

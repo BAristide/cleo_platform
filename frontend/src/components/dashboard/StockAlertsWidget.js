@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Table, Tag } from 'antd';
-import { AlertOutlined } from '@ant-design/icons';
+import { AlertOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 
@@ -31,7 +31,10 @@ const StockAlertsWidget = ({ alertsCount = 0 }) => {
   if (alertsCount === 0) {
     return (
       <Card title={<span><AlertOutlined style={{ color: '#38a169', marginRight: 8 }} />Stock — Aucune alerte</span>} style={{ borderRadius: 12 }}>
-        <p style={{ color: '#38a169', textAlign: 'center', margin: '20px 0' }}>Tous les niveaux de stock sont normaux 🎉</p>
+        <p style={{ color: '#38a169', textAlign: 'center', margin: '20px 0' }}>
+          <CheckCircleOutlined style={{ marginRight: 6 }} />
+          Tous les niveaux de stock sont normaux
+        </p>
       </Card>
     );
   }

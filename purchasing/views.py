@@ -1,3 +1,4 @@
+import mimetypes
 from decimal import Decimal
 
 from django.db.models import Count, Sum
@@ -17,6 +18,7 @@ from .models import (
     ReceptionItem,
     Supplier,
     SupplierInvoice,
+    SupplierInvoiceDocument,
     SupplierInvoiceItem,
     SupplierPayment,
 )
@@ -28,6 +30,7 @@ from .serializers import (
     ReceptionItemSerializer,
     ReceptionSerializer,
     SupplierInvoiceDetailSerializer,
+    SupplierInvoiceDocumentSerializer,
     SupplierInvoiceItemSerializer,
     SupplierInvoiceSerializer,
     SupplierPaymentSerializer,
@@ -493,6 +496,114 @@ class SupplierInvoiceViewSet(viewsets.ModelViewSet):
         ).order_by('-date')
         serializer = SupplierInvoiceSerializer(credit_notes, many=True)
         return Response(serializer.data)
+
+    # ── Pièces jointes ───────────────────────────────────────────────
+
+    @action(detail=True, methods=['get', 'post'], url_path='documents')
+    def documents(self, request, pk=None):
+        """GET: liste des pièces jointes. POST: upload d'un fichier."""
+        invoice = self.get_object()
+
+        if request.method == 'GET':
+            docs = invoice.documents.all()
+            serializer = SupplierInvoiceDocumentSerializer(docs, many=True)
+            return Response(serializer.data)
+
+        # POST — upload
+        uploaded_file = request.FILES.get('file')
+        if not uploaded_file:
+            return Response(
+                {'error': 'Aucun fichier fourni.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validation taille (10 Mo max)
+        max_size = 10 * 1024 * 1024
+        if uploaded_file.size > max_size:
+            return Response(
+                {'error': 'Le fichier dépasse la taille maximale de 10 Mo.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validation type MIME
+        allowed_types = [
+            'application/pdf',
+            'image/jpeg',
+            'image/png',
+            'image/webp',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel',
+            'text/csv',
+        ]
+        content_type = (
+            uploaded_file.content_type
+            or mimetypes.guess_type(uploaded_file.name)[0]
+            or 'application/octet-stream'
+        )
+        if content_type not in allowed_types:
+            return Response(
+                {
+                    'error': f'Type de fichier non autorisé : {content_type}. '
+                    f'Types acceptés : PDF, JPEG, PNG, WebP, Excel, CSV.'
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        doc = SupplierInvoiceDocument.objects.create(
+            invoice=invoice,
+            file=uploaded_file,
+            filename=uploaded_file.name,
+            file_size=uploaded_file.size,
+            mime_type=content_type,
+            description=request.data.get('description', ''),
+            uploaded_by=request.user,
+        )
+        serializer = SupplierInvoiceDocumentSerializer(doc)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=True,
+        methods=['get'],
+        url_path='documents/(?P<doc_id>[0-9]+)/download',
+    )
+    def document_download(self, request, pk=None, doc_id=None):
+        """Téléchargement d'une pièce jointe."""
+        invoice = self.get_object()
+        try:
+            doc = invoice.documents.get(pk=doc_id)
+        except SupplierInvoiceDocument.DoesNotExist:
+            return Response(
+                {'error': 'Pièce jointe non trouvée.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        from django.http import FileResponse
+
+        response = FileResponse(
+            doc.file.open('rb'),
+            content_type=doc.mime_type,
+        )
+        response['Content-Disposition'] = f'attachment; filename="{doc.filename}"'
+        return response
+
+    @action(
+        detail=True,
+        methods=['delete'],
+        url_path='documents/(?P<doc_id>[0-9]+)',
+    )
+    def document_delete(self, request, pk=None, doc_id=None):
+        """Suppression d'une pièce jointe."""
+        invoice = self.get_object()
+        try:
+            doc = invoice.documents.get(pk=doc_id)
+        except SupplierInvoiceDocument.DoesNotExist:
+            return Response(
+                {'error': 'Pièce jointe non trouvée.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        doc.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class SupplierInvoiceItemViewSet(viewsets.ModelViewSet):

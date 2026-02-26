@@ -7,6 +7,7 @@ from .models import (
     ReceptionItem,
     Supplier,
     SupplierInvoice,
+    SupplierInvoiceDocument,
     SupplierInvoiceItem,
     SupplierPayment,
 )
@@ -62,3 +63,17 @@ class SupplierInvoiceAdmin(admin.ModelAdmin):
 class SupplierPaymentAdmin(admin.ModelAdmin):
     list_display = ['invoice', 'date', 'amount', 'method']
     list_filter = ['method', 'date']
+
+
+@admin.register(SupplierInvoiceDocument)
+class SupplierInvoiceDocumentAdmin(admin.ModelAdmin):
+    list_display = (
+        'filename',
+        'invoice',
+        'file_size',
+        'mime_type',
+        'uploaded_by',
+        'uploaded_at',
+    )
+    list_filter = ('mime_type', 'uploaded_at')
+    readonly_fields = ('uploaded_at',)

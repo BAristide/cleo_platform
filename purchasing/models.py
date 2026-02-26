@@ -471,3 +471,46 @@ class SupplierPayment(models.Model):
         if invoice.amount_due <= 0:
             invoice.state = 'paid'
         invoice.save(update_fields=['amount_paid', 'amount_due', 'state'])
+
+
+class SupplierInvoiceDocument(models.Model):
+    """Pièce jointe d'une facture fournisseur."""
+
+    invoice = models.ForeignKey(
+        SupplierInvoice,
+        on_delete=models.CASCADE,
+        related_name='documents',
+        verbose_name=_('Facture fournisseur'),
+    )
+    file = models.FileField(
+        _('Fichier'),
+        upload_to='purchasing/invoices/%Y/%m/',
+    )
+    filename = models.CharField(_('Nom du fichier'), max_length=255)
+    file_size = models.PositiveIntegerField(_('Taille (octets)'), default=0)
+    mime_type = models.CharField(
+        _('Type MIME'), max_length=100, default='application/pdf'
+    )
+    description = models.CharField(_('Description'), max_length=300, blank=True)
+    uploaded_by = models.ForeignKey(
+        'auth.User',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_('Téléversé par'),
+    )
+    uploaded_at = models.DateTimeField(_('Date de téléversement'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Pièce jointe facture fournisseur')
+        verbose_name_plural = _('Pièces jointes factures fournisseur')
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f'{self.filename} ({self.invoice.number})'
+
+    def delete(self, *args, **kwargs):
+        # Supprimer le fichier physique
+        if self.file:
+            self.file.delete(save=False)
+        super().delete(*args, **kwargs)

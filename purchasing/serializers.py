@@ -7,6 +7,7 @@ from .models import (
     ReceptionItem,
     Supplier,
     SupplierInvoice,
+    SupplierInvoiceDocument,
     SupplierInvoiceItem,
     SupplierPayment,
 )
@@ -118,6 +119,7 @@ class SupplierInvoiceSerializer(serializers.ModelSerializer):
     state_display = serializers.CharField(source='get_state_display', read_only=True)
     type_display = serializers.CharField(source='get_type_display', read_only=True)
     items_count = serializers.IntegerField(source='items.count', read_only=True)
+    documents_count = serializers.IntegerField(source='documents.count', read_only=True)
     parent_invoice_number = serializers.SerializerMethodField()
 
     class Meta:
@@ -139,8 +141,13 @@ class SupplierInvoiceSerializer(serializers.ModelSerializer):
 
 class SupplierInvoiceDetailSerializer(SupplierInvoiceSerializer):
     items = SupplierInvoiceItemSerializer(many=True, read_only=True)
+    documents = serializers.SerializerMethodField()
     parent_invoice_details = serializers.SerializerMethodField()
     credit_notes_list = serializers.SerializerMethodField()
+
+    def get_documents(self, obj):
+        docs = obj.documents.all().order_by('-uploaded_at')
+        return SupplierInvoiceDocumentSerializer(docs, many=True).data
 
     def get_parent_invoice_details(self, obj):
         if obj.parent_invoice:
@@ -180,3 +187,44 @@ class SupplierPaymentSerializer(serializers.ModelSerializer):
         model = SupplierPayment
         fields = '__all__'
         read_only_fields = ['created_by', 'created_at']
+
+
+class SupplierInvoiceDocumentSerializer(serializers.ModelSerializer):
+    uploaded_by_name = serializers.SerializerMethodField()
+    download_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SupplierInvoiceDocument
+        fields = [
+            'id',
+            'invoice',
+            'file',
+            'filename',
+            'file_size',
+            'mime_type',
+            'description',
+            'uploaded_by',
+            'uploaded_by_name',
+            'uploaded_at',
+            'download_url',
+        ]
+        read_only_fields = [
+            'id',
+            'invoice',
+            'filename',
+            'file_size',
+            'mime_type',
+            'uploaded_by',
+            'uploaded_at',
+        ]
+
+    def get_uploaded_by_name(self, obj):
+        if obj.uploaded_by:
+            full = f'{obj.uploaded_by.first_name} {obj.uploaded_by.last_name}'.strip()
+            return full or obj.uploaded_by.username
+        return None
+
+    def get_download_url(self, obj):
+        if obj.file:
+            return obj.file.url
+        return None

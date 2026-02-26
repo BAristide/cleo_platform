@@ -12,7 +12,7 @@ export default function SupplierForm() {
   });
 
   useEffect(() => {
-    axios.get('/api/sales/currencies/').then(r => setCurrencies(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/core/currencies/').then(r => setCurrencies(r.data.results || r.data)).catch(console.error);
     if (id) axios.get(`/api/purchasing/suppliers/${id}/`).then(r => setForm(r.data)).catch(console.error);
   }, [id]);
 

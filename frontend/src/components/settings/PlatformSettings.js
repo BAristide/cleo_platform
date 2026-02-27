@@ -3,19 +3,22 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Tabs, Form, Input, InputNumber, Select, Switch, Button, Card,
   Typography, Spin, message, Tag, Row, Col, Divider, Descriptions,
-  Space, Upload, Alert, Statistic, Progress, Tooltip,
+  Space, Upload, Alert, Statistic, Progress, Tooltip, Table, Image,
+  DatePicker, Avatar,
 } from 'antd';
 import {
   BankOutlined, SettingOutlined, MailOutlined, InfoCircleOutlined,
   SaveOutlined, SendOutlined, UploadOutlined, LockOutlined,
   CloudServerOutlined, DatabaseOutlined, TeamOutlined,
   CheckCircleOutlined, CloseCircleOutlined, GlobalOutlined,
-  SafetyCertificateOutlined, HomeOutlined,
+  SafetyCertificateOutlined, HomeOutlined, FileSearchOutlined,
+  UserOutlined, ClockCircleOutlined, DeleteOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { Breadcrumb, Layout } from 'antd';
 import UserMenu from '../common/UserMenu';
 import axios from '../../utils/axiosConfig';
+import { useCompany } from '../../context/CompanyContext';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -30,6 +33,9 @@ const CompanyTab = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [companyData, setCompanyData] = useState(null);
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
+  const { refreshCompanyInfo } = useCompany();
 
   const fetchData = useCallback(async () => {
     try {
@@ -49,8 +55,18 @@ const CompanyTab = () => {
     try {
       const values = await form.validateFields();
       setSaving(true);
-      await axios.put('/api/core/company/', values);
+      if (logoFile) {
+        const formData = new FormData();
+        Object.entries(values).forEach(([k, v]) => { if (v != null) formData.append(k, v); });
+        formData.append('logo', logoFile);
+        await axios.put('/api/core/company/', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        setLogoFile(null);
+        setLogoPreview(null);
+      } else {
+        await axios.put('/api/core/company/', values);
+      }
       message.success('Informations entreprise mises à jour');
+      refreshCompanyInfo();
       fetchData();
     } catch (err) {
       if (err.response) {
@@ -172,6 +188,47 @@ const CompanyTab = () => {
         </Col>
         <Col span={8}>
           <Form.Item name="bank_swift" label="Code SWIFT/BIC"><Input /></Form.Item>
+        </Col>
+      </Row>
+
+      {/* Logo entreprise */}
+      <Title level={5} style={{ marginTop: 16 }}>Logo entreprise</Title>
+      <Row gutter={16} align="middle">
+        <Col>
+          {companyData?.logo ? (
+            <div style={{ border: '1px solid #f0f0f0', borderRadius: 8, padding: 12, display: 'inline-block', background: '#fafafa' }}>
+              <Image src={companyData.logo} alt="Logo" style={{ maxHeight: 80, maxWidth: 200, objectFit: 'contain' }} />
+            </div>
+          ) : (
+            <div style={{ border: '2px dashed #d9d9d9', borderRadius: 8, padding: '20px 40px', color: '#999', textAlign: 'center' }}>
+              Aucun logo
+            </div>
+          )}
+        </Col>
+        <Col>
+          <Upload
+            accept="image/*"
+            showUploadList={false}
+            beforeUpload={(file) => {
+              if (file.size > 5 * 1024 * 1024) {
+                message.error('Le fichier ne doit pas dépasser 5 Mo');
+                return false;
+              }
+              setLogoFile(file);
+              setLogoPreview(URL.createObjectURL(file));
+              return false;
+            }}
+          >
+            <Button icon={<UploadOutlined />}>Choisir un logo</Button>
+          </Upload>
+          {logoPreview && (
+            <div style={{ marginTop: 8 }}>
+              <Image src={logoPreview} alt="Aperçu" style={{ maxHeight: 60 }} />
+              <Button type="link" danger size="small" onClick={() => { setLogoFile(null); setLogoPreview(null); }}>
+                <DeleteOutlined /> Annuler
+              </Button>
+            </div>
+          )}
         </Col>
       </Row>
 
@@ -579,6 +636,168 @@ const SystemTab = () => {
   );
 };
 
+
+// ════════════════════════════════════════════════════════════════
+// Onglet 5 — Journal d'audit
+// ════════════════════════════════════════════════════════════════
+
+const { RangePicker } = DatePicker;
+
+const MODULE_LABELS = {
+  crm: 'CRM',
+  sales: 'Ventes',
+  purchasing: 'Achats',
+  hr: 'RH',
+  inventory: 'Stocks',
+  accounting: 'Comptabilité',
+  payroll: 'Paie',
+  recruitment: 'Recrutement',
+  core: 'Système',
+};
+
+const MODULE_COLORS = {
+  crm: 'blue',
+  sales: 'green',
+  purchasing: 'orange',
+  hr: 'gold',
+  inventory: 'cyan',
+  accounting: 'purple',
+  payroll: 'magenta',
+  recruitment: 'pink',
+  core: 'default',
+};
+
+const AuditTab = () => {
+  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [filters, setFilters] = useState({ module: undefined, search: '' });
+
+  const fetchLogs = useCallback(async (p = 1) => {
+    setLoading(true);
+    try {
+      const params = { page: p, page_size: 30, ordering: '-timestamp' };
+      if (filters.module) params.module = filters.module;
+      if (filters.search) params.search = filters.search;
+      const res = await axios.get('/api/users/activity-logs/', { params });
+      setLogs(res.data.results || []);
+      setTotal(res.data.count || 0);
+    } catch {
+      message.error('Impossible de charger les logs');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters]);
+
+  useEffect(() => { fetchLogs(page); }, [page, fetchLogs]);
+
+  const columns = [
+    {
+      title: 'Date',
+      dataIndex: 'timestamp',
+      key: 'timestamp',
+      width: 170,
+      render: (ts) => ts ? new Date(ts).toLocaleString('fr-FR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+      }) : '—',
+    },
+    {
+      title: 'Utilisateur',
+      dataIndex: 'user',
+      key: 'user',
+      width: 150,
+      render: (u) => (
+        <span><Avatar size="small" icon={<UserOutlined />} style={{ marginRight: 6 }} />{u || 'Système'}</span>
+      ),
+    },
+    {
+      title: 'Module',
+      dataIndex: 'module',
+      key: 'module',
+      width: 120,
+      render: (m) => <Tag color={MODULE_COLORS[m] || 'default'}>{MODULE_LABELS[m] || m}</Tag>,
+    },
+    {
+      title: 'Action',
+      dataIndex: 'action',
+      key: 'action',
+      width: 160,
+    },
+    {
+      title: 'Entité',
+      key: 'entity',
+      width: 180,
+      render: (_, r) => r.entity_type ? (
+        <span>{r.entity_type} {r.entity_id ? `#${r.entity_id}` : ''}</span>
+      ) : '—',
+    },
+    {
+      title: 'Détails',
+      dataIndex: 'details',
+      key: 'details',
+      ellipsis: true,
+      render: (d) => d || '—',
+    },
+    {
+      title: 'IP',
+      dataIndex: 'ip_address',
+      key: 'ip_address',
+      width: 130,
+      render: (ip) => ip ? <Tag>{ip}</Tag> : '—',
+    },
+  ];
+
+  const moduleOptions = Object.entries(MODULE_LABELS).map(([k, v]) => ({ value: k, label: v }));
+
+  return (
+    <div>
+      <Row gutter={16} style={{ marginBottom: 16 }}>
+        <Col span={6}>
+          <Select
+            placeholder="Filtrer par module"
+            allowClear
+            style={{ width: '100%' }}
+            options={moduleOptions}
+            value={filters.module}
+            onChange={(val) => { setFilters((f) => ({ ...f, module: val })); setPage(1); }}
+          />
+        </Col>
+        <Col span={8}>
+          <Input.Search
+            placeholder="Rechercher (utilisateur, détails, IP)..."
+            allowClear
+            onSearch={(val) => { setFilters((f) => ({ ...f, search: val })); setPage(1); }}
+          />
+        </Col>
+        <Col style={{ marginLeft: 'auto' }}>
+          <Tag icon={<ClockCircleOutlined />} color="blue" style={{ fontSize: 13, padding: '4px 12px' }}>
+            {total} entrée{total > 1 ? 's' : ''}
+          </Tag>
+        </Col>
+      </Row>
+
+      <Table
+        columns={columns}
+        dataSource={logs}
+        rowKey="id"
+        loading={loading}
+        size="small"
+        pagination={{
+          current: page,
+          total,
+          pageSize: 30,
+          showSizeChanger: false,
+          showTotal: (t, range) => `${range[0]}-${range[1]} sur ${t}`,
+          onChange: (p) => setPage(p),
+        }}
+        scroll={{ x: 1100 }}
+      />
+    </div>
+  );
+};
+
 // ════════════════════════════════════════════════════════════════
 // Page principale — PlatformSettings
 // ════════════════════════════════════════════════════════════════
@@ -639,6 +858,11 @@ const PlatformSettings = () => {
                 key: 'system',
                 label: <span><InfoCircleOutlined /> Système</span>,
                 children: <SystemTab />,
+              },
+              {
+                key: 'audit',
+                label: <span><FileSearchOutlined /> Journal d'audit</span>,
+                children: <AuditTab />,
               },
             ]}
           />

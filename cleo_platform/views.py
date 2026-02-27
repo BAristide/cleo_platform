@@ -5,6 +5,7 @@ from django.http import JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import ensure_csrf_cookie
 
+from core.models import CompanySetup
 from users.models import ActivityLog
 
 
@@ -41,12 +42,22 @@ def login_view(request):
                 ip_address=request.META.get('REMOTE_ADDR'),
             )
 
+            # Logo & nom entreprise
+            setup = CompanySetup.objects.first()
+            logo_url = setup.logo.url if setup and setup.logo else None
+            company_name = (
+                setup.company_name if setup and setup.company_name else 'Cleo ERP'
+            )
+
             return render(
                 request,
                 'login.html',
                 {
                     'error': "Nom d'utilisateur ou mot de passe invalide",
+                    'next': next_url if 'next_url' in dir() else '/',
                     'version': getattr(django_settings, 'VERSION', ''),
+                    'logo_url': logo_url,
+                    'company_name': company_name,
                 },
             )
     else:
@@ -54,10 +65,22 @@ def login_view(request):
         # Vérifier si next_url est vide ou invalide
         if not next_url or next_url == '':
             next_url = '/'  # Utiliser la page d'accueil par défaut
+        # Logo & nom entreprise
+        setup = CompanySetup.objects.first()
+        logo_url = setup.logo.url if setup and setup.logo else None
+        company_name = (
+            setup.company_name if setup and setup.company_name else 'Cleo ERP'
+        )
+
         return render(
             request,
             'login.html',
-            {'next': next_url, 'version': getattr(django_settings, 'VERSION', '')},
+            {
+                'next': next_url,
+                'version': getattr(django_settings, 'VERSION', ''),
+                'logo_url': logo_url,
+                'company_name': company_name,
+            },
         )
 
 

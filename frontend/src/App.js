@@ -14,6 +14,7 @@ import InventoryRoutes from './components/inventory/Routes';
 import PurchasingRoutes from './components/purchasing/Routes';
 import SetupWizard from './components/setup/SetupWizard';
 import { AuthProvider } from './context/AuthContext';
+import { CompanyProvider } from './context/CompanyContext';
 import { CurrencyProvider } from './context/CurrencyContext';
 import PrivateRoute from './components/PrivateRoute';
 import PermissionRoute from './components/common/PermissionRoute';
@@ -75,7 +76,8 @@ function App() {
 
   return (
     <AuthProvider>
-      <CurrencyProvider>
+      <CompanyProvider>
+        <CurrencyProvider>
         <ConfigProvider locale={frFR}>
           <Router>
             <Routes>
@@ -182,6 +184,7 @@ function App() {
           </Router>
         </ConfigProvider>
       </CurrencyProvider>
+        </CompanyProvider>
     </AuthProvider>
   );
 }

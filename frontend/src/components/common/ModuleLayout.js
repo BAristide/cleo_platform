@@ -5,6 +5,7 @@ import { Link, useLocation, Outlet } from 'react-router-dom';
 import { HomeOutlined } from '@ant-design/icons';
 import UserMenu from './UserMenu';
 import GlobalSearch from './GlobalSearch';
+import { useCompany } from '../../context/CompanyContext';
 import './ModuleLayout.css';
 
 const { Header, Content, Sider } = Layout;
@@ -20,6 +21,9 @@ const ModuleLayout = ({
   children,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
+  const { companyInfo } = useCompany();
+  const logoUrl = companyInfo?.logo || null;
+  const companyName = companyInfo?.company_name || 'Cleo ERP';
   const location = useLocation();
 
   const getSelectedKey = () => {
@@ -94,9 +98,13 @@ const ModuleLayout = ({
       >
         <div className="module-layout-logo">
           <Link to="/">
-            <Title level={4} style={{ color: '#fff', margin: 0, textAlign: 'center' }}>
-              {collapsed ? 'C' : 'Cleo ERP'}
-            </Title>
+            {!collapsed && logoUrl ? (
+              <img src={logoUrl} alt={companyName} className="sidebar-company-logo" />
+            ) : (
+              <Title level={4} style={{ color: '#fff', margin: 0, textAlign: 'center' }}>
+                {collapsed ? (companyName?.[0] || 'C') : companyName}
+              </Title>
+            )}
           </Link>
         </div>
         <Menu

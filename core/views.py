@@ -10,6 +10,7 @@ from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -488,6 +489,8 @@ class SetupCreateView(APIView):
 
 class CompanyInfoView(APIView):
     """GET/PUT /api/core/company/ — Infos entreprise post-setup."""
+
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
         if self.request.method == 'GET':

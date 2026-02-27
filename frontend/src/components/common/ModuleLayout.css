@@ -46,3 +46,19 @@
 .ant-layout-sider .ant-menu-item:hover a {
   color: #fff;
 }
+
+/* ── Branding / Logo entreprise (v3.5.1) ─────────── */
+
+.sidebar-company-logo {
+  max-height: 40px;
+  max-width: 160px;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+
+  transition: opacity 0.2s;
+}
+
+.sidebar-company-logo:hover {
+  opacity: 0.85;
+}

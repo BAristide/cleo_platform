@@ -13,6 +13,8 @@ import {
   CheckCircleOutlined, CloseCircleOutlined, GlobalOutlined,
   SafetyCertificateOutlined, HomeOutlined, FileSearchOutlined,
   UserOutlined, ClockCircleOutlined, DeleteOutlined,
+  DownloadOutlined, ReloadOutlined, FileZipOutlined,
+  HddOutlined, SecurityScanOutlined,
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import { Breadcrumb, Layout } from 'antd';
@@ -21,7 +23,6 @@ import axios from '../../utils/axiosConfig';
 import { useCompany } from '../../context/CompanyContext';
 
 const { Title, Text } = Typography;
-const { TabPane } = Tabs;
 const { Content, Header } = Layout;
 
 // ════════════════════════════════════════════════════════════════
@@ -396,7 +397,7 @@ const EmailTab = () => {
       setPasswordIsSet(res.data.password_is_set);
       form.setFieldsValue({
         ...res.data,
-        email_host_password: '', // jamais prérempli
+        email_host_password: '',
       });
     } catch (err) {
       message.error('Impossible de charger la configuration email');
@@ -411,7 +412,6 @@ const EmailTab = () => {
     try {
       const values = await form.validateFields();
       setSaving(true);
-      // Si le mot de passe est vide, ne pas l'envoyer (conserve l'existant)
       const payload = { ...values };
       if (!payload.email_host_password) {
         delete payload.email_host_password;
@@ -444,7 +444,6 @@ const EmailTab = () => {
 
   return (
     <Form form={form} layout="vertical" style={{ maxWidth: 900 }}>
-      {/* Serveur SMTP */}
       <Title level={5}>Serveur SMTP</Title>
       <Row gutter={16}>
         <Col span={12}>
@@ -464,7 +463,6 @@ const EmailTab = () => {
         </Col>
       </Row>
 
-      {/* Authentification */}
       <Title level={5} style={{ marginTop: 16 }}>Authentification</Title>
       <Row gutter={16}>
         <Col span={12}>
@@ -475,7 +473,7 @@ const EmailTab = () => {
         <Col span={12}>
           <Form.Item
             name="email_host_password"
-            label={
+            label={(
               <span>
                 Mot de passe SMTP{' '}
                 {passwordIsSet && (
@@ -484,14 +482,13 @@ const EmailTab = () => {
                   </Tooltip>
                 )}
               </span>
-            }
+            )}
           >
             <Input.Password placeholder={passwordIsSet ? '••••••••  (laisser vide pour conserver)' : 'Mot de passe'} />
           </Form.Item>
         </Col>
       </Row>
 
-      {/* Expéditeur */}
       <Title level={5} style={{ marginTop: 16 }}>Expéditeur</Title>
       <Row gutter={16}>
         <Col span={12}>
@@ -515,12 +512,18 @@ const EmailTab = () => {
 };
 
 // ════════════════════════════════════════════════════════════════
-// Onglet 4 — Informations système
+// Onglet 4 — Informations système + Backups + Export RGPD
 // ════════════════════════════════════════════════════════════════
 
 const SystemTab = () => {
   const [loading, setLoading] = useState(true);
   const [info, setInfo] = useState(null);
+
+  const [backups, setBackups] = useState([]);
+  const [backupsLoading, setBackupsLoading] = useState(false);
+  const [backupCreating, setBackupCreating] = useState(false);
+
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -534,7 +537,116 @@ const SystemTab = () => {
       }
     };
     fetchData();
+    fetchBackups();
   }, []);
+
+  const fetchBackups = async () => {
+    setBackupsLoading(true);
+    try {
+      const res = await axios.get('/api/core/backups/');
+      const data = res.data;
+      if (Array.isArray(data)) {
+        setBackups(data);
+      } else if (Array.isArray(data.backups)) {
+        setBackups(data.backups);
+      } else if (Array.isArray(data.results)) {
+        setBackups(data.results);
+      } else {
+        setBackups([]);
+      }
+    } catch (err) {
+      setBackups([]);
+    } finally {
+      setBackupsLoading(false);
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    setBackupCreating(true);
+    try {
+      const res = await axios.post('/api/core/backups/');
+      message.loading({ content: res.data?.message || 'Sauvegarde en cours...', key: 'backup', duration: 0 });
+      // Attendre que la tâche Celery termine (~3s)
+      setTimeout(async () => {
+        await fetchBackups();
+        setBackupCreating(false);
+        message.success({ content: 'Sauvegarde terminée avec succès', key: 'backup', duration: 3 });
+      }, 3000);
+    } catch (err) {
+      message.error(err.response?.data?.error || 'Erreur lors de la création de la sauvegarde');
+      setBackupCreating(false);
+    }
+  };
+
+  const handleDownloadBackup = async (filename) => {
+    try {
+      const res = await axios.get(`/api/core/backups/${filename}/download/`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      message.error('Erreur lors du téléchargement');
+    }
+  };
+
+  const handleExportRGPD = async () => {
+    setExporting(true);
+    try {
+      const res = await axios.post('/api/core/export/', {}, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/zip' }));
+      const link = document.createElement('a');
+      link.href = url;
+      const now = new Date().toISOString().slice(0, 10);
+      link.setAttribute('download', `cleo_export_rgpd_${now}.zip`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      message.success('Export RGPD téléchargé avec succès');
+    } catch (err) {
+      message.error("Erreur lors de l'export RGPD");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const backupColumns = [
+    { title: 'Fichier', dataIndex: 'filename', key: 'filename', ellipsis: true },
+    {
+      title: 'Taille',
+      dataIndex: 'size_mb',
+      key: 'size_mb',
+      width: 120,
+      render: (val) => (val != null ? `${val} Mo` : '—'),
+    },
+    {
+      title: 'Date de création',
+      dataIndex: 'created_at',
+      key: 'created_at',
+      width: 180,
+      render: (val) => (val ? new Date(val).toLocaleString('fr-FR', {
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit',
+      }) : '—'),
+    },
+    {
+      title: 'Action',
+      key: 'action',
+      width: 130,
+      render: (_, record) => (
+        <Button type="link" icon={<DownloadOutlined />} onClick={() => handleDownloadBackup(record.filename)}>
+          Télécharger
+        </Button>
+      ),
+    },
+  ];
 
   if (loading) return <Spin tip="Chargement..." style={{ display: 'block', margin: '60px auto' }} />;
   if (!info) return <Alert type="error" message="Données indisponibles" />;
@@ -543,7 +655,6 @@ const SystemTab = () => {
 
   return (
     <div style={{ maxWidth: 900 }}>
-      {/* Plateforme */}
       <Title level={5}><CloudServerOutlined /> Plateforme</Title>
       <Descriptions bordered size="small" column={2} style={{ marginBottom: 24 }}>
         <Descriptions.Item label="Version Cleo ERP">
@@ -574,32 +685,14 @@ const SystemTab = () => {
         </Descriptions.Item>
       </Descriptions>
 
-      {/* Statistiques */}
       <Title level={5}><DatabaseOutlined /> Données</Title>
       <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={6}>
-          <Card size="small">
-            <Statistic title="Comptes comptables" value={info.accounts_count} prefix={<BankOutlined />} />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small">
-            <Statistic title="Journaux" value={info.journals_count} prefix={<DatabaseOutlined />} />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small">
-            <Statistic title="Utilisateurs" value={info.users_count} prefix={<TeamOutlined />} />
-          </Card>
-        </Col>
-        <Col span={6}>
-          <Card size="small">
-            <Statistic title="Devises" value={info.currencies_count} prefix={<GlobalOutlined />} />
-          </Card>
-        </Col>
+        <Col span={6}><Card size="small"><Statistic title="Comptes comptables" value={info.accounts_count} prefix={<BankOutlined />} /></Card></Col>
+        <Col span={6}><Card size="small"><Statistic title="Journaux" value={info.journals_count} prefix={<DatabaseOutlined />} /></Card></Col>
+        <Col span={6}><Card size="small"><Statistic title="Utilisateurs" value={info.users_count} prefix={<TeamOutlined />} /></Card></Col>
+        <Col span={6}><Card size="small"><Statistic title="Devises" value={info.currencies_count} prefix={<GlobalOutlined />} /></Card></Col>
       </Row>
 
-      {/* Espace disque */}
       {disk && (
         <>
           <Title level={5}><CloudServerOutlined /> Espace disque</Title>
@@ -626,16 +719,72 @@ const SystemTab = () => {
         </>
       )}
 
-      {/* Technique */}
       <Title level={5}><InfoCircleOutlined /> Technique</Title>
-      <Descriptions bordered size="small" column={2}>
+      <Descriptions bordered size="small" column={2} style={{ marginBottom: 24 }}>
         <Descriptions.Item label="Python">{info.python_version}</Descriptions.Item>
         <Descriptions.Item label="Django">{info.django_version}</Descriptions.Item>
       </Descriptions>
+
+      <Divider />
+
+      <Title level={5}><HddOutlined /> Sauvegardes de la base de données</Title>
+      <Card
+        size="small"
+        style={{ marginBottom: 24 }}
+        extra={(
+          <Space>
+            <Button icon={<ReloadOutlined />} onClick={fetchBackups} loading={backupsLoading} size="small">
+              Actualiser
+            </Button>
+            <Button type="primary" icon={<DatabaseOutlined />} onClick={handleCreateBackup} loading={backupCreating}>
+              Nouvelle sauvegarde
+            </Button>
+          </Space>
+        )}
+      >
+        <Alert
+          type="info"
+          showIcon
+          message="Les sauvegardes sont exécutées automatiquement chaque jour à 2h00. Rétention : 30 jours."
+          style={{ marginBottom: 16 }}
+        />
+        <Table
+          columns={backupColumns}
+          dataSource={backups}
+          rowKey="filename"
+          loading={backupsLoading}
+          size="small"
+          pagination={{
+            pageSize: 10,
+            showSizeChanger: false,
+            showTotal: (t) => `${t} sauvegarde${t > 1 ? 's' : ''}`,
+          }}
+          locale={{ emptyText: 'Aucune sauvegarde disponible' }}
+        />
+      </Card>
+
+      <Title level={5}><SecurityScanOutlined /> Export des données (RGPD)</Title>
+      <Card size="small">
+        <Alert
+          type="warning"
+          showIcon
+          message="Portabilité des données — Article 20 du RGPD"
+          description="Cette fonctionnalité permet d'exporter l'intégralité des données de la plateforme dans un format structuré (JSON). L'archive ZIP générée contient les données de tous les modules : ventes, achats, comptabilité, stocks, RH, CRM, etc."
+          style={{ marginBottom: 16 }}
+        />
+        <Button
+          type="primary"
+          icon={<FileZipOutlined />}
+          onClick={handleExportRGPD}
+          loading={exporting}
+          size="large"
+        >
+          {exporting ? 'Génération en cours...' : 'Exporter toutes les données'}
+        </Button>
+      </Card>
     </div>
   );
 };
-
 
 // ════════════════════════════════════════════════════════════════
 // Onglet 5 — Journal d'audit
@@ -698,10 +847,10 @@ const AuditTab = () => {
       dataIndex: 'timestamp',
       key: 'timestamp',
       width: 170,
-      render: (ts) => ts ? new Date(ts).toLocaleString('fr-FR', {
+      render: (ts) => (ts ? new Date(ts).toLocaleString('fr-FR', {
         day: '2-digit', month: '2-digit', year: 'numeric',
         hour: '2-digit', minute: '2-digit', second: '2-digit',
-      }) : '—',
+      }) : '—'),
     },
     {
       title: 'Utilisateur',
@@ -719,34 +868,15 @@ const AuditTab = () => {
       width: 120,
       render: (m) => <Tag color={MODULE_COLORS[m] || 'default'}>{MODULE_LABELS[m] || m}</Tag>,
     },
-    {
-      title: 'Action',
-      dataIndex: 'action',
-      key: 'action',
-      width: 160,
-    },
+    { title: 'Action', dataIndex: 'action', key: 'action', width: 160 },
     {
       title: 'Entité',
       key: 'entity',
       width: 180,
-      render: (_, r) => r.entity_type ? (
-        <span>{r.entity_type} {r.entity_id ? `#${r.entity_id}` : ''}</span>
-      ) : '—',
+      render: (_, r) => (r.entity_type ? <span>{r.entity_type} {r.entity_id ? `#${r.entity_id}` : ''}</span> : '—'),
     },
-    {
-      title: 'Détails',
-      dataIndex: 'details',
-      key: 'details',
-      ellipsis: true,
-      render: (d) => d || '—',
-    },
-    {
-      title: 'IP',
-      dataIndex: 'ip_address',
-      key: 'ip_address',
-      width: 130,
-      render: (ip) => ip ? <Tag>{ip}</Tag> : '—',
-    },
+    { title: 'Détails', dataIndex: 'details', key: 'details', ellipsis: true, render: (d) => d || '—' },
+    { title: 'IP', dataIndex: 'ip_address', key: 'ip_address', width: 130, render: (ip) => (ip ? <Tag>{ip}</Tag> : '—') },
   ];
 
   const moduleOptions = Object.entries(MODULE_LABELS).map(([k, v]) => ({ value: k, label: v }));
@@ -839,31 +969,11 @@ const PlatformSettings = () => {
             defaultActiveKey="company"
             size="large"
             items={[
-              {
-                key: 'company',
-                label: <span><BankOutlined /> Entreprise</span>,
-                children: <CompanyTab />,
-              },
-              {
-                key: 'settings',
-                label: <span><SettingOutlined /> Paramètres</span>,
-                children: <SettingsTab />,
-              },
-              {
-                key: 'email',
-                label: <span><MailOutlined /> Email</span>,
-                children: <EmailTab />,
-              },
-              {
-                key: 'system',
-                label: <span><InfoCircleOutlined /> Système</span>,
-                children: <SystemTab />,
-              },
-              {
-                key: 'audit',
-                label: <span><FileSearchOutlined /> Journal d'audit</span>,
-                children: <AuditTab />,
-              },
+              { key: 'company', label: <span><BankOutlined /> Entreprise</span>, children: <CompanyTab /> },
+              { key: 'settings', label: <span><SettingOutlined /> Paramètres</span>, children: <SettingsTab /> },
+              { key: 'email', label: <span><MailOutlined /> Email</span>, children: <EmailTab /> },
+              { key: 'system', label: <span><InfoCircleOutlined /> Système</span>, children: <SystemTab /> },
+              { key: 'audit', label: <span><FileSearchOutlined /> Journal d'audit</span>, children: <AuditTab /> },
             ]}
           />
         </Card>

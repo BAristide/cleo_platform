@@ -6,6 +6,7 @@ import shutil
 from django.conf import settings as django_settings
 from django.core.mail import EmailMessage, get_connection
 from django.db import transaction
+from django.db.models import Q
 from django.utils import timezone
 from rest_framework import status, viewsets
 from rest_framework.decorators import action
@@ -514,3 +515,309 @@ class CompanyInfoView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
+
+
+# ── Recherche globale (v3.5.0) ───────────────────────────────────────
+
+
+class GlobalSearchView(APIView):
+    """
+    GET /api/core/search/?q=renault&limit=20
+    Recherche multi-modules avec résultats groupés.
+    Respecte les permissions de l'utilisateur.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    # Nombre max de résultats par module
+    PER_MODULE = 5
+
+    def _get_user_modules(self, user):
+        """Retourne les modules accessibles par l'utilisateur."""
+        if user.is_superuser:
+            return None  # None = tous les modules
+        accessible = set()
+        for group in user.groups.all():
+            try:
+                role = group.role
+                for mp in role.module_permissions.all():
+                    if mp.access_level != 'no_access':
+                        accessible.add(mp.module)
+            except Exception:
+                continue
+        return accessible
+
+    def _search_crm(self, q, limit):
+        from crm.models import Company, Contact, Opportunity
+
+        results = []
+
+        for obj in Company.objects.filter(
+            Q(name__icontains=q) | Q(email__icontains=q) | Q(phone__icontains=q)
+        )[:limit]:
+            results.append(
+                {
+                    'module': 'crm',
+                    'type': 'Entreprise',
+                    'id': obj.id,
+                    'label': obj.name,
+                    'url': f'/crm/companies/{obj.id}',
+                }
+            )
+
+        for obj in Contact.objects.filter(
+            Q(first_name__icontains=q)
+            | Q(last_name__icontains=q)
+            | Q(email__icontains=q)
+        ).select_related('company')[:limit]:
+            results.append(
+                {
+                    'module': 'crm',
+                    'type': 'Contact',
+                    'id': obj.id,
+                    'label': f'{obj.first_name} {obj.last_name}',
+                    'description': obj.company.name if obj.company else '',
+                    'url': f'/crm/contacts/{obj.id}',
+                }
+            )
+
+        for obj in Opportunity.objects.filter(Q(name__icontains=q)).select_related(
+            'company'
+        )[:limit]:
+            results.append(
+                {
+                    'module': 'crm',
+                    'type': 'Opportunité',
+                    'id': obj.id,
+                    'label': obj.name,
+                    'description': obj.company.name if obj.company else '',
+                    'url': f'/crm/opportunities/{obj.id}',
+                }
+            )
+
+        return results
+
+    def _search_sales(self, q, limit):
+        from sales.models import Invoice, Order, Product, Quote
+
+        results = []
+
+        for obj in Product.objects.filter(
+            Q(name__icontains=q) | Q(reference__icontains=q)
+        )[:limit]:
+            results.append(
+                {
+                    'module': 'sales',
+                    'type': 'Produit',
+                    'id': obj.id,
+                    'label': f'{obj.reference} — {obj.name}',
+                    'url': f'/sales/products/{obj.id}',
+                }
+            )
+
+        for obj in Quote.objects.filter(
+            Q(number__icontains=q) | Q(company__name__icontains=q)
+        ).select_related('company')[:limit]:
+            results.append(
+                {
+                    'module': 'sales',
+                    'type': 'Devis',
+                    'id': obj.id,
+                    'label': obj.number,
+                    'description': obj.company.name if obj.company else '',
+                    'url': f'/sales/quotes/{obj.id}',
+                }
+            )
+
+        for obj in Order.objects.filter(
+            Q(number__icontains=q) | Q(company__name__icontains=q)
+        ).select_related('company')[:limit]:
+            results.append(
+                {
+                    'module': 'sales',
+                    'type': 'Commande',
+                    'id': obj.id,
+                    'label': obj.number,
+                    'description': obj.company.name if obj.company else '',
+                    'url': f'/sales/orders/{obj.id}',
+                }
+            )
+
+        for obj in Invoice.objects.filter(
+            Q(number__icontains=q) | Q(company__name__icontains=q)
+        ).select_related('company')[:limit]:
+            results.append(
+                {
+                    'module': 'sales',
+                    'type': 'Facture',
+                    'id': obj.id,
+                    'label': obj.number,
+                    'description': obj.company.name if obj.company else '',
+                    'url': f'/sales/invoices/{obj.id}',
+                }
+            )
+
+        return results
+
+    def _search_purchasing(self, q, limit):
+        from purchasing.models import PurchaseOrder, Supplier, SupplierInvoice
+
+        results = []
+
+        for obj in Supplier.objects.filter(
+            Q(name__icontains=q) | Q(code__icontains=q) | Q(email__icontains=q)
+        )[:limit]:
+            results.append(
+                {
+                    'module': 'purchasing',
+                    'type': 'Fournisseur',
+                    'id': obj.id,
+                    'label': f'{obj.code} — {obj.name}',
+                    'url': f'/purchasing/suppliers/{obj.id}',
+                }
+            )
+
+        for obj in PurchaseOrder.objects.filter(
+            Q(number__icontains=q) | Q(supplier__name__icontains=q)
+        ).select_related('supplier')[:limit]:
+            results.append(
+                {
+                    'module': 'purchasing',
+                    'type': 'Bon de commande',
+                    'id': obj.id,
+                    'label': obj.number,
+                    'description': obj.supplier.name,
+                    'url': f'/purchasing/orders/{obj.id}',
+                }
+            )
+
+        for obj in SupplierInvoice.objects.filter(
+            Q(number__icontains=q)
+            | Q(supplier__name__icontains=q)
+            | Q(supplier_reference__icontains=q)
+        ).select_related('supplier')[:limit]:
+            results.append(
+                {
+                    'module': 'purchasing',
+                    'type': 'Facture fournisseur',
+                    'id': obj.id,
+                    'label': obj.number,
+                    'description': obj.supplier.name,
+                    'url': f'/purchasing/invoices/{obj.id}',
+                }
+            )
+
+        return results
+
+    def _search_hr(self, q, limit):
+        from hr.models import Employee
+
+        results = []
+
+        for obj in Employee.objects.filter(
+            Q(first_name__icontains=q)
+            | Q(last_name__icontains=q)
+            | Q(employee_id__icontains=q)
+        )[:limit]:
+            results.append(
+                {
+                    'module': 'hr',
+                    'type': 'Employé',
+                    'id': obj.id,
+                    'label': f'{obj.first_name} {obj.last_name}',
+                    'description': obj.employee_id,
+                    'url': f'/hr/employees/{obj.id}',
+                }
+            )
+
+        return results
+
+    def _search_inventory(self, q, limit):
+        from inventory.models import Warehouse
+
+        results = []
+
+        for obj in Warehouse.objects.filter(
+            Q(name__icontains=q) | Q(code__icontains=q)
+        )[:limit]:
+            results.append(
+                {
+                    'module': 'inventory',
+                    'type': 'Entrepôt',
+                    'id': obj.id,
+                    'label': f'{obj.code} — {obj.name}',
+                    'url': '/inventory/warehouses',
+                }
+            )
+
+        return results
+
+    def _search_accounting(self, q, limit):
+        from accounting.models import Account, Journal
+
+        results = []
+
+        for obj in Account.objects.filter(Q(code__icontains=q) | Q(name__icontains=q))[
+            :limit
+        ]:
+            results.append(
+                {
+                    'module': 'accounting',
+                    'type': 'Compte',
+                    'id': obj.id,
+                    'label': f'{obj.code} — {obj.name}',
+                    'url': f'/accounting/accounts/{obj.id}',
+                }
+            )
+
+        for obj in Journal.objects.filter(Q(code__icontains=q) | Q(name__icontains=q))[
+            :limit
+        ]:
+            results.append(
+                {
+                    'module': 'accounting',
+                    'type': 'Journal',
+                    'id': obj.id,
+                    'label': f'{obj.code} — {obj.name}',
+                    'url': f'/accounting/journals/{obj.id}',
+                }
+            )
+
+        return results
+
+    def get(self, request):
+        q = request.query_params.get('q', '').strip()
+        if len(q) < 2:
+            return Response({'results': [], 'query': q, 'total': 0})
+
+        limit = min(int(request.query_params.get('limit', 20)), 50)
+        per_module = self.PER_MODULE
+        user_modules = self._get_user_modules(request.user)
+
+        search_map = {
+            'crm': self._search_crm,
+            'sales': self._search_sales,
+            'purchasing': self._search_purchasing,
+            'hr': self._search_hr,
+            'inventory': self._search_inventory,
+            'accounting': self._search_accounting,
+        }
+
+        all_results = []
+        for module_key, search_fn in search_map.items():
+            # Vérifier les permissions
+            if user_modules is not None and module_key not in user_modules:
+                continue
+            try:
+                results = search_fn(q, per_module)
+                all_results.extend(results)
+            except Exception:
+                continue
+
+        return Response(
+            {
+                'results': all_results[:limit],
+                'query': q,
+                'total': len(all_results),
+            }
+        )

@@ -29,4 +29,6 @@ urlpatterns = [
         name='email-test',
     ),
     path('system-info/', views.SystemInfoView.as_view(), name='system-info'),
+    # ── Recherche globale (v3.5.0) ────────────────────────────────────
+    path('search/', views.GlobalSearchView.as_view(), name='global-search'),
 ]

@@ -4,6 +4,7 @@ import { Layout, Menu, Typography, Breadcrumb } from 'antd';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import { HomeOutlined } from '@ant-design/icons';
 import UserMenu from './UserMenu';
+import GlobalSearch from './GlobalSearch';
 import './ModuleLayout.css';
 
 const { Header, Content, Sider } = Layout;
@@ -112,7 +113,10 @@ const ModuleLayout = ({
             <Title level={4} style={{ margin: 0 }}>{moduleTitle}</Title>
             {headerExtra}
           </div>
-          <UserMenu />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <GlobalSearch />
+            <UserMenu />
+          </div>
         </Header>
 
         <Content className="module-layout-content">

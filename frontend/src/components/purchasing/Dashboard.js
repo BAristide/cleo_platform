@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
+import {
+  ShopOutlined, FileTextOutlined, InboxOutlined,
+  FileExclamationOutlined, DollarOutlined, CreditCardOutlined,
+} from '@ant-design/icons';
 
 const kpiConfig = [
-  { key: 'suppliers_count', label: 'Fournisseurs actifs', icon: '🏭', color: '#3182ce' },
-  { key: 'pending_orders', label: 'BC à réceptionner', icon: '📋', color: '#dd6b20' },
-  { key: 'pending_receptions', label: 'Réceptions en attente', icon: '📦', color: '#805ad5' },
-  { key: 'unpaid_invoices', label: 'Factures impayées', icon: '🧾', color: '#e53e3e' },
-  { key: 'total_purchases', label: 'Total achats', icon: '💰', color: '#38a169', isCurrency: true },
-  { key: 'total_due', label: 'Dettes fournisseurs', icon: '💳', color: '#d69e2e', isCurrency: true },
+  { key: 'suppliers_count', label: 'Fournisseurs actifs', icon: <ShopOutlined />, color: '#3182ce' },
+  { key: 'pending_orders', label: 'BC à réceptionner', icon: <FileTextOutlined />, color: '#dd6b20' },
+  { key: 'pending_receptions', label: 'Réceptions en attente', icon: <InboxOutlined />, color: '#805ad5' },
+  { key: 'unpaid_invoices', label: 'Factures impayées', icon: <FileExclamationOutlined />, color: '#e53e3e' },
+  { key: 'total_purchases', label: 'Total achats', icon: <DollarOutlined />, color: '#38a169', isCurrency: true },
+  { key: 'total_due', label: 'Dettes fournisseurs', icon: <CreditCardOutlined />, color: '#d69e2e', isCurrency: true },
 ];
 
 export default function Dashboard() {
@@ -38,7 +42,7 @@ export default function Dashboard() {
             background: '#fff', borderRadius: 12, padding: 20,
             borderLeft: `4px solid ${kpi.color}`, boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
           }}>
-            <div style={{ fontSize: 24, marginBottom: 8 }}>{kpi.icon}</div>
+            <div style={{ fontSize: 28, marginBottom: 8, color: kpi.color }}>{kpi.icon}</div>
             <div style={{ fontSize: 13, color: '#718096', marginBottom: 4 }}>{kpi.label}</div>
             <div style={{ fontSize: 22, fontWeight: 700, color: '#2d3748' }}>
               {kpi.isCurrency

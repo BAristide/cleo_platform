@@ -51,7 +51,7 @@ export default function PurchaseOrderDetail() {
             <Link to={`/purchasing/receptions/new?po=${id}`} style={{
               padding: '8px 16px', background: '#805ad5', color: '#fff',
               borderRadius: 6, textDecoration: 'none', fontSize: 14
-            }}>📦 Créer réception</Link>
+            }}>Créer réception</Link>
           )}
           {['draft', 'confirmed'].includes(order.state) && (
             <button onClick={handleCancel} style={{

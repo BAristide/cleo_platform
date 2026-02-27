@@ -263,7 +263,7 @@ const MainDashboard = () => {
 
         {/* Modules */}
         <div className="section-title">
-          <span className="section-icon" style={{ background: '#3b82f6' }}>📦</span>
+          <span className="section-icon" style={{ background: '#3b82f6', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}><AppstoreOutlined /></span>
           Modules
         </div>
         <div className="modules-grid">

@@ -159,8 +159,8 @@ class AvailabilityAdmin(admin.ModelAdmin):
     date_hierarchy = 'start_date'
 
     def approval_status(self, obj):
-        hr = '✅' if obj.approved_by_hr else '❌'
-        manager = '✅' if obj.approved_by_manager else '❌'
+        hr = 'Oui' if obj.approved_by_hr else 'Non'
+        manager = 'Oui' if obj.approved_by_manager else 'Non'
 
         return mark_safe(f'Manager: {manager} | RH: {hr}')
 
@@ -225,9 +225,9 @@ class MissionAdmin(admin.ModelAdmin):
     pdf_link.short_description = 'Ordre de mission PDF'
 
     def approval_status(self, obj):
-        manager = '✅' if obj.approved_by_manager else '❌'
-        hr = '✅' if obj.approved_by_hr else '❌'
-        finance = '✅' if obj.approved_by_finance else '❌'
+        manager = 'Oui' if obj.approved_by_manager else 'Non'
+        hr = 'Oui' if obj.approved_by_hr else 'Non'
+        finance = 'Oui' if obj.approved_by_finance else 'Non'
 
         return mark_safe(f'Manager: {manager} | RH: {hr} | Finance: {finance}')
 
@@ -360,9 +360,9 @@ class TrainingPlanAdmin(admin.ModelAdmin):
     inlines = [TrainingPlanItemInline]
 
     def approval_status(self, obj):
-        manager = '✅' if obj.approved_by_manager else '❌'
-        hr = '✅' if obj.approved_by_hr else '❌'
-        finance = '✅' if obj.approved_by_finance else '❌'
+        manager = 'Oui' if obj.approved_by_manager else 'Non'
+        hr = 'Oui' if obj.approved_by_hr else 'Non'
+        finance = 'Oui' if obj.approved_by_finance else 'Non'
 
         return mark_safe(f'Manager: {manager} | RH: {hr} | Finance: {finance}')
 

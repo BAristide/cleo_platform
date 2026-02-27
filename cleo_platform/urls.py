@@ -79,7 +79,7 @@ urlpatterns = [
         'purchasing/<path:path>',
         login_required(TemplateView.as_view(template_name='index.html')),
     ),
-    # ✅ Nouveau : routes frontend pour Settings
+    # Nouveau : routes frontend pour Settings
     path('settings/', login_required(TemplateView.as_view(template_name='index.html'))),
     path(
         'settings/<path:path>',

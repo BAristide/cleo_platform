@@ -43,14 +43,14 @@ class Command(BaseCommand):
             return
 
         if force:
-            self.stdout.write('🔄 Réinitialisation forcée des données de paie...')
+            self.stdout.write('[RESET] Réinitialisation forcée des données de paie...')
             PayrollParameter.objects.all().delete()
             SalaryComponent.objects.all().delete()
             ContractType.objects.all().delete()
             TaxBracket.objects.all().delete()
 
         self.stdout.write(
-            f'📦 Initialisation des données de paie — Pack : {locale_pack}'
+            f'[INIT] Initialisation des données de paie — Pack : {locale_pack}'
         )
 
         # 1. Charger les fixtures génériques
@@ -68,7 +68,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.SUCCESS(
-                f'✅ Initialisation de la paie terminée — Pack {locale_pack}'
+                f'[OK] Initialisation de la paie terminée — Pack {locale_pack}'
             )
         )
 
@@ -83,7 +83,7 @@ class Command(BaseCommand):
         except Exception:
             pass
         self.stdout.write(
-            self.style.WARNING('⚠️  CompanySetup non trouvé — défaut : MA')
+            self.style.WARNING('[WARN] CompanySetup non trouvé — défaut : MA')
         )
         return 'MA'
 

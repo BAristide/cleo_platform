@@ -97,7 +97,7 @@ class Command(BaseCommand):
 
         pack_info = AVAILABLE_PACKS[country]
         self.stdout.write(
-            self.style.NOTICE(f'🌍 Chargement du pack {pack_info["name"]}...')
+            self.style.NOTICE(f'[SETUP] Chargement du pack {pack_info["name"]}...')
         )
 
         if force and existing:
@@ -123,7 +123,7 @@ class Command(BaseCommand):
 
             init_service = InitAccountingService(locale_pack=country, force=False)
             init_service.init_all()
-            self.stdout.write(self.style.SUCCESS('  ✅ Comptabilité initialisée'))
+            self.stdout.write(self.style.SUCCESS('  [OK] Comptabilité initialisée'))
 
             try:
                 import importlib
@@ -133,17 +133,19 @@ class Command(BaseCommand):
                 )
                 if hasattr(payroll_module, 'load_payroll_data'):
                     payroll_module.load_payroll_data()
-                    self.stdout.write(self.style.SUCCESS('  ✅ Paie initialisée'))
+                    self.stdout.write(self.style.SUCCESS('  [OK] Paie initialisée'))
             except (ImportError, ModuleNotFoundError):
                 try:
                     from django.core.management import call_command
 
                     call_command('init_payroll_data')
                     self.stdout.write(
-                        self.style.SUCCESS('  ✅ Paie initialisée (legacy)')
+                        self.style.SUCCESS('  [OK] Paie initialisée (legacy)')
                     )
                 except Exception:
-                    self.stdout.write(self.style.WARNING('  ⚠️  Paie : non disponible'))
+                    self.stdout.write(
+                        self.style.WARNING('  [WARN]  Paie : non disponible')
+                    )
 
             if install_demo:
                 try:
@@ -155,16 +157,18 @@ class Command(BaseCommand):
                     if hasattr(demo_module, 'load_demo_data'):
                         demo_module.load_demo_data()
                         self.stdout.write(
-                            self.style.SUCCESS('  ✅ Données de démo installées')
+                            self.style.SUCCESS('  [OK] Données de démo installées')
                         )
                 except (ImportError, ModuleNotFoundError):
                     self.stdout.write(
-                        self.style.WARNING('  ⚠️  Données de démo : non disponibles')
+                        self.style.WARNING(
+                            '  [WARN]  Données de démo : non disponibles'
+                        )
                     )
 
         except Exception as e:
             setup.delete()
-            self.stderr.write(self.style.ERROR(f'❌ Erreur : {e}'))
+            self.stderr.write(self.style.ERROR(f'[ERROR] Erreur : {e}'))
             raise
 
         setup.setup_completed = True
@@ -175,21 +179,23 @@ class Command(BaseCommand):
 
         try:
             call_command('create_custom_permissions')
-            self.stdout.write(self.style.SUCCESS('  ✅ Permissions créées'))
+            self.stdout.write(self.style.SUCCESS('  [OK] Permissions créées'))
         except Exception:
-            self.stdout.write(self.style.WARNING('  ⚠️  Permissions : non disponibles'))
+            self.stdout.write(
+                self.style.WARNING('  [WARN]  Permissions : non disponibles')
+            )
 
         try:
             call_command('create_default_roles')
-            self.stdout.write(self.style.SUCCESS('  ✅ Rôles créés'))
+            self.stdout.write(self.style.SUCCESS('  [OK] Rôles créés'))
         except Exception:
-            self.stdout.write(self.style.WARNING('  ⚠️  Rôles : non disponibles'))
+            self.stdout.write(self.style.WARNING('  [WARN]  Rôles : non disponibles'))
 
         from accounting.models import Account, Journal, Tax
 
         self.stdout.write('')
         self.stdout.write(
-            self.style.SUCCESS(f'🎉 Cleo ERP configuré — Pack {pack_info["name"]}')
+            self.style.SUCCESS(f'[DONE] Cleo ERP configuré — Pack {pack_info["name"]}')
         )
         self.stdout.write(f'   Entreprise : {company_name}')
         self.stdout.write(f'   Comptes    : {Account.objects.count()}')

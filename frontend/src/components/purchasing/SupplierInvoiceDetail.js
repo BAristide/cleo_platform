@@ -26,9 +26,9 @@ const mimeIcons = {
   'image/jpeg': '🖼️',
   'image/png': '🖼️',
   'image/webp': '🖼️',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': '📊',
-  'application/vnd.ms-excel': '📊',
-  'text/csv': '📊',
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLS',
+  'application/vnd.ms-excel': 'XLS',
+  'text/csv': 'XLS',
 };
 
 export default function SupplierInvoiceDetail() {
@@ -521,7 +521,7 @@ export default function SupplierInvoiceDetail() {
               disabled={uploading}
               style={btnStyle('#3182ce')}
             >
-              {uploading ? '⏳ Envoi en cours...' : '📤 Ajouter un fichier'}
+              {uploading ? 'Envoi en cours...' : 'Ajouter un fichier'}
             </button>
           </div>
         </div>

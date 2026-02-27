@@ -9,6 +9,10 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 from . import views
 
@@ -38,6 +42,9 @@ urlpatterns = [
         name='swagger-ui',
     ),
     path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    # Authentification JWT (v3.7.0)
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # Routes pour le frontend (nécessitent une authentification)
     path('crm/', login_required(TemplateView.as_view(template_name='index.html'))),
     path(

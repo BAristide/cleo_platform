@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 from decouple import Csv, config
@@ -6,7 +7,7 @@ from decouple import Csv, config
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # ── Version de la plateforme ────────────────────────────────────
-VERSION = '3.5.1'
+VERSION = '3.7.0'
 
 SITE_URL = config('SITE_URL', default='http://localhost:8000')
 
@@ -42,7 +43,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
@@ -110,6 +111,21 @@ SPECTACULAR_SETTINGS = {
         {'name': 'Dashboard', 'description': 'Statistiques et KPI consolidés'},
     ],
 }
+
+# =========================
+# JWT (v3.7.0)
+# =========================
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'UPDATE_LAST_LOGIN': True,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'TOKEN_OBTAIN_SERIALIZER': 'rest_framework_simplejwt.serializers.TokenObtainPairSerializer',
+}
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

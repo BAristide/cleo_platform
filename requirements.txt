@@ -44,3 +44,4 @@ webencodings==0.5.1
 xlsxwriter>=3.1.0
 zopfli==0.2.3.post1
 drf-spectacular
+djangorestframework-simplejwt

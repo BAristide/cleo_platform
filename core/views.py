@@ -1,7 +1,11 @@
 import importlib
+import json
 import logging
 import os
 import shutil
+import zipfile
+from datetime import datetime
+from io import BytesIO
 
 from django.conf import settings as django_settings
 from django.core.mail import EmailMessage, get_connection
@@ -913,3 +917,597 @@ class BackupDownloadView(APIView):
         )
         response['Content-Disposition'] = f'attachment; filename="{safe_filename}"'
         return response
+
+
+# ── Export RGPD (v3.9.0) ─────────────────────────────────────────────
+
+
+class ExportRGPDView(APIView):
+    """
+    POST /api/core/export/
+    Génère une archive ZIP contenant toutes les données de l'entreprise
+    au format JSON (un fichier par module).
+    Réservé aux administrateurs (obligation RGPD — droit à la portabilité).
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def post(self, request):
+        buffer = BytesIO()
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+
+        with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+            # ── Core ─────────────────────────────────────────────
+            from core.models import Company, CompanySetup, Currency
+
+            zf.writestr(
+                'core/currencies.json',
+                self._serialize(
+                    Currency.objects.all(),
+                    [
+                        'id',
+                        'code',
+                        'name',
+                        'symbol',
+                        'is_default',
+                        'exchange_rate',
+                        'decimal_places',
+                        'symbol_position',
+                    ],
+                ),
+            )
+            zf.writestr(
+                'core/company.json',
+                self._serialize(
+                    Company.objects.all(),
+                    [
+                        'id',
+                        'name',
+                        'legal_name',
+                        'tax_id',
+                        'registration_number',
+                        'website',
+                        'email',
+                        'phone',
+                        'street',
+                        'street2',
+                        'city',
+                        'zip_code',
+                        'state',
+                        'country',
+                    ],
+                ),
+            )
+            zf.writestr(
+                'core/company_setup.json',
+                self._serialize(
+                    CompanySetup.objects.all(),
+                    [
+                        'id',
+                        'company_name',
+                        'country_code',
+                        'locale_pack',
+                        'address_line1',
+                        'city',
+                        'postal_code',
+                        'country',
+                        'phone',
+                        'email',
+                        'website',
+                        'bank_name',
+                        'bank_account',
+                    ],
+                ),
+            )
+
+            # ── CRM ──────────────────────────────────────────────
+            try:
+                from crm.models import Activity, Contact, CRMCompany, Opportunity
+
+                zf.writestr(
+                    'crm/contacts.json',
+                    self._serialize(
+                        Contact.objects.all(),
+                        [
+                            'id',
+                            'first_name',
+                            'last_name',
+                            'email',
+                            'phone',
+                            'mobile',
+                            'job_title',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'crm/companies.json',
+                    self._serialize(
+                        CRMCompany.objects.all(),
+                        [
+                            'id',
+                            'name',
+                            'email',
+                            'phone',
+                            'website',
+                            'industry',
+                            'city',
+                            'country',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'crm/opportunities.json',
+                    self._serialize(
+                        Opportunity.objects.all(),
+                        [
+                            'id',
+                            'name',
+                            'stage',
+                            'amount',
+                            'probability',
+                            'expected_close_date',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'crm/activities.json',
+                    self._serialize(
+                        Activity.objects.all(),
+                        [
+                            'id',
+                            'activity_type',
+                            'subject',
+                            'description',
+                            'date',
+                            'created_at',
+                        ],
+                    ),
+                )
+            except ImportError:
+                pass
+
+            # ── Ventes ───────────────────────────────────────────
+            try:
+                from sales.models import (
+                    Invoice,
+                    Order,
+                    Payment,
+                    Product,
+                    Quote,
+                )
+
+                zf.writestr(
+                    'sales/products.json',
+                    self._serialize(
+                        Product.objects.all(),
+                        [
+                            'id',
+                            'reference',
+                            'name',
+                            'product_type',
+                            'sale_price',
+                            'cost_price',
+                            'tax_rate',
+                            'stock_alert_threshold',
+                            'is_active',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'sales/quotes.json',
+                    self._serialize(
+                        Quote.objects.all(),
+                        [
+                            'id',
+                            'number',
+                            'state',
+                            'total_ht',
+                            'total_ttc',
+                            'date',
+                            'validity_date',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'sales/orders.json',
+                    self._serialize(
+                        Order.objects.all(),
+                        [
+                            'id',
+                            'number',
+                            'state',
+                            'total_ht',
+                            'total_ttc',
+                            'date',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'sales/invoices.json',
+                    self._serialize(
+                        Invoice.objects.all(),
+                        [
+                            'id',
+                            'number',
+                            'state',
+                            'payment_status',
+                            'total_ht',
+                            'total_ttc',
+                            'amount_due',
+                            'date',
+                            'due_date',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'sales/payments.json',
+                    self._serialize(
+                        Payment.objects.all(),
+                        [
+                            'id',
+                            'amount',
+                            'payment_method',
+                            'payment_date',
+                            'reference',
+                            'created_at',
+                        ],
+                    ),
+                )
+            except ImportError:
+                pass
+
+            # ── Achats ───────────────────────────────────────────
+            try:
+                from purchasing.models import (
+                    PurchaseOrder,
+                    Supplier,
+                    SupplierInvoice,
+                )
+
+                zf.writestr(
+                    'purchasing/suppliers.json',
+                    self._serialize(
+                        Supplier.objects.all(),
+                        [
+                            'id',
+                            'name',
+                            'email',
+                            'phone',
+                            'address',
+                            'city',
+                            'country',
+                            'tax_id',
+                            'is_active',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'purchasing/purchase_orders.json',
+                    self._serialize(
+                        PurchaseOrder.objects.all(),
+                        [
+                            'id',
+                            'number',
+                            'state',
+                            'total_ht',
+                            'total_ttc',
+                            'date',
+                            'expected_delivery_date',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'purchasing/supplier_invoices.json',
+                    self._serialize(
+                        SupplierInvoice.objects.all(),
+                        [
+                            'id',
+                            'number',
+                            'state',
+                            'total_ht',
+                            'total_ttc',
+                            'date',
+                            'due_date',
+                            'created_at',
+                        ],
+                    ),
+                )
+            except ImportError:
+                pass
+
+            # ── Stocks ───────────────────────────────────────────
+            try:
+                from inventory.models import (
+                    StockLevel,
+                    StockMovement,
+                    Warehouse,
+                )
+
+                zf.writestr(
+                    'inventory/warehouses.json',
+                    self._serialize(
+                        Warehouse.objects.all(),
+                        [
+                            'id',
+                            'name',
+                            'code',
+                            'address',
+                            'is_active',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'inventory/stock_levels.json',
+                    self._serialize(
+                        StockLevel.objects.all(),
+                        [
+                            'id',
+                            'quantity_on_hand',
+                            'quantity_reserved',
+                            'updated_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'inventory/stock_movements.json',
+                    self._serialize(
+                        StockMovement.objects.all(),
+                        [
+                            'id',
+                            'movement_type',
+                            'quantity',
+                            'reference',
+                            'date',
+                            'created_at',
+                        ],
+                    ),
+                )
+            except ImportError:
+                pass
+
+            # ── RH ───────────────────────────────────────────────
+            try:
+                from hr.models import Department, Employee, Position
+
+                zf.writestr(
+                    'hr/departments.json',
+                    self._serialize(
+                        Department.objects.all(),
+                        [
+                            'id',
+                            'name',
+                            'code',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'hr/positions.json',
+                    self._serialize(
+                        Position.objects.all(),
+                        [
+                            'id',
+                            'title',
+                            'department_id',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'hr/employees.json',
+                    self._serialize(
+                        Employee.objects.all(),
+                        [
+                            'id',
+                            'employee_id',
+                            'first_name',
+                            'last_name',
+                            'email',
+                            'phone',
+                            'hire_date',
+                            'status',
+                            'created_at',
+                        ],
+                    ),
+                )
+            except ImportError:
+                pass
+
+            # ── Paie ─────────────────────────────────────────────
+            try:
+                from payroll.models import Payslip
+
+                zf.writestr(
+                    'payroll/payslips.json',
+                    self._serialize(
+                        Payslip.objects.all(),
+                        [
+                            'id',
+                            'period',
+                            'gross_salary',
+                            'net_salary',
+                            'total_deductions',
+                            'state',
+                            'created_at',
+                        ],
+                    ),
+                )
+            except ImportError:
+                pass
+
+            # ── Comptabilité ─────────────────────────────────────
+            try:
+                from accounting.models import Account, Journal, JournalEntry
+
+                zf.writestr(
+                    'accounting/accounts.json',
+                    self._serialize(
+                        Account.objects.all(),
+                        [
+                            'id',
+                            'code',
+                            'name',
+                            'account_type',
+                            'is_active',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'accounting/journals.json',
+                    self._serialize(
+                        Journal.objects.all(),
+                        [
+                            'id',
+                            'code',
+                            'name',
+                            'journal_type',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'accounting/journal_entries.json',
+                    self._serialize(
+                        JournalEntry.objects.all(),
+                        [
+                            'id',
+                            'number',
+                            'date',
+                            'description',
+                            'total_debit',
+                            'total_credit',
+                            'state',
+                            'created_at',
+                        ],
+                    ),
+                )
+            except ImportError:
+                pass
+
+            # ── Recrutement ──────────────────────────────────────
+            try:
+                from recruitment.models import Application, JobOffer
+
+                zf.writestr(
+                    'recruitment/job_offers.json',
+                    self._serialize(
+                        JobOffer.objects.all(),
+                        [
+                            'id',
+                            'title',
+                            'status',
+                            'location',
+                            'contract_type',
+                            'published_date',
+                            'created_at',
+                        ],
+                    ),
+                )
+                zf.writestr(
+                    'recruitment/applications.json',
+                    self._serialize(
+                        Application.objects.all(),
+                        [
+                            'id',
+                            'candidate_name',
+                            'candidate_email',
+                            'status',
+                            'applied_date',
+                            'created_at',
+                        ],
+                    ),
+                )
+            except ImportError:
+                pass
+
+            # ── Utilisateurs ─────────────────────────────────────
+            from django.contrib.auth.models import User
+
+            zf.writestr(
+                'users/users.json',
+                self._serialize(
+                    User.objects.all(),
+                    [
+                        'id',
+                        'username',
+                        'email',
+                        'first_name',
+                        'last_name',
+                        'is_active',
+                        'is_staff',
+                        'date_joined',
+                        'last_login',
+                    ],
+                ),
+            )
+
+            # ── Notifications ────────────────────────────────────
+            try:
+                from notifications.models import Notification
+
+                zf.writestr(
+                    'notifications/notifications.json',
+                    self._serialize(
+                        Notification.objects.all(),
+                        [
+                            'id',
+                            'level',
+                            'title',
+                            'message',
+                            'module',
+                            'is_read',
+                            'created_at',
+                        ],
+                    ),
+                )
+            except ImportError:
+                pass
+
+            # ── Métadonnées ──────────────────────────────────────
+            meta = {
+                'export_date': datetime.now().isoformat(),
+                'platform': 'Cleo ERP',
+                'version': django_settings.VERSION,
+                'export_type': 'RGPD — Portabilité des données (Art. 20)',
+                'requested_by': request.user.username,
+            }
+            zf.writestr('metadata.json', json.dumps(meta, indent=2, default=str))
+
+        buffer.seek(0)
+
+        from django.http import FileResponse
+
+        response = FileResponse(
+            buffer,
+            content_type='application/zip',
+        )
+        response['Content-Disposition'] = (
+            f'attachment; filename="cleo_export_{timestamp}.zip"'
+        )
+        return response
+
+    def _serialize(self, queryset, fields):
+        """Sérialise un queryset en JSON avec les champs spécifiés."""
+        data = []
+        for obj in queryset:
+            row = {}
+            for field in fields:
+                value = getattr(obj, field, None)
+                if hasattr(value, 'isoformat'):
+                    value = value.isoformat()
+                elif hasattr(value, '__str__') and not isinstance(
+                    value, (str, int, float, bool, type(None))
+                ):
+                    value = str(value)
+                row[field] = value
+            data.append(row)
+        return json.dumps(data, indent=2, ensure_ascii=False, default=str)

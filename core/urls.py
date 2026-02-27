@@ -38,4 +38,6 @@ urlpatterns = [
         views.BackupDownloadView.as_view(),
         name='backup-download',
     ),
+    # ── Export RGPD (v3.9.0) ─────────────────────────────────────────
+    path('export/', views.ExportRGPDView.as_view(), name='rgpd-export'),
 ]

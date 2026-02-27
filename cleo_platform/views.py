@@ -1,3 +1,4 @@
+from django.conf import settings as django_settings
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
@@ -43,14 +44,21 @@ def login_view(request):
             return render(
                 request,
                 'login.html',
-                {'error': "Nom d'utilisateur ou mot de passe invalide"},
+                {
+                    'error': "Nom d'utilisateur ou mot de passe invalide",
+                    'version': getattr(django_settings, 'VERSION', ''),
+                },
             )
     else:
         next_url = request.GET.get('next', '/')
         # Vérifier si next_url est vide ou invalide
         if not next_url or next_url == '':
             next_url = '/'  # Utiliser la page d'accueil par défaut
-        return render(request, 'login.html', {'next': next_url})
+        return render(
+            request,
+            'login.html',
+            {'next': next_url, 'version': getattr(django_settings, 'VERSION', '')},
+        )
 
 
 def logout_view(request):

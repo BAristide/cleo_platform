@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Spin } from 'antd';
+import { Spin, ConfigProvider } from 'antd';
+import frFR from 'antd/locale/fr_FR';
 import './App.css';
 import ExecutiveDashboard from './components/dashboard/ExecutiveDashboard';
 import CRMRoutes from './components/crm/Routes';
@@ -54,18 +55,20 @@ function App() {
   if (!setupStatus?.setup_completed) {
     return (
       <AuthProvider>
-        <Router>
-          <Routes>
-            <Route path="/setup" element={
-              <PrivateRoute>
-                <AdminRoute>
-                  <SetupWizard />
-                </AdminRoute>
-              </PrivateRoute>
-            } />
-            <Route path="*" element={<Navigate to="/setup" replace />} />
-          </Routes>
-        </Router>
+        <ConfigProvider locale={frFR}>
+          <Router>
+            <Routes>
+              <Route path="/setup" element={
+                <PrivateRoute>
+                  <AdminRoute>
+                    <SetupWizard />
+                  </AdminRoute>
+                </PrivateRoute>
+              } />
+              <Route path="*" element={<Navigate to="/setup" replace />} />
+            </Routes>
+          </Router>
+        </ConfigProvider>
       </AuthProvider>
     );
   }
@@ -73,109 +76,111 @@ function App() {
   return (
     <AuthProvider>
       <CurrencyProvider>
-        <Router>
-          <Routes>
-            <Route path="/" element={
-              <PrivateRoute>
-                <ExecutiveDashboard />
-              </PrivateRoute>
-            } />
-            <Route path="/profile" element={
-              <PrivateRoute>
-                <ProfilePage />
-              </PrivateRoute>
-            } />
-            <Route path="/profile/password" element={
-              <PrivateRoute>
-                <ChangePassword />
-              </PrivateRoute>
-            } />
-            <Route path="/users/*" element={
-              <PrivateRoute>
-                <AdminRoute>
-                  <UserRoutes />
-                </AdminRoute>
-              </PrivateRoute>
-            } />
-            <Route path="/crm/*" element={
-              <PrivateRoute>
-                <PermissionRoute module="crm">
-                  <CRMRoutes />
-                </PermissionRoute>
-              </PrivateRoute>
-            } />
-            <Route path="/sales/*" element={
-              <PrivateRoute>
-                <PermissionRoute module="sales">
-                  <SalesRoutes />
-                </PermissionRoute>
-              </PrivateRoute>
-            } />
-            <Route path="/hr/*" element={
-              <PrivateRoute>
-                <PermissionRoute module="hr">
-                  <HRRoutes />
-                </PermissionRoute>
-              </PrivateRoute>
-            } />
-            <Route path="/payroll/*" element={
-              <PrivateRoute>
-                <PermissionRoute module="payroll">
-                  <PayrollRoutes />
-                </PermissionRoute>
-              </PrivateRoute>
-            } />
-            <Route path="/accounting/*" element={
-              <PrivateRoute>
-                <PermissionRoute module="accounting">
-                  <AccountingRoutes />
-                </PermissionRoute>
-              </PrivateRoute>
-            } />
-            <Route path="/recruitment/*" element={
-              <PrivateRoute>
-                <PermissionRoute module="recruitment">
-                  <RecruitmentRoutes />
-                </PermissionRoute>
-              </PrivateRoute>
-            } />
-            <Route path="/purchasing/*" element={
-              <PrivateRoute>
-                <PermissionRoute module="purchasing">
-                  <PurchasingRoutes />
-                </PermissionRoute>
-              </PrivateRoute>
-            } />
-            <Route path="/inventory/*" element={
-              <PrivateRoute>
-                <PermissionRoute module="inventory">
-                  <InventoryRoutes />
-                </PermissionRoute>
-              </PrivateRoute>
-            } />
+        <ConfigProvider locale={frFR}>
+          <Router>
+            <Routes>
+              <Route path="/" element={
+                <PrivateRoute>
+                  <ExecutiveDashboard />
+                </PrivateRoute>
+              } />
+              <Route path="/profile" element={
+                <PrivateRoute>
+                  <ProfilePage />
+                </PrivateRoute>
+              } />
+              <Route path="/profile/password" element={
+                <PrivateRoute>
+                  <ChangePassword />
+                </PrivateRoute>
+              } />
+              <Route path="/users/*" element={
+                <PrivateRoute>
+                  <AdminRoute>
+                    <UserRoutes />
+                  </AdminRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/crm/*" element={
+                <PrivateRoute>
+                  <PermissionRoute module="crm">
+                    <CRMRoutes />
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/sales/*" element={
+                <PrivateRoute>
+                  <PermissionRoute module="sales">
+                    <SalesRoutes />
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/hr/*" element={
+                <PrivateRoute>
+                  <PermissionRoute module="hr">
+                    <HRRoutes />
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/payroll/*" element={
+                <PrivateRoute>
+                  <PermissionRoute module="payroll">
+                    <PayrollRoutes />
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/accounting/*" element={
+                <PrivateRoute>
+                  <PermissionRoute module="accounting">
+                    <AccountingRoutes />
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/recruitment/*" element={
+                <PrivateRoute>
+                  <PermissionRoute module="recruitment">
+                    <RecruitmentRoutes />
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/purchasing/*" element={
+                <PrivateRoute>
+                  <PermissionRoute module="purchasing">
+                    <PurchasingRoutes />
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/inventory/*" element={
+                <PrivateRoute>
+                  <PermissionRoute module="inventory">
+                    <InventoryRoutes />
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
 
-            <Route path="/settings" element={
-              <PrivateRoute>
-                <AdminRoute>
-                  <PlatformSettings />
-                </AdminRoute>
-              </PrivateRoute>
-            } />
+              <Route path="/settings" element={
+                <PrivateRoute>
+                  <AdminRoute>
+                    <PlatformSettings />
+                  </AdminRoute>
+                </PrivateRoute>
+              } />
 
-            <Route path="/notifications" element={
-              <PrivateRoute>
-                <NotificationCenter />
-              </PrivateRoute>
-            } />
-            <Route path="/notifications/preferences" element={
-              <PrivateRoute>
-                <NotificationPreferences />
-              </PrivateRoute>
-            } />
-            <Route path="/setup" element={<Navigate to="/" replace />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Router>
+              <Route path="/notifications" element={
+                <PrivateRoute>
+                  <NotificationCenter />
+                </PrivateRoute>
+              } />
+              <Route path="/notifications/preferences" element={
+                <PrivateRoute>
+                  <NotificationPreferences />
+                </PrivateRoute>
+              } />
+              <Route path="/setup" element={<Navigate to="/" replace />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Router>
+        </ConfigProvider>
       </CurrencyProvider>
     </AuthProvider>
   );

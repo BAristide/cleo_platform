@@ -824,3 +824,92 @@ class GlobalSearchView(APIView):
                 'total': len(all_results),
             }
         )
+
+
+# ── Backup (v3.8.0) ──────────────────────────────────────────────────
+
+
+class BackupListView(APIView):
+    """
+    GET  /api/core/backups/          → Liste des backups disponibles
+    POST /api/core/backups/          → Déclencher un backup manuel
+    """
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request):
+        backup_dir = os.path.join(django_settings.MEDIA_ROOT, 'backups')
+        backups = []
+
+        if os.path.exists(backup_dir):
+            import glob
+
+            for filepath in sorted(
+                glob.glob(os.path.join(backup_dir, 'cleo_db_*.sql.gz')),
+                reverse=True,
+            ):
+                stat = os.stat(filepath)
+                backups.append(
+                    {
+                        'filename': os.path.basename(filepath),
+                        'size_mb': round(stat.st_size / (1024 * 1024), 2),
+                        'created_at': timezone.datetime.fromtimestamp(
+                            stat.st_mtime
+                        ).isoformat(),
+                    }
+                )
+
+        return Response(
+            {
+                'backups': backups,
+                'count': len(backups),
+                'backup_dir': backup_dir,
+            }
+        )
+
+    def post(self, request):
+        from core.tasks import backup_database_manual
+
+        task = backup_database_manual.delay()
+        return Response(
+            {
+                'status': 'started',
+                'task_id': task.id,
+                'message': 'Backup en cours. Rafraîchissez la liste dans quelques secondes.',
+            },
+            status=status.HTTP_202_ACCEPTED,
+        )
+
+
+class BackupDownloadView(APIView):
+    """GET /api/core/backups/<filename>/download/ → Télécharger un backup."""
+
+    permission_classes = [IsAdminUser]
+
+    def get(self, request, filename):
+        # Sécurité : empêcher le path traversal
+        safe_filename = os.path.basename(filename)
+        if not safe_filename.startswith('cleo_db_') or not safe_filename.endswith(
+            '.sql.gz'
+        ):
+            return Response(
+                {'error': 'Nom de fichier invalide'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        filepath = os.path.join(django_settings.MEDIA_ROOT, 'backups', safe_filename)
+
+        if not os.path.exists(filepath):
+            return Response(
+                {'error': 'Fichier non trouvé'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        from django.http import FileResponse
+
+        response = FileResponse(
+            open(filepath, 'rb'),
+            content_type='application/octet-stream',
+        )
+        response['Content-Disposition'] = f'attachment; filename="{safe_filename}"'
+        return response

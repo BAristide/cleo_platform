@@ -1,5 +1,4 @@
 services:
-
   db:
     image: postgres:14-alpine
     restart: unless-stopped
@@ -15,7 +14,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-
   redis:
     image: redis:7-alpine
     restart: unless-stopped
@@ -24,7 +22,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-
   backend:
     build:
       context: .
@@ -51,7 +48,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
   celery-worker:
     build:
       context: .
@@ -65,6 +61,8 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     command: celery -A cleo_platform worker --loglevel=info --concurrency=2
+    volumes:
+      - media_data:/data/media
     depends_on:
       db:
         condition: service_healthy
@@ -72,7 +70,6 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
-
   celery-beat:
     build:
       context: .
@@ -86,6 +83,8 @@ services:
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
     command: celery -A cleo_platform beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    volumes:
+      - media_data:/data/media
     depends_on:
       db:
         condition: service_healthy
@@ -93,7 +92,6 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
-
   nginx:
     image: nginx:alpine
     restart: unless-stopped
@@ -106,7 +104,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-
 volumes:
   pg_data:
     name: cleo_pg_data

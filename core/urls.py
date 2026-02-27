@@ -31,4 +31,11 @@ urlpatterns = [
     path('system-info/', views.SystemInfoView.as_view(), name='system-info'),
     # ── Recherche globale (v3.5.0) ────────────────────────────────────
     path('search/', views.GlobalSearchView.as_view(), name='global-search'),
+    # ── Backup (v3.8.0) ──────────────────────────────────────────────
+    path('backups/', views.BackupListView.as_view(), name='backup-list'),
+    path(
+        'backups/<str:filename>/download/',
+        views.BackupDownloadView.as_view(),
+        name='backup-download',
+    ),
 ]

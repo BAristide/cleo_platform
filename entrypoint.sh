@@ -34,6 +34,8 @@ echo "[STATIC] Collecte des fichiers statiques Django..."
 python manage.py collectstatic --noinput
 
 echo "[STATIC] Copie des fichiers frontend React..."
+# ── Répertoire backups ───────────────────────────────────────
+mkdir -p /data/media/backups
 cp -rf /app/frontend/build/static/* /data/static/ 2>/dev/null || true
 
 for f in favicon.ico manifest.json logo192.png logo512.png robots.txt; do
@@ -74,7 +76,7 @@ else:
 "
 
 # ── Paramètres système (singletons) ───────────────────────────
-echo "⚙️ Initialisation des paramètres système..."
+echo "[SETTINGS] Initialisation des paramètres système..."
 python manage.py shell -c "
 from core.models import CoreSettings, EmailSettings
 cs = CoreSettings.load()

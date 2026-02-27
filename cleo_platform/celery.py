@@ -27,4 +27,9 @@ app.conf.beat_schedule = {
         'task': 'notifications.tasks.check_overdue_purchase_orders',
         'schedule': crontab(hour=9, minute=0),
     },
+    # Backup quotidien (v3.8.0)
+    'backup-database-daily': {
+        'task': 'core.tasks.backup_database',
+        'schedule': crontab(hour=2, minute=0),
+    },
 }

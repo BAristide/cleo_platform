@@ -46,6 +46,9 @@ class StockMoveSerializer(serializers.ModelSerializer):
 
 
 class StockLevelSerializer(serializers.ModelSerializer):
+    quantity_available = serializers.DecimalField(
+        max_digits=15, decimal_places=3, read_only=True
+    )
     product_name = serializers.CharField(source='product.name', read_only=True)
     product_reference = serializers.CharField(
         source='product.reference', read_only=True
@@ -62,7 +65,21 @@ class StockLevelSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = StockLevel
-        fields = '__all__'
+        fields = [
+            'id',
+            'product',
+            'warehouse',
+            'quantity_on_hand',
+            'quantity_reserved',
+            'quantity_available',
+            'last_updated',
+            'product_name',
+            'product_reference',
+            'product_type',
+            'warehouse_name',
+            'stock_alert_threshold',
+            'is_below_threshold',
+        ]
         read_only_fields = [
             'quantity_on_hand',
             'quantity_reserved',
@@ -85,10 +102,22 @@ class StockInventoryLineSerializer(serializers.ModelSerializer):
     product_reference = serializers.CharField(
         source='product.reference', read_only=True
     )
+    difference = serializers.DecimalField(
+        max_digits=15, decimal_places=3, read_only=True
+    )
 
     class Meta:
         model = StockInventoryLine
-        fields = '__all__'
+        fields = [
+            'id',
+            'inventory',
+            'product',
+            'theoretical_qty',
+            'physical_qty',
+            'difference',
+            'product_name',
+            'product_reference',
+        ]
         read_only_fields = ['difference']
 
 

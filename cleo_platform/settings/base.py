@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     'dashboard',
     'django_celery_beat',
     'notifications',
+    'drf_spectacular',
 ]
 
 REST_FRAMEWORK = {
@@ -50,6 +51,64 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Cleo ERP API',
+    'DESCRIPTION': 'API REST de la plateforme de gestion Cleo ERP — CRM, Ventes, Achats, Stocks, RH, Paie, Comptabilité, Recrutement, Notifications.',
+    'VERSION': VERSION,
+    'SERVE_INCLUDE_SCHEMA': False,
+    'COMPONENT_SPLIT_REQUEST': True,
+    'SCHEMA_PATH_PREFIX': '/api/',
+    'ENUM_NAME_OVERRIDES': {},
+    'POSTPROCESSING_HOOKS': [
+        'drf_spectacular.hooks.postprocess_schema_enums',
+    ],
+    'TAGS': [
+        {
+            'name': 'Core',
+            'description': 'Configuration, devises, setup, recherche globale',
+        },
+        {
+            'name': 'CRM',
+            'description': 'Contacts, entreprises, opportunités, activités',
+        },
+        {
+            'name': 'Sales',
+            'description': 'Produits, devis, commandes, factures, paiements',
+        },
+        {
+            'name': 'Purchasing',
+            'description': 'Fournisseurs, bons de commande, réceptions, factures fournisseur',
+        },
+        {
+            'name': 'Inventory',
+            'description': 'Entrepôts, niveaux de stock, mouvements, inventaires',
+        },
+        {
+            'name': 'HR',
+            'description': 'Employés, départements, postes, missions, formations',
+        },
+        {'name': 'Payroll', 'description': 'Bulletins de paie, cotisations, avances'},
+        {
+            'name': 'Accounting',
+            'description': 'Plan comptable, écritures, journaux, rapports',
+        },
+        {
+            'name': 'Recruitment',
+            'description': 'Offres, candidatures, entretiens, évaluations',
+        },
+        {
+            'name': 'Users',
+            'description': "Profils, rôles, permissions, journal d'activité",
+        },
+        {
+            'name': 'Notifications',
+            'description': 'Alertes, préférences, centre de notifications',
+        },
+        {'name': 'Dashboard', 'description': 'Statistiques et KPI consolidés'},
+    ],
 }
 
 MIDDLEWARE = [

@@ -1,3 +1,5 @@
+# sales/services/email_service.py
+import logging
 import os
 
 from django.conf import settings
@@ -7,6 +9,8 @@ from django.template.loader import render_to_string
 from core.services import get_company_context
 
 from .pdf_generator import PDFGenerator
+
+logger = logging.getLogger(__name__)
 
 
 class EmailService:
@@ -57,7 +61,7 @@ class EmailService:
             email.send()
             return True
         except Exception as e:
-            print(f"Erreur lors de l'envoi de l'email: {str(e)}")
+            logger.error(f"Erreur lors de l'envoi de l'email: {str(e)}")
             return False
 
     @staticmethod
@@ -105,7 +109,7 @@ class EmailService:
             email.send()
             return True
         except Exception as e:
-            print(f"Erreur lors de l'envoi de l'email: {str(e)}")
+            logger.error(f"Erreur lors de l'envoi de l'email: {str(e)}")
             return False
 
     @staticmethod
@@ -153,5 +157,5 @@ class EmailService:
             email.send()
             return True
         except Exception as e:
-            print(f"Erreur lors de l'envoi de l'email: {str(e)}")
+            logger.error(f"Erreur lors de l'envoi de l'email: {str(e)}")
             return False

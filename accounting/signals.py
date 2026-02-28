@@ -1,3 +1,5 @@
+# accounting/signals.py
+import logging
 from decimal import Decimal
 
 from django.db.models.signals import post_save, pre_save
@@ -11,6 +13,8 @@ from .models import (
     JournalEntry,
     JournalEntryLine,
 )
+
+logger = logging.getLogger(__name__)
 
 # Suppression de l'import problématique:
 # from .services.accounting_service import AccountingService
@@ -217,7 +221,7 @@ class AccountingService:
             return entry
         except Exception as e:
             # Log l'erreur
-            print(
+            logger.error(
                 f"Erreur lors de la création de l'écriture comptable pour la facture {invoice.number}: {str(e)}"
             )
             # On ne relance pas l'erreur pour ne pas bloquer la sauvegarde de la facture
@@ -301,7 +305,7 @@ class AccountingService:
             return entry
         except Exception as e:
             # Log l'erreur
-            print(
+            logger.error(
                 f"Erreur lors de la création de l'écriture comptable pour le paiement {payment.id}: {str(e)}"
             )
             # On ne relance pas l'erreur pour ne pas bloquer la sauvegarde du paiement
@@ -452,7 +456,7 @@ class AccountingService:
             return entry
         except Exception as e:
             # Log l'erreur
-            print(
+            logger.error(
                 f"Erreur lors de la création de l'écriture comptable pour le lancement de paie {payroll_run.id}: {str(e)}"
             )
             # On ne relance pas l'erreur pour ne pas bloquer la sauvegarde du lancement

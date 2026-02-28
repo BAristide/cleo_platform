@@ -28,7 +28,7 @@ class AccountType(models.Model):
 
 
 class Account(models.Model):
-    """Comptes comptables du Plan Comptable Marocain."""
+    """Comptes comptables."""
 
     code = models.CharField(_('Code'), max_length=20, unique=True)
     name = models.CharField(_('Nom'), max_length=200)

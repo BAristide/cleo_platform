@@ -1,3 +1,4 @@
+import logging
 import os
 from decimal import Decimal
 
@@ -8,6 +9,8 @@ from django.utils.translation import gettext_lazy as _
 
 from core.models import Currency
 from core.services import get_company_context
+
+logger = logging.getLogger(__name__)
 
 
 class SalesDocument(models.Model):
@@ -624,12 +627,9 @@ class Quote(SalesDocument):
         Raises:
             ValueError: Si le devis n'est pas dans un état permettant la conversion
         """
-        import logging
 
         from django.utils import timezone
 
-        # Configurer le logger pour déboguer
-        logger = logging.getLogger(__name__)
         logger.info(f'Début de la conversion du devis {self.number} en commande')
 
         # Vérification du statut
@@ -986,7 +986,7 @@ class Order(SalesDocument):
 
         # Vérifier si le statut a été correctement enregistré (contournement du problème)
         if hasattr(self, '_status') and self._status != self.status:
-            print(
+            logger.debug(
                 "ALERTE: Le statut n'a pas été correctement enregistré. Tentative supplémentaire."
             )
             # Tentative supplémentaire avec une requête directe
@@ -1375,10 +1375,10 @@ class Invoice(SalesDocument):
             hasattr(self, '_payment_status')
             and self._payment_status != self.payment_status
         ):
-            print(
+            logger.debug(
                 "ALERTE: Le statut de paiement n'a pas été correctement enregistré. Tentative supplémentaire."
             )
-            print(
+            logger.debug(
                 f'  Statut attendu: {self._payment_status}, Statut actuel: {self.payment_status}'
             )
             # Tentative supplémentaire avec une requête directe
@@ -1411,7 +1411,7 @@ class Invoice(SalesDocument):
                     update_fields=['amount_paid', 'amount_due', 'payment_status']
                 )
             except Exception as e:
-                print(
+                logger.error(
                     f"Erreur lors de la mise à jour de la facture d'origine: {str(e)}"
                 )
 
@@ -1431,10 +1431,10 @@ class Invoice(SalesDocument):
         today = timezone.now().date()
 
         # Afficher des informations de débogage
-        print(f'Mise à jour du statut de paiement pour {self.number}')
-        print(f'  - Montant total: {self.total}')
-        print(f'  - Montant payé: {self.amount_paid}')
-        print(f'  - Statut actuel: {self.payment_status}')
+        logger.debug(f'Mise à jour du statut de paiement pour {self.number}')
+        logger.debug(f'  - Montant total: {self.total}')
+        logger.debug(f'  - Montant payé: {self.amount_paid}')
+        logger.debug(f'  - Statut actuel: {self.payment_status}')
 
         # Vérifier que les valeurs sont des décimaux valides
         if not isinstance(self.amount_paid, Decimal):
@@ -1467,7 +1467,7 @@ class Invoice(SalesDocument):
                 self.payment_status = 'partial'
 
         # Afficher le nouveau statut
-        print(f'  - Nouveau statut: {self.payment_status}')
+        logger.debug(f'  - Nouveau statut: {self.payment_status}')
 
     def get_template_name(self):
         """

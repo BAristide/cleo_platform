@@ -112,11 +112,10 @@ class PurchaseOrder(models.Model):
         self.total = self.subtotal + self.tax_amount
 
     def save(self, *args, **kwargs):
-        # Auto-numérotation
         if not self.number:
-            last = PurchaseOrder.objects.order_by('-id').first()
-            next_num = (last.id + 1) if last else 1
-            self.number = f'BC-{next_num:05d}'
+            from core.services import generate_document_number
+
+            self.number = generate_document_number('purchase_order')
         super().save(*args, **kwargs)
 
 
@@ -140,7 +139,7 @@ class PurchaseOrderItem(models.Model):
         _('Prix unitaire HT'), max_digits=15, decimal_places=2
     )
     tax_rate = models.DecimalField(
-        _('Taux TVA (%)'), max_digits=5, decimal_places=2, default=20
+        _('Taux TVA (%)'), max_digits=5, decimal_places=2, default=0
     )
     quantity_received = models.DecimalField(
         _('Quantité reçue'), max_digits=15, decimal_places=3, default=0
@@ -232,9 +231,9 @@ class Reception(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.number:
-            last = Reception.objects.order_by('-id').first()
-            next_num = (last.id + 1) if last else 1
-            self.number = f'REC-{next_num:05d}'
+            from core.services import generate_document_number
+
+            self.number = generate_document_number('reception')
         super().save(*args, **kwargs)
 
 
@@ -376,9 +375,9 @@ class SupplierInvoice(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.number:
-            last = SupplierInvoice.objects.order_by('-id').first()
-            next_num = (last.id + 1) if last else 1
-            self.number = f'FF-{next_num:05d}'
+            from core.services import generate_document_number
+
+            self.number = generate_document_number('supplier_invoice')
         if not self.due_date and self.date and self.supplier:
             from datetime import timedelta
 
@@ -406,7 +405,7 @@ class SupplierInvoiceItem(models.Model):
         _('Prix unitaire HT'), max_digits=15, decimal_places=2
     )
     tax_rate = models.DecimalField(
-        _('Taux TVA (%)'), max_digits=5, decimal_places=2, default=20
+        _('Taux TVA (%)'), max_digits=5, decimal_places=2, default=0
     )
 
     class Meta:

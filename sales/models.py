@@ -355,7 +355,7 @@ class Product(models.Model):
         Currency, on_delete=models.PROTECT, verbose_name=_('Devise')
     )
     tax_rate = models.DecimalField(
-        _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=20.00
+        _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=0
     )
     is_active = models.BooleanField(_('Actif'), default=True)
 
@@ -406,6 +406,14 @@ class Product(models.Model):
 
     def __str__(self):
         return f'{self.reference} - {self.name}'
+
+    def save(self, *args, **kwargs):
+        """Initialise le taux de TVA depuis la configuration si non défini."""
+        if not self.tax_rate or self.tax_rate == 0:
+            from core.services import get_default_tax_rate
+
+            self.tax_rate = get_default_tax_rate()
+        super().save(*args, **kwargs)
 
 
 class Quote(SalesDocument):
@@ -480,30 +488,9 @@ class Quote(SalesDocument):
         """
         # Générer un numéro de devis automatique si non défini
         if not self.number:
-            last_quote = Quote.objects.order_by('-id').first()
-            if last_quote:
-                try:
-                    # Tente d'extraire le numéro de la partie après le tiret
-                    if '-' in last_quote.number:
-                        last_number = int(last_quote.number.split('-')[-1])
-                        self.number = f'DEV-{last_number + 1:04d}'
-                    # Tente de gérer le format sans tiret (comme "DEV01")
-                    else:
-                        # Supprime tout ce qui n'est pas un chiffre
-                        import re
+            from core.services import generate_document_number
 
-                        numeric_part = re.sub(r'[^0-9]', '', last_quote.number)
-                        if numeric_part:
-                            last_number = int(numeric_part)
-                            self.number = f'DEV-{last_number + 1:04d}'
-                        else:
-                            # Si pas de numéro trouvé, commencer à 1
-                            self.number = 'DEV-0001'
-                except (ValueError, IndexError):
-                    # En cas d'erreur, utiliser un numéro par défaut
-                    self.number = 'DEV-0001'
-            else:
-                self.number = 'DEV-0001'
+            self.number = generate_document_number('quote')
 
         # Calculer la date d'expiration si non définie
         if not self.expiration_date and self.date:
@@ -653,18 +640,12 @@ class Quote(SalesDocument):
         logger.info(f"Création d'une nouvelle commande à partir du devis {self.number}")
 
         # Créer la commande
+        # Déterminer le numéro de commande
+        from core.services import generate_document_number
+
         from .models import Order, OrderItem
 
-        # Déterminer le numéro de commande
-        last_order = Order.objects.order_by('-id').first()
-        if last_order and last_order.number.startswith('CMD-'):
-            try:
-                last_number = int(last_order.number.split('-')[-1])
-                order_number = f'CMD-{last_number + 1:04d}'
-            except (ValueError, IndexError):
-                order_number = 'CMD-0001'
-        else:
-            order_number = 'CMD-0001'
+        order_number = generate_document_number('order')
 
         logger.info(f'Numéro de commande généré: {order_number}')
 
@@ -786,7 +767,7 @@ class QuoteItem(models.Model):
         _('Prix unitaire'), max_digits=15, decimal_places=2
     )
     tax_rate = models.DecimalField(
-        _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=20.00
+        _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=0
     )
 
     class Meta:
@@ -946,33 +927,11 @@ class Order(SalesDocument):
         Surcharge de la méthode save pour gérer le numéro de commande automatique
         et d'autres traitements spécifiques aux commandes.
         """
-        # Si c'est une nouvelle commande (pas encore de numéro)
+        # Générer un numéro de commande automatique si non défini
         if not self.number:
-            # Générer un numéro de commande automatique
-            last_order = Order.objects.order_by('-id').first()
-            if last_order:
-                try:
-                    # Tente d'extraire le numéro de la partie après le tiret
-                    if '-' in last_order.number:
-                        last_number = int(last_order.number.split('-')[-1])
-                        self.number = f'CMD-{last_number + 1:04d}'
-                    # Tente de gérer le format sans tiret (comme "CMD01")
-                    else:
-                        # Supprime tout ce qui n'est pas un chiffre
-                        import re
+            from core.services import generate_document_number
 
-                        numeric_part = re.sub(r'[^0-9]', '', last_order.number)
-                        if numeric_part:
-                            last_number = int(numeric_part)
-                            self.number = f'CMD-{last_number + 1:04d}'
-                        else:
-                            # Si pas de numéro trouvé, commencer à 1
-                            self.number = 'CMD-0001'
-                except (ValueError, IndexError):
-                    # En cas d'erreur, utiliser un numéro par défaut
-                    self.number = 'CMD-0001'
-            else:
-                self.number = 'CMD-0001'
+            self.number = generate_document_number('order')
 
         # S'assurer que le champ status est correctement défini (contournement du problème)
         if 'status' in kwargs.get('update_fields', []) or not kwargs.get(
@@ -1127,7 +1086,7 @@ class OrderItem(models.Model):
         _('Prix unitaire'), max_digits=15, decimal_places=2
     )
     tax_rate = models.DecimalField(
-        _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=20.00
+        _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=0
     )
 
     class Meta:
@@ -1302,49 +1261,17 @@ class Invoice(SalesDocument):
         """
         # Générer un numéro de facture automatique si non défini
         if not self.number:
-            # Préfixe selon le type de facture
-            prefix = ''
-            if hasattr(self, 'type'):
-                if self.type == 'standard':
-                    prefix = 'FACT-'
-                elif self.type == 'deposit':
-                    prefix = 'AC-'  # Acompte
-                elif self.type == 'credit_note':
-                    prefix = 'AV-'  # Avoir
-            else:
-                prefix = 'FACT-'  # Par défaut
+            from core.services import generate_document_number
 
-            # Rechercher la dernière facture avec ce type/préfixe
-            if hasattr(self, 'type'):
-                last_invoice = (
-                    Invoice.objects.filter(type=self.type).order_by('-id').first()
-                )
-            else:
-                last_invoice = Invoice.objects.order_by('-id').first()
-
-            if last_invoice:
-                try:
-                    # Tente d'extraire le numéro de la partie après le tiret
-                    if '-' in last_invoice.number:
-                        last_number = int(last_invoice.number.split('-')[-1])
-                        self.number = f'{prefix}{last_number + 1:04d}'
-                    # Tente de gérer le format sans tiret
-                    else:
-                        # Supprime tout ce qui n'est pas un chiffre
-                        import re
-
-                        numeric_part = re.sub(r'[^0-9]', '', last_invoice.number)
-                        if numeric_part:
-                            last_number = int(numeric_part)
-                            self.number = f'{prefix}{last_number + 1:04d}'
-                        else:
-                            # Si pas de numéro trouvé, commencer à 1
-                            self.number = f'{prefix}0001'
-                except (ValueError, IndexError):
-                    # En cas d'erreur, utiliser un numéro par défaut
-                    self.number = f'{prefix}0001'
-            else:
-                self.number = f'{prefix}0001'
+            type_map = {
+                'standard': 'invoice_standard',
+                'deposit': 'invoice_deposit',
+                'credit_note': 'invoice_credit_note',
+            }
+            doc_type = type_map.get(
+                getattr(self, 'type', 'standard'), 'invoice_standard'
+            )
+            self.number = generate_document_number(doc_type)
 
         # Calculer la date d'échéance si non définie
         if not self.due_date and self.date:
@@ -1713,7 +1640,7 @@ class InvoiceItem(models.Model):
         _('Prix unitaire'), max_digits=15, decimal_places=2
     )
     tax_rate = models.DecimalField(
-        _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=20.00
+        _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=0
     )
 
     class Meta:

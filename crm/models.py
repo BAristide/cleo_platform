@@ -3,6 +3,8 @@ from django.db import models
 from django.urls import reverse
 from django.utils import timezone
 
+from core.models import Currency
+
 
 class Tag(models.Model):
     """Tags for categorizing CRM entities."""
@@ -209,14 +211,14 @@ class Opportunity(models.Model):
 
     # Financial details
     amount = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
-    CURRENCY_CHOICES = [
-        ('USD', 'US Dollar'),
-        ('EUR', 'Euro'),
-        ('GBP', 'British Pound'),
-        ('MAD', 'Moroccan Dirham'),
-        # Add more currencies as needed
-    ]
-    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default='MAD')
+    currency = models.ForeignKey(
+        Currency,
+        on_delete=models.PROTECT,
+        related_name='crm_opportunities',
+        verbose_name='Devise',
+        null=True,
+        blank=True,
+    )
     probability = models.PositiveSmallIntegerField(
         default=0, help_text='Probability percentage (0-100)'
     )

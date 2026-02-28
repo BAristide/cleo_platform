@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
+from core.models import Currency
+
 from .models import (
     Activity,
     ActivityType,
@@ -225,6 +227,12 @@ class ActivityTypeSerializer(serializers.ModelSerializer):
 class OpportunityListSerializer(serializers.ModelSerializer):
     company_name = serializers.ReadOnlyField(source='company.name')
     stage_name = serializers.ReadOnlyField(source='stage.name')
+    currency = serializers.SlugRelatedField(
+        slug_field='code',
+        queryset=Currency.objects.all(),
+        allow_null=True,
+        required=False,
+    )
     stage_color = serializers.ReadOnlyField(source='stage.color')
     assigned_to_name = serializers.ReadOnlyField(source='assigned_to.username')
     is_closed = serializers.ReadOnlyField()
@@ -250,6 +258,12 @@ class OpportunityListSerializer(serializers.ModelSerializer):
 
 
 class OpportunityDetailSerializer(serializers.ModelSerializer):
+    currency = serializers.SlugRelatedField(
+        slug_field='code',
+        queryset=Currency.objects.all(),
+        allow_null=True,
+        required=False,
+    )
     company = CompanyListSerializer(read_only=True)
     company_id = serializers.PrimaryKeyRelatedField(
         queryset=Company.objects.all(), source='company', write_only=True

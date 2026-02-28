@@ -8,6 +8,7 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from notifications.models import Notification
 from users.permissions import HasModulePermission
 
 from .filters import ApplicationFilter, JobOpeningFilter
@@ -19,7 +20,6 @@ from .models import (
     Interviewer,
     InterviewPanel,
     JobOpening,
-    RecruitmentNotification,
     RecruitmentStats,
 )
 from .serializers import (
@@ -32,7 +32,6 @@ from .serializers import (
     InterviewPanelSerializer,
     JobOpeningDetailSerializer,
     JobOpeningSerializer,
-    RecruitmentNotificationSerializer,
     RecruitmentStatsSerializer,
 )
 
@@ -358,13 +357,15 @@ class InterviewPanelViewSet(viewsets.ModelViewSet):
         # Envoyer des notifications à chaque évaluateur
         for interviewer in panel.interviewers.all():
             # Créer une notification dans le système
-            RecruitmentNotification.objects.create(
-                recipient=interviewer.employee,
-                title=f'Entretien programmé: {job_title}',
-                message=f'Vous êtes convié(e) à un entretien pour le poste de {job_title} avec {candidate_name} le {interview_date} à {interview_location}.',
-                type='interview',
-                job_opening_id=panel.job_opening.id,
-            )
+            if hasattr(interviewer.employee, 'user') and interviewer.employee.user:
+                Notification.objects.create(
+                    user=interviewer.employee.user,
+                    title=f'Entretien programmé: {job_title}',
+                    message=f'Vous êtes convié(e) à un entretien pour le poste de {job_title} avec {candidate_name} le {interview_date} à {interview_location}.',
+                    module='recruitment',
+                    level='info',
+                    link=f'/recruitment/job-openings/{panel.job_opening.id}',
+                )
 
             # Envoyer un email (si configuré)
             if hasattr(settings, 'EMAIL_HOST_USER') and settings.EMAIL_HOST_USER:
@@ -620,90 +621,3 @@ class RecruitmentStatsViewSet(viewsets.ReadOnlyModelViewSet):
         )
 
         return Response(RecruitmentStatsSerializer(stats).data)
-
-
-class RecruitmentNotificationViewSet(viewsets.ModelViewSet):
-    queryset = RecruitmentNotification.objects.all()
-    serializer_class = RecruitmentNotificationSerializer
-    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
-    module_name = 'recruitment'
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_fields = ['recipient', 'is_read', 'type']
-    ordering_fields = ['created_at']
-    ordering = ['-created_at']
-
-    def get_queryset(self):
-        """Filtrer les notifications pour n'afficher que celles de l'utilisateur connecté."""
-        queryset = super().get_queryset()
-
-        # Si l'utilisateur n'est pas un RH, ne montrer que ses notifications
-        if self.request.user.employee and not self.request.user.employee.is_hr:
-            queryset = queryset.filter(recipient=self.request.user.employee)
-
-        return queryset
-
-    @action(detail=False, methods=['get'])
-    def my_notifications(self, request):
-        """Liste des notifications de l'employé connecté."""
-        try:
-            employee = request.user.employee
-        except Exception:
-            return Response(
-                {'error': 'Aucun employé associé à cet utilisateur.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        notifications = RecruitmentNotification.objects.filter(
-            recipient=employee
-        ).order_by('-created_at')
-
-        # Filtre par statut de lecture
-        is_read = request.query_params.get('is_read')
-        if is_read is not None:
-            is_read = is_read.lower() == 'true'
-            notifications = notifications.filter(is_read=is_read)
-
-        page = self.paginate_queryset(notifications)
-        if page is not None:
-            serializer = RecruitmentNotificationSerializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-
-        serializer = RecruitmentNotificationSerializer(notifications, many=True)
-        return Response(serializer.data)
-
-    @action(detail=True, methods=['post'])
-    def mark_as_read(self, request, pk=None):
-        """Marquer une notification comme lue."""
-        notification = self.get_object()
-        notification.is_read = True
-        notification.save()
-
-        return Response({'status': 'Notification marquée comme lue'})
-
-    @action(detail=True, methods=['post'])
-    def mark_as_unread(self, request, pk=None):
-        """Marquer une notification comme non lue."""
-        notification = self.get_object()
-        notification.is_read = False
-        notification.save()
-
-        return Response({'status': 'Notification marquée comme non lue'})
-
-    @action(detail=False, methods=['post'])
-    def mark_all_as_read(self, request):
-        """Marquer toutes les notifications de l'utilisateur comme lues."""
-        try:
-            employee = request.user.employee
-        except Exception:
-            return Response(
-                {'error': 'Aucun employé associé à cet utilisateur.'},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        updated = RecruitmentNotification.objects.filter(
-            recipient=employee, is_read=False
-        ).update(is_read=True)
-
-        return Response(
-            {'status': f'{updated} notification(s) marquée(s) comme lue(s)'}
-        )

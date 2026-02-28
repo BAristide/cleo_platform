@@ -1280,8 +1280,8 @@ class Invoice(SalesDocument):
         verbose_name_plural = _('Factures')
         constraints = [
             models.CheckConstraint(
-                check=models.Q(amount_paid__gte=0),
-                name='sales_invoice_amount_paid_non_negative',
+                check=models.Q(amount_paid__gte=0) | models.Q(type='credit_note'),
+                name='sales_invoice_amount_paid_valid',
             ),
         ]
         ordering = ['-date']

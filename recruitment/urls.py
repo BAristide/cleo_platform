@@ -13,7 +13,6 @@ router.register(r'interviewers', views.InterviewerViewSet)
 router.register(r'evaluation-criteria', views.EvaluationCriterionViewSet)
 router.register(r'evaluations', views.CandidateEvaluationViewSet)
 router.register(r'statistics', views.RecruitmentStatsViewSet)
-router.register(r'notifications', views.RecruitmentNotificationViewSet)
 
 # URLs pour la page publique de candidature
 # public_urls = [

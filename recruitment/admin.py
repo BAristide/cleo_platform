@@ -11,7 +11,6 @@ from .models import (
     Interviewer,
     InterviewPanel,
     JobOpening,
-    RecruitmentNotification,
     RecruitmentStats,
 )
 
@@ -338,34 +337,3 @@ class RecruitmentStatsAdmin(admin.ModelAdmin):
         'hiring_rate',
     )
     readonly_fields = ('generated_at',)
-
-
-@admin.register(RecruitmentNotification)
-class RecruitmentNotificationAdmin(admin.ModelAdmin):
-    list_display = ('title', 'recipient', 'type', 'is_read', 'created_at')
-    list_filter = ('is_read', 'type', 'created_at')
-    search_fields = (
-        'title',
-        'message',
-        'recipient__first_name',
-        'recipient__last_name',
-    )
-    readonly_fields = ('created_at',)
-
-    actions = ['mark_as_read', 'mark_as_unread']
-
-    def mark_as_read(self, request, queryset):
-        updated = queryset.update(is_read=True)
-        self.message_user(
-            request, f'{updated} notification(s) marquée(s) comme lue(s).'
-        )
-
-    mark_as_read.short_description = 'Marquer comme lu'
-
-    def mark_as_unread(self, request, queryset):
-        updated = queryset.update(is_read=False)
-        self.message_user(
-            request, f'{updated} notification(s) marquée(s) comme non lue(s).'
-        )
-
-    mark_as_unread.short_description = 'Marquer comme non lu'

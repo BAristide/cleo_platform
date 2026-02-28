@@ -13,7 +13,6 @@ from .models import (
     Interviewer,
     InterviewPanel,
     JobOpening,
-    RecruitmentNotification,
     RecruitmentStats,
 )
 
@@ -403,33 +402,3 @@ class RecruitmentStatsSerializer(serializers.ModelSerializer):
         from django.utils.formats import date_format
 
         return f'{date_format(obj.period_start, "SHORT_DATE_FORMAT")} - {date_format(obj.period_end, "SHORT_DATE_FORMAT")}'
-
-
-class RecruitmentNotificationSerializer(serializers.ModelSerializer):
-    """Serializer pour les notifications de recrutement."""
-
-    recipient_name = serializers.SerializerMethodField()
-    type_display = serializers.SerializerMethodField()
-
-    class Meta:
-        model = RecruitmentNotification
-        fields = [
-            'id',
-            'recipient',
-            'recipient_name',
-            'title',
-            'message',
-            'is_read',
-            'type',
-            'type_display',
-            'job_opening_id',
-            'application_id',
-            'created_at',
-        ]
-        read_only_fields = ['created_at']
-
-    def get_recipient_name(self, obj):
-        return obj.recipient.full_name if obj.recipient else None
-
-    def get_type_display(self, obj):
-        return obj.get_type_display() if obj.type else None

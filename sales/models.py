@@ -40,7 +40,7 @@ class SalesDocument(models.Model):
 
     # Devise et taux de change
     currency = models.ForeignKey(
-        Currency, on_delete=models.CASCADE, verbose_name=_('Devise')
+        Currency, on_delete=models.PROTECT, verbose_name=_('Devise')
     )
     exchange_rate = models.DecimalField(
         _('Taux de change'), max_digits=10, decimal_places=4, default=1.0000
@@ -316,7 +316,7 @@ class BankAccount(models.Model):
     iban = models.CharField(_('IBAN'), max_length=34, blank=True, null=True)
     swift = models.CharField(_('Code SWIFT/BIC'), max_length=11, blank=True, null=True)
     currency = models.ForeignKey(
-        Currency, on_delete=models.CASCADE, verbose_name=_('Devise')
+        Currency, on_delete=models.PROTECT, verbose_name=_('Devise')
     )
     is_default = models.BooleanField(_('Compte par défaut'), default=False)
 
@@ -352,7 +352,7 @@ class Product(models.Model):
         _('Prix unitaire'), max_digits=15, decimal_places=2
     )
     currency = models.ForeignKey(
-        Currency, on_delete=models.CASCADE, verbose_name=_('Devise')
+        Currency, on_delete=models.PROTECT, verbose_name=_('Devise')
     )
     tax_rate = models.DecimalField(
         _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=20.00
@@ -397,6 +397,12 @@ class Product(models.Model):
     class Meta:
         verbose_name = _('Produit')
         verbose_name_plural = _('Produits')
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(tax_rate__gte=0) & models.Q(tax_rate__lte=100),
+                name='sales_product_tax_rate_range',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.reference} - {self.name}'
@@ -408,14 +414,14 @@ class Quote(SalesDocument):
     """
 
     company = models.ForeignKey(
-        'crm.Company', on_delete=models.CASCADE, verbose_name=_('Entreprise')
+        'crm.Company', on_delete=models.PROTECT, verbose_name=_('Entreprise')
     )
     contact = models.ForeignKey(
-        'crm.Contact', on_delete=models.CASCADE, verbose_name=_('Contact')
+        'crm.Contact', on_delete=models.PROTECT, verbose_name=_('Contact')
     )
     opportunity = models.ForeignKey(
         'crm.Opportunity',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name=_('Opportunité'),
         null=True,
         blank=True,
@@ -448,7 +454,7 @@ class Quote(SalesDocument):
     # Compte bancaire à utiliser pour ce devis
     bank_account = models.ForeignKey(
         BankAccount,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name=_('Compte bancaire'),
         null=True,
         blank=True,
@@ -786,6 +792,16 @@ class QuoteItem(models.Model):
     class Meta:
         verbose_name = _('Ligne de devis')
         verbose_name_plural = _('Lignes de devis')
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(quantity__gt=0),
+                name='sales_quoteitem_quantity_positive',
+            ),
+            models.CheckConstraint(
+                check=models.Q(tax_rate__gte=0) & models.Q(tax_rate__lte=100),
+                name='sales_quoteitem_tax_rate_range',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.product.name} ({self.quantity})'
@@ -821,14 +837,14 @@ class Order(SalesDocument):
     """
 
     company = models.ForeignKey(
-        'crm.Company', on_delete=models.CASCADE, verbose_name=_('Entreprise')
+        'crm.Company', on_delete=models.PROTECT, verbose_name=_('Entreprise')
     )
     contact = models.ForeignKey(
-        'crm.Contact', on_delete=models.CASCADE, verbose_name=_('Contact')
+        'crm.Contact', on_delete=models.PROTECT, verbose_name=_('Contact')
     )
     opportunity = models.ForeignKey(
         'crm.Opportunity',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name=_('Opportunité'),
         null=True,
         blank=True,
@@ -868,7 +884,7 @@ class Order(SalesDocument):
     # Compte bancaire à utiliser pour cette commande
     bank_account = models.ForeignKey(
         BankAccount,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name=_('Compte bancaire'),
         null=True,
         blank=True,
@@ -1117,6 +1133,16 @@ class OrderItem(models.Model):
     class Meta:
         verbose_name = _('Ligne de commande')
         verbose_name_plural = _('Lignes de commande')
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(quantity__gt=0),
+                name='sales_orderitem_quantity_positive',
+            ),
+            models.CheckConstraint(
+                check=models.Q(tax_rate__gte=0) & models.Q(tax_rate__lte=100),
+                name='sales_orderitem_tax_rate_range',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.product.name} ({self.quantity})'
@@ -1152,14 +1178,14 @@ class Invoice(SalesDocument):
     """
 
     company = models.ForeignKey(
-        'crm.Company', on_delete=models.CASCADE, verbose_name=_('Entreprise')
+        'crm.Company', on_delete=models.PROTECT, verbose_name=_('Entreprise')
     )
     contact = models.ForeignKey(
-        'crm.Contact', on_delete=models.CASCADE, verbose_name=_('Contact')
+        'crm.Contact', on_delete=models.PROTECT, verbose_name=_('Contact')
     )
     opportunity = models.ForeignKey(
         'crm.Opportunity',
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name=_('Opportunité'),
         null=True,
         blank=True,
@@ -1208,7 +1234,7 @@ class Invoice(SalesDocument):
     # Compte bancaire à utiliser pour cette facture
     bank_account = models.ForeignKey(
         BankAccount,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         verbose_name=_('Compte bancaire'),
         null=True,
         blank=True,
@@ -1252,6 +1278,12 @@ class Invoice(SalesDocument):
     class Meta:
         verbose_name = _('Facture')
         verbose_name_plural = _('Factures')
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(amount_paid__gte=0),
+                name='sales_invoice_amount_paid_non_negative',
+            ),
+        ]
         ordering = ['-date']
 
     def __str__(self):
@@ -1687,6 +1719,16 @@ class InvoiceItem(models.Model):
     class Meta:
         verbose_name = _('Ligne de facture')
         verbose_name_plural = _('Lignes de facture')
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(quantity__gt=0),
+                name='sales_invoiceitem_quantity_positive',
+            ),
+            models.CheckConstraint(
+                check=models.Q(tax_rate__gte=0) & models.Q(tax_rate__lte=100),
+                name='sales_invoiceitem_tax_rate_range',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.product.name} ({self.quantity})'

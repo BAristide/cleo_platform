@@ -149,6 +149,16 @@ class PurchaseOrderItem(models.Model):
     class Meta:
         verbose_name = _('Ligne de commande fournisseur')
         verbose_name_plural = _('Lignes de commande fournisseur')
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(quantity__gt=0),
+                name='purchasing_purchaseorderitem_quantity_positive',
+            ),
+            models.CheckConstraint(
+                check=models.Q(tax_rate__gte=0) & models.Q(tax_rate__lte=100),
+                name='purchasing_purchaseorderitem_tax_rate_range',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.product.name} × {self.quantity}'
@@ -402,6 +412,16 @@ class SupplierInvoiceItem(models.Model):
     class Meta:
         verbose_name = _('Ligne de facture fournisseur')
         verbose_name_plural = _('Lignes de facture fournisseur')
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(quantity__gt=0),
+                name='purchasing_supplierinvoiceitem_quantity_positive',
+            ),
+            models.CheckConstraint(
+                check=models.Q(tax_rate__gte=0) & models.Q(tax_rate__lte=100),
+                name='purchasing_supplierinvoiceitem_tax_rate_range',
+            ),
+        ]
 
     def __str__(self):
         return f'{self.product.name} × {self.quantity}'

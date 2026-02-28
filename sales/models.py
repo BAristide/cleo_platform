@@ -750,12 +750,9 @@ class Quote(SalesDocument):
         return invoice
 
 
-class QuoteItem(models.Model):
-    """
-    Ligne de devis associée à un produit.
-    """
+class SalesDocumentItem(models.Model):
+    """Classe abstraite — champs communs aux lignes de devis, commandes et factures."""
 
-    quote = models.ForeignKey(Quote, on_delete=models.CASCADE, verbose_name=_('Devis'))
     product = models.ForeignKey(
         Product, on_delete=models.CASCADE, verbose_name=_('Produit')
     )
@@ -771,6 +768,42 @@ class QuoteItem(models.Model):
     )
 
     class Meta:
+        abstract = True
+
+    def __str__(self):
+        return f'{self.product.name} ({self.quantity})'
+
+    @property
+    def subtotal(self):
+        return self.quantity * self.unit_price
+
+    @property
+    def tax_amount(self):
+        from decimal import Decimal
+
+        return self.subtotal * (self.tax_rate / Decimal('100'))
+
+    @property
+    def total(self):
+        return self.subtotal + self.tax_amount
+
+    def save(self, *args, **kwargs):
+        """Initialise prix, description et TVA depuis le produit si non définis."""
+        if self.unit_price is None or self.unit_price == 0:
+            self.unit_price = self.product.unit_price
+        if not self.description:
+            self.description = self.product.description
+        if self.tax_rate is None or self.tax_rate == 0:
+            self.tax_rate = self.product.tax_rate
+        super().save(*args, **kwargs)
+
+
+class QuoteItem(SalesDocumentItem):
+    """Ligne de devis associée à un produit."""
+
+    quote = models.ForeignKey(Quote, on_delete=models.CASCADE, verbose_name=_('Devis'))
+
+    class Meta:
         verbose_name = _('Ligne de devis')
         verbose_name_plural = _('Lignes de devis')
         constraints = [
@@ -784,29 +817,8 @@ class QuoteItem(models.Model):
             ),
         ]
 
-    def __str__(self):
-        return f'{self.product.name} ({self.quantity})'
-
     def save(self, *args, **kwargs):
-        """
-        Surcharge de save pour initialiser le prix unitaire et la description depuis le produit.
-        """
-        # Si prix unitaire non défini, utiliser celui du produit
-        if self.unit_price is None or self.unit_price == 0:
-            self.unit_price = self.product.unit_price
-
-        # Si description non définie, utiliser celle du produit
-        if not self.description:
-            self.description = self.product.description
-
-        # Si taux de TVA non défini, utiliser celui du produit
-        if self.tax_rate is None or self.tax_rate == 0:
-            self.tax_rate = self.product.tax_rate
-
-        # Sauvegarder l'item
         super().save(*args, **kwargs)
-
-        # Recalculer les totaux du devis
         if self.quote:
             self.quote.calculate_amounts()
             self.quote.save(update_fields=['subtotal', 'tax_amount', 'total'])
@@ -1067,26 +1079,11 @@ class Order(SalesDocument):
         return email_sent
 
 
-class OrderItem(models.Model):
-    """
-    Ligne de commande associée à un produit.
-    """
+class OrderItem(SalesDocumentItem):
+    """Ligne de commande associée à un produit."""
 
     order = models.ForeignKey(
         Order, on_delete=models.CASCADE, verbose_name=_('Commande')
-    )
-    product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, verbose_name=_('Produit')
-    )
-    description = models.TextField(_('Description'), blank=True)
-    quantity = models.DecimalField(
-        _('Quantité'), max_digits=10, decimal_places=2, default=1
-    )
-    unit_price = models.DecimalField(
-        _('Prix unitaire'), max_digits=15, decimal_places=2
-    )
-    tax_rate = models.DecimalField(
-        _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=0
     )
 
     class Meta:
@@ -1103,29 +1100,8 @@ class OrderItem(models.Model):
             ),
         ]
 
-    def __str__(self):
-        return f'{self.product.name} ({self.quantity})'
-
     def save(self, *args, **kwargs):
-        """
-        Surcharge de save pour initialiser le prix unitaire et la description depuis le produit.
-        """
-        # Si prix unitaire non défini, utiliser celui du produit
-        if self.unit_price is None or self.unit_price == 0:
-            self.unit_price = self.product.unit_price
-
-        # Si description non définie, utiliser celle du produit
-        if not self.description:
-            self.description = self.product.description
-
-        # Si taux de TVA non défini, utiliser celui du produit
-        if self.tax_rate is None or self.tax_rate == 0:
-            self.tax_rate = self.product.tax_rate
-
-        # Sauvegarder l'item
         super().save(*args, **kwargs)
-
-        # Recalculer les totaux de la commande
         if self.order:
             self.order.calculate_amounts()
             self.order.save(update_fields=['subtotal', 'tax_amount', 'total'])
@@ -1621,26 +1597,11 @@ class Invoice(SalesDocument):
         return payment
 
 
-class InvoiceItem(models.Model):
-    """
-    Ligne de facture associée à un produit.
-    """
+class InvoiceItem(SalesDocumentItem):
+    """Ligne de facture associée à un produit."""
 
     invoice = models.ForeignKey(
         Invoice, on_delete=models.CASCADE, verbose_name=_('Facture')
-    )
-    product = models.ForeignKey(
-        Product, on_delete=models.CASCADE, verbose_name=_('Produit')
-    )
-    description = models.TextField(_('Description'), blank=True)
-    quantity = models.DecimalField(
-        _('Quantité'), max_digits=10, decimal_places=2, default=1
-    )
-    unit_price = models.DecimalField(
-        _('Prix unitaire'), max_digits=15, decimal_places=2
-    )
-    tax_rate = models.DecimalField(
-        _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=0
     )
 
     class Meta:
@@ -1657,29 +1618,8 @@ class InvoiceItem(models.Model):
             ),
         ]
 
-    def __str__(self):
-        return f'{self.product.name} ({self.quantity})'
-
     def save(self, *args, **kwargs):
-        """
-        Surcharge de save pour initialiser le prix unitaire et la description depuis le produit.
-        """
-        # Si prix unitaire non défini, utiliser celui du produit
-        if self.unit_price is None or self.unit_price == 0:
-            self.unit_price = self.product.unit_price
-
-        # Si description non définie, utiliser celle du produit
-        if not self.description:
-            self.description = self.product.description
-
-        # Si taux de TVA non défini, utiliser celui du produit
-        if self.tax_rate is None or self.tax_rate == 0:
-            self.tax_rate = self.product.tax_rate
-
-        # Sauvegarder l'item
         super().save(*args, **kwargs)
-
-        # Recalculer les totaux de la facture
         if self.invoice:
             self.invoice.calculate_amounts()
             self.invoice.save(

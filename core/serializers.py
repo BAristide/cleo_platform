@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Company, CompanySetup, CoreSettings, Currency, EmailSettings
+from .models import CompanySetup, CoreSettings, Currency, EmailSettings
 
 
 class CurrencySerializer(serializers.ModelSerializer):
@@ -13,12 +13,6 @@ class CurrencySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Currency
-        fields = '__all__'
-
-
-class CompanySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Company
         fields = '__all__'
 
 

@@ -21,10 +21,9 @@ from rest_framework.views import APIView
 
 from users.permissions import HasModulePermission
 
-from .models import Company, CompanySetup, CoreSettings, Currency, EmailSettings
+from .models import CompanySetup, CoreSettings, Currency, EmailSettings
 from .serializers import (
     CompanyInfoSerializer,
-    CompanySerializer,
     CompanySetupSerializer,
     CoreSettingsSerializer,
     CurrencySerializer,
@@ -120,13 +119,6 @@ class CurrencyViewSet(viewsets.ModelViewSet):
             data['is_locked'] = self._has_commercial_documents()
             return Response(data)
         return Response({'error': 'No default currency found'}, status=404)
-
-
-class CompanyViewSet(viewsets.ModelViewSet):
-    queryset = Company.objects.all()
-    serializer_class = CompanySerializer
-    permission_classes = [IsAuthenticated, HasModulePermission]
-    module_name = 'core'
 
 
 class CoreSettingsView(APIView):
@@ -938,7 +930,7 @@ class ExportRGPDView(APIView):
 
         with zipfile.ZipFile(buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
             # ── Core ─────────────────────────────────────────────
-            from core.models import Company, CompanySetup, Currency
+            from core.models import CompanySetup, Currency
 
             zf.writestr(
                 'core/currencies.json',
@@ -953,28 +945,6 @@ class ExportRGPDView(APIView):
                         'exchange_rate',
                         'decimal_places',
                         'symbol_position',
-                    ],
-                ),
-            )
-            zf.writestr(
-                'core/company.json',
-                self._serialize(
-                    Company.objects.all(),
-                    [
-                        'id',
-                        'name',
-                        'legal_name',
-                        'tax_id',
-                        'registration_number',
-                        'website',
-                        'email',
-                        'phone',
-                        'street',
-                        'street2',
-                        'city',
-                        'zip_code',
-                        'state',
-                        'country',
                     ],
                 ),
             )

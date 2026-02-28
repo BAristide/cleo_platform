@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Company, CoreSettings, Currency, EmailSettings
+from .models import CoreSettings, Currency, EmailSettings
 
 
 @admin.register(Currency)
@@ -21,35 +21,6 @@ class CurrencyAdmin(admin.ModelAdmin):
                     'symbol_position',
                 )
             },
-        ),
-    )
-
-
-@admin.register(Company)
-class CompanyAdmin(admin.ModelAdmin):
-    list_display = ('name', 'currency', 'email', 'phone', 'is_active')
-    list_filter = ('is_active', 'currency')
-    search_fields = ('name', 'legal_name', 'tax_id', 'email')
-    fieldsets = (
-        (
-            'Informations de base',
-            {'fields': ('name', 'legal_name', 'logo', 'is_active')},
-        ),
-        (
-            'Informations fiscales',
-            {
-                'fields': (
-                    'tax_id',
-                    'registration_number',
-                    'currency',
-                    'fiscal_year_start',
-                )
-            },
-        ),
-        ('Contact', {'fields': ('website', 'email', 'phone')}),
-        (
-            'Adresse',
-            {'fields': ('street', 'street2', 'city', 'zip_code', 'state', 'country')},
         ),
     )
 

@@ -106,53 +106,6 @@ class Currency(models.Model):
         return f'{amount_str} {sym}'.rstrip()
 
 
-class Company(models.Model):
-    """Informations sur l'entreprise utilisatrice de l'ERP."""
-
-    name = models.CharField(_('Nom'), max_length=100)
-    legal_name = models.CharField(_('Raison sociale'), max_length=100, blank=True)
-    tax_id = models.CharField(_('Identifiant fiscal'), max_length=50, blank=True)
-    registration_number = models.CharField(
-        _("Numéro d'immatriculation"), max_length=50, blank=True
-    )
-
-    website = models.URLField(_('Site web'), blank=True)
-    email = models.EmailField(_('Email'), blank=True)
-    phone = models.CharField(_('Téléphone'), max_length=20, blank=True)
-
-    street = models.CharField(_('Adresse'), max_length=100, blank=True)
-    street2 = models.CharField(_("Complément d'adresse"), max_length=100, blank=True)
-    city = models.CharField(_('Ville'), max_length=50, blank=True)
-    zip_code = models.CharField(_('Code postal'), max_length=20, blank=True)
-    state = models.CharField(_('État/Province'), max_length=50, blank=True)
-    country = models.CharField(_('Pays'), max_length=50, blank=True)
-
-    currency = models.ForeignKey(
-        Currency,
-        on_delete=models.PROTECT,
-        related_name='companies',
-        verbose_name=_('Devise'),
-    )
-    fiscal_year_start = models.DateField(
-        _("Début de l'année fiscale"), null=True, blank=True
-    )
-
-    logo = models.ImageField(
-        _('Logo'), upload_to='company/logos/', null=True, blank=True
-    )
-
-    is_active = models.BooleanField(_('Actif'), default=True)
-    created_at = models.DateTimeField(_('Créé le'), auto_now_add=True)
-    updated_at = models.DateTimeField(_('Modifié le'), auto_now=True)
-
-    class Meta:
-        verbose_name = _('Entreprise')
-        verbose_name_plural = _('Entreprises')
-
-    def __str__(self):
-        return self.name
-
-
 class CoreSettings(models.Model):
     """Paramètres globaux de l'ERP — Singleton (pk=1 toujours)."""
 

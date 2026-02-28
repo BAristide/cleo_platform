@@ -86,6 +86,11 @@ urlpatterns = [
         'recruitment/<path:path>',
         login_required(TemplateView.as_view(template_name='index.html')),
     ),
+    path('catalog/', login_required(TemplateView.as_view(template_name='index.html'))),
+    path(
+        'catalog/<path:path>',
+        login_required(TemplateView.as_view(template_name='index.html')),
+    ),
     path(
         'inventory/', login_required(TemplateView.as_view(template_name='index.html'))
     ),

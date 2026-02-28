@@ -2,14 +2,14 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   TeamOutlined, ShoppingCartOutlined, ShoppingOutlined, UserOutlined,
-  DollarOutlined, BankOutlined, SolutionOutlined, InboxOutlined, ArrowRightOutlined,
+  DollarOutlined, BankOutlined, SolutionOutlined, InboxOutlined, ArrowRightOutlined, TagsOutlined,
 } from '@ant-design/icons';
 
 const ModuleCard = ({ title, icon, description, path, stats, colorClass, color }) => {
   const iconMap = {
     'team': <TeamOutlined />, 'shopping-cart': <ShoppingCartOutlined />, 'shopping': <ShoppingOutlined />,
     'user': <UserOutlined />, 'dollar': <DollarOutlined />, 'bank': <BankOutlined />,
-    'solution': <SolutionOutlined />, 'inbox': <InboxOutlined />,
+    'solution': <SolutionOutlined />, 'inbox': <InboxOutlined />, 'tag': <TagsOutlined />,
   };
 
   return (

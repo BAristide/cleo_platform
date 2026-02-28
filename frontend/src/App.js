@@ -6,6 +6,7 @@ import './App.css';
 import ExecutiveDashboard from './components/dashboard/ExecutiveDashboard';
 import CRMRoutes from './components/crm/Routes';
 import SalesRoutes from './components/sales/Routes';
+import CatalogRoutes from './components/catalog/Routes';
 import HRRoutes from './components/hr/Routes';
 import PayrollRoutes from './components/payroll/Routes';
 import AccountingRoutes from './components/accounting/Routes';
@@ -107,6 +108,13 @@ function App() {
                 <PrivateRoute>
                   <PermissionRoute module="crm">
                     <CRMRoutes />
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/catalog/*" element={
+                <PrivateRoute>
+                  <PermissionRoute module="sales">
+                    <CatalogRoutes />
                   </PermissionRoute>
                 </PrivateRoute>
               } />

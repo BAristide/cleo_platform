@@ -30,7 +30,7 @@ const InventoryRoutes = () => {
         <Route path="/inventories/new" element={<InventoryForm />} />
         <Route path="/inventories/:id" element={<InventoryDetail />} />
 
-        <Route path="/categories" element={<WarehouseList />} />
+        <Route path="/categories" element={<Navigate to="/catalog/categories" replace />} />
 
         <Route path="*" element={<Navigate to="/inventory" replace />} />
       </Routes>

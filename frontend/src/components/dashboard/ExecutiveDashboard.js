@@ -6,7 +6,7 @@ import {
   DollarOutlined, RiseOutlined, FallOutlined, BankOutlined,
   TeamOutlined, ShoppingCartOutlined, InboxOutlined, WarningOutlined,
   DashboardOutlined, IdcardOutlined, AccountBookOutlined,
-  SolutionOutlined, ShoppingOutlined,
+  SolutionOutlined, ShoppingOutlined, TagsOutlined,
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -50,7 +50,7 @@ const ExecutiveDashboard = () => {
     }
 
     try {
-      const [crm, quotes, hr, inv, purch, acct, payroll, recruit] = await Promise.all([
+      const [crm, quotes, hr, inv, purch, acct, payroll, recruit, catalogProducts] = await Promise.all([
         axios.get('/api/crm/dashboard/').catch(() => ({ data: {} })),
         axios.get('/api/sales/quotes/').catch(() => ({ data: { results: [] } })),
         axios.get('/api/hr/dashboard/').catch(() => ({ data: {} })),
@@ -59,12 +59,14 @@ const ExecutiveDashboard = () => {
         axios.get('/api/accounting/accounts/').catch(() => ({ data: { results: [] } })),
         axios.get('/api/payroll/dashboard/').catch(() => ({ data: {} })),
         axios.get('/api/recruitment/job-openings/').catch(() => ({ data: { results: [] } })),
+        axios.get('/api/catalog/products/').catch(() => ({ data: { results: [], count: 0 } })),
       ]);
       const acctList = acct.data?.results || (Array.isArray(acct.data) ? acct.data : []);
       const recruitList = recruit.data?.results || (Array.isArray(recruit.data) ? recruit.data : []);
       setModuleStats({
         crm: crm.data, sales: { quotes: (quotes.data?.results || []).length }, hr: hr.data, inventory: inv.data, purchasing: purch.data,
         accounting: { total: acctList.length }, payroll: payroll.data, recruitment: { total: recruitList.length },
+        catalog: { total: catalogProducts.data?.count || (catalogProducts.data?.results || []).length },
       });
     } catch (err) {
       console.error('Module stats error:', err);
@@ -76,6 +78,7 @@ const ExecutiveDashboard = () => {
   const allModuleMenuItems = [
     { key: 'home', icon: <DashboardOutlined />, label: <Link to="/">Tableau de bord</Link>, module: null },
     { key: 'crm', icon: <TeamOutlined />, label: <Link to="/crm">CRM</Link>, module: 'crm' },
+    { key: 'catalog', icon: <TagsOutlined />, label: <Link to="/catalog">Catalogue</Link>, module: 'sales' },
     { key: 'sales', icon: <ShoppingCartOutlined />, label: <Link to="/sales">Ventes</Link>, module: 'sales' },
     { key: 'inventory', icon: <InboxOutlined />, label: <Link to="/inventory">Stocks</Link>, module: 'inventory' },
     { key: 'purchasing', icon: <ShoppingOutlined />, label: <Link to="/purchasing">Achats</Link>, module: 'purchasing' },
@@ -124,6 +127,8 @@ const ExecutiveDashboard = () => {
   const modules = [
     { title: 'CRM', module: 'crm', icon: 'team', description: 'Contacts, opportunités, pipeline', path: '/crm', colorClass: 'module-crm', color: '#3b82f6',
       stats: { count: moduleStats.crm?.contacts || 0, recent: moduleStats.crm?.opportunities || 0 } },
+    { title: 'Catalogue', module: 'sales', icon: 'tag', description: 'Produits, categories, tarifs', path: '/catalog', colorClass: 'module-catalog', color: '#0ea5e9',
+      stats: { count: moduleStats.catalog?.total || 0, recent: 0 } },
     { title: 'Ventes', module: 'sales', icon: 'shopping-cart', description: 'Devis, commandes, factures', path: '/sales', colorClass: 'module-sales', color: '#10b981',
       stats: { count: moduleStats.sales?.quotes || 0, recent: 0 } },
     { title: 'Stocks', module: 'inventory', icon: 'inbox', description: 'Entrepôts, mouvements, niveaux', path: '/inventory', colorClass: 'module-inventory', color: '#14b8a6',

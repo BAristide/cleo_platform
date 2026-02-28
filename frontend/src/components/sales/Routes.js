@@ -9,8 +9,6 @@ import OrderList from './OrderList';
 import OrderDetail from './OrderDetail';
 import InvoiceList from './InvoiceList';
 import InvoiceDetail from './InvoiceDetail';
-import ProductList from './ProductList';
-import ProductDetail from './ProductDetail';
 import BankAccountList from './BankAccountList';
 import PaymentList from './PaymentList';
 import CreditNoteList from './CreditNoteList';
@@ -44,9 +42,9 @@ const SalesRoutes = () => {
         {/* Credit Notes (Avoirs) */}
         <Route path="/credit-notes" element={<CreditNoteList />} />
 
-        {/* Products (Produits) */}
-        <Route path="/products" element={<ProductList />} />
-        <Route path="/products/:id" element={<ProductDetail />} />
+        {/* Products redirige vers Catalogue */}
+        <Route path="/products" element={<Navigate to="/catalog/products" replace />} />
+        <Route path="/products/:id" element={<Navigate to="/catalog/products" replace />} />
 
         {/* Bank Accounts (Comptes bancaires) */}
         <Route path="/bank-accounts" element={<BankAccountList />} />

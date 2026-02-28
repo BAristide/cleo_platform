@@ -14,7 +14,7 @@ const menuItems = [
   { key: 'invoices', icon: <FileTextOutlined />, label: <Link to="/sales/invoices">Factures</Link> },
   { key: 'credit-notes', icon: <FileTextOutlined />, label: <Link to="/sales/credit-notes">Avoirs</Link> },
   { key: 'payments', icon: <DollarOutlined />, label: <Link to="/sales/payments">Paiements</Link> },
-  { key: 'products', icon: <AppstoreOutlined />, label: <Link to="/sales/products">Produits</Link> },
+  { key: 'products', icon: <AppstoreOutlined />, label: <Link to="/catalog/products">Produits</Link> },
   { key: 'bank-accounts', icon: <BankOutlined />, label: <Link to="/sales/bank-accounts">Comptes bancaires</Link> },
 ];
 

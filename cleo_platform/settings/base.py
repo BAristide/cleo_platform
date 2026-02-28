@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     'django_filters',
     'corsheaders',
     'core',
+    'catalog',
     'crm',
     'sales',
     'hr',

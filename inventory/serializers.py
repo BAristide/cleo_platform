@@ -1,7 +1,8 @@
 from rest_framework import serializers
 
+from catalog.models import ProductCategory
+
 from .models import (
-    ProductCategory,
     StockInventory,
     StockInventoryLine,
     StockLevel,

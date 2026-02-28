@@ -29,35 +29,8 @@ class Warehouse(models.Model):
         super().save(*args, **kwargs)
 
 
-class ProductCategory(models.Model):
-    """Catégories de produits (arborescence simple via FK parent)."""
-
-    name = models.CharField(_('Nom'), max_length=200)
-    code = models.CharField(_('Code'), max_length=20, unique=True)
-    parent = models.ForeignKey(
-        'self',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name='children',
-        verbose_name=_('Catégorie parente'),
-    )
-    accounting_account = models.ForeignKey(
-        'accounting.Account',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        verbose_name=_('Compte comptable de stock'),
-        help_text=_('Compte comptable de stock associé (classe 3)'),
-    )
-
-    class Meta:
-        verbose_name = _('Catégorie de produit')
-        verbose_name_plural = _('Catégories de produits')
-        ordering = ['code']
-
-    def __str__(self):
-        return f'{self.code} - {self.name}'
+# ── ProductCategory migré vers catalog.models (IC-005) ───────────────
+from catalog.models import ProductCategory  # noqa: E402, F401 — rétrocompatibilité
 
 
 class StockMove(models.Model):
@@ -73,7 +46,7 @@ class StockMove(models.Model):
     ]
 
     product = models.ForeignKey(
-        'sales.Product',
+        'catalog.Product',
         on_delete=models.CASCADE,
         related_name='stock_moves',
         verbose_name=_('Produit'),
@@ -130,7 +103,7 @@ class StockLevel(models.Model):
     """Niveau de stock par produit × entrepôt (table dénormalisée pour performance)."""
 
     product = models.ForeignKey(
-        'sales.Product',
+        'catalog.Product',
         on_delete=models.CASCADE,
         related_name='stock_levels',
         verbose_name=_('Produit'),
@@ -211,7 +184,7 @@ class StockInventoryLine(models.Model):
         verbose_name=_('Inventaire'),
     )
     product = models.ForeignKey(
-        'sales.Product',
+        'catalog.Product',
         on_delete=models.CASCADE,
         verbose_name=_('Produit'),
     )

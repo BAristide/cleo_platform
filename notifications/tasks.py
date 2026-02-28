@@ -104,8 +104,8 @@ def check_overdue_invoices():
 @shared_task(name='notifications.tasks.check_stock_alerts')
 def check_stock_alerts():
     """Détecte les produits dont le stock est sous le seuil d'alerte."""
+    from catalog.models import Product
     from inventory.models import StockLevel
-    from sales.models import Product
 
     # Produits stockables avec seuil > 0
     products_with_threshold = Product.objects.filter(

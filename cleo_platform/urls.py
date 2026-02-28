@@ -25,6 +25,7 @@ urlpatterns = [
     path('', login_required(views.index_view), name='index'),
     path('api/core/', include('core.urls')),
     path('api/crm/', include('crm.urls')),
+    path('api/catalog/', include('catalog.urls')),
     path('api/sales/', include('sales.urls')),
     path('api/hr/', include('hr.urls')),
     path('api/payroll/', include('payroll.urls')),

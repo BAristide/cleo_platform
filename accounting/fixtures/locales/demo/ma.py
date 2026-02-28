@@ -21,10 +21,11 @@ def load_demo_data():
         JournalEntry,
         JournalEntryLine,
     )
+    from catalog.models import Product
     from core.models import Currency
     from crm.models import Company, Contact
     from hr.models import Department, Employee, JobTitle
-    from sales.models import BankAccount, Product, Quote, QuoteItem
+    from sales.models import BankAccount, Quote, QuoteItem
 
     User = get_user_model()
     logger.info('Chargement des données de démonstration — Pack MA')

@@ -7,10 +7,10 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
+from catalog.models import ProductCategory
 from users.permissions import HasModulePermission, module_permission_required
 
 from .models import (
-    ProductCategory,
     StockInventory,
     StockInventoryLine,
     StockLevel,
@@ -172,7 +172,7 @@ class StockInventoryLineViewSet(viewsets.ModelViewSet):
 @module_permission_required('inventory')
 def dashboard_view(request):
     """KPIs du module stock."""
-    from sales.models import Product
+    from catalog.models import Product
 
     # Nombre de produits stockables
     total_products = Product.objects.filter(

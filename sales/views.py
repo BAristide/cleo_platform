@@ -20,7 +20,6 @@ from .models import (
     Order,
     OrderItem,
     Payment,
-    Product,
     Quote,
     QuoteItem,
 )
@@ -33,7 +32,6 @@ from .serializers import (
     OrderItemSerializer,
     OrderSerializer,
     PaymentSerializer,
-    ProductSerializer,
     QuoteDetailSerializer,
     QuoteItemSerializer,
     QuoteSerializer,
@@ -150,22 +148,8 @@ class BankAccountViewSet(viewsets.ModelViewSet):
             )
 
 
-class ProductViewSet(viewsets.ModelViewSet):
-    """API pour les produits."""
-
-    queryset = Product.objects.all()
-    serializer_class = ProductSerializer
-    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
-    module_name = 'sales'
-    filter_backends = [
-        DjangoFilterBackend,
-        filters.SearchFilter,
-        filters.OrderingFilter,
-    ]
-    filterset_fields = ['is_active', 'currency']
-    search_fields = ['name', 'reference', 'description']
-    ordering_fields = ['name', 'reference', 'unit_price', 'tax_rate']
-    ordering = ['reference']
+# ProductViewSet migré vers catalog.views (IC-005)
+from catalog.views import ProductViewSet  # noqa: E402, F401 — rétrocompatibilité urls
 
 
 class QuoteViewSet(viewsets.ModelViewSet):

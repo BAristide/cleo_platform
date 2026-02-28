@@ -10,7 +10,6 @@ from .models import (
     Order,
     OrderItem,
     Payment,
-    Product,
     Quote,
     QuoteItem,
 )
@@ -57,21 +56,6 @@ class BankAccountAdmin(admin.ModelAdmin):
     list_filter = ('currency', 'is_default')
     search_fields = ('name', 'bank_name', 'rib', 'iban')
     ordering = ('currency', '-is_default', 'name')
-
-
-@admin.register(Product)
-class ProductAdmin(admin.ModelAdmin):
-    list_display = (
-        'reference',
-        'name',
-        'unit_price',
-        'currency',
-        'tax_rate',
-        'is_active',
-    )
-    list_filter = ('is_active', 'currency', 'tax_rate')
-    search_fields = ('name', 'reference', 'description')
-    ordering = ('reference',)
 
 
 class QuoteItemInline(admin.TabularInline):

@@ -129,7 +129,7 @@ class PurchaseOrderItem(models.Model):
         verbose_name=_('Bon de commande'),
     )
     product = models.ForeignKey(
-        'sales.Product',
+        'catalog.Product',
         on_delete=models.PROTECT,
         verbose_name=_('Produit'),
     )
@@ -253,7 +253,7 @@ class ReceptionItem(models.Model):
         verbose_name=_('Ligne de commande'),
     )
     product = models.ForeignKey(
-        'sales.Product',
+        'catalog.Product',
         on_delete=models.PROTECT,
         verbose_name=_('Produit'),
     )
@@ -395,7 +395,7 @@ class SupplierInvoiceItem(models.Model):
         verbose_name=_('Facture fournisseur'),
     )
     product = models.ForeignKey(
-        'sales.Product',
+        'catalog.Product',
         on_delete=models.PROTECT,
         verbose_name=_('Produit'),
     )

@@ -1,7 +1,6 @@
 from django.contrib import admin
 
 from .models import (
-    ProductCategory,
     StockInventory,
     StockInventoryLine,
     StockLevel,
@@ -14,13 +13,6 @@ from .models import (
 class WarehouseAdmin(admin.ModelAdmin):
     list_display = ['code', 'name', 'is_active', 'is_default']
     list_filter = ['is_active', 'is_default']
-    search_fields = ['code', 'name']
-
-
-@admin.register(ProductCategory)
-class ProductCategoryAdmin(admin.ModelAdmin):
-    list_display = ['code', 'name', 'parent']
-    list_filter = ['parent']
     search_fields = ['code', 'name']
 
 

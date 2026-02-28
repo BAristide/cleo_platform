@@ -597,7 +597,8 @@ class GlobalSearchView(APIView):
         return results
 
     def _search_sales(self, q, limit):
-        from sales.models import Invoice, Order, Product, Quote
+        from catalog.models import Product
+        from sales.models import Invoice, Order, Quote
 
         results = []
 

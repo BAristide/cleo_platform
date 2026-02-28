@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
+from catalog.models import Product
 from core.models import Currency  # Importation de Currency depuis core.models
 
 from .models import (
@@ -10,7 +11,6 @@ from .models import (
     Order,
     OrderItem,
     Payment,
-    Product,
     Quote,
     QuoteItem,
 )

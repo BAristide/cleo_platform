@@ -1,3 +1,5 @@
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.db.models import F
 from django.utils.translation import gettext_lazy as _
@@ -70,15 +72,19 @@ class StockMove(models.Model):
         blank=True,
         help_text=_('N° BC, BL, facture...'),
     )
-    source_document_type = models.CharField(
-        _('Type document source'),
-        max_length=50,
+    content_type = models.ForeignKey(
+        ContentType,
+        on_delete=models.SET_NULL,
+        null=True,
         blank=True,
-        help_text=_('order, invoice, purchase...'),
+        verbose_name=_('Type de document source'),
     )
-    source_document_id = models.IntegerField(
-        _('ID document source'), null=True, blank=True
+    object_id = models.PositiveIntegerField(
+        _('ID document source'),
+        null=True,
+        blank=True,
     )
+    source_document = GenericForeignKey('content_type', 'object_id')
     date = models.DateTimeField(_('Date du mouvement'))
     notes = models.TextField(_('Notes'), blank=True)
     created_by = models.ForeignKey(
@@ -138,6 +144,12 @@ class StockLevel(models.Model):
 
 class StockInventory(models.Model):
     """Inventaire physique."""
+
+    stock_moves = GenericRelation(
+        'inventory.StockMove',
+        content_type_field='content_type',
+        object_id_field='object_id',
+    )
 
     STATES = [
         ('draft', _('Brouillon')),

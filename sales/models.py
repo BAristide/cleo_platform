@@ -3,6 +3,7 @@ import os
 from decimal import Decimal
 
 from django.conf import settings
+from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.db.models import F, Sum
 from django.utils.translation import gettext_lazy as _
@@ -1478,6 +1479,11 @@ class InvoiceItem(SalesDocumentItem):
 
     invoice = models.ForeignKey(
         Invoice, on_delete=models.CASCADE, verbose_name=_('Facture')
+    )
+    stock_moves = GenericRelation(
+        'inventory.StockMove',
+        content_type_field='content_type',
+        object_id_field='object_id',
     )
 
     class Meta:

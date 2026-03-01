@@ -5,6 +5,7 @@ Génère automatiquement des StockMove OUT lors de la création de lignes de fac
 
 import logging
 
+from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
 from inventory.models import StockMove, Warehouse
@@ -49,9 +50,10 @@ def create_stock_move_for_invoice_item(invoice_item):
         return None
 
     # Éviter les doublons (si le signal se déclenche plusieurs fois)
+    ct = ContentType.objects.get_for_model(invoice_item)
     existing = StockMove.objects.filter(
-        source_document_type='invoice_item',
-        source_document_id=invoice_item.pk,
+        content_type=ct,
+        object_id=invoice_item.pk,
     ).exists()
     if existing:
         return None
@@ -63,8 +65,8 @@ def create_stock_move_for_invoice_item(invoice_item):
         quantity=invoice_item.quantity,
         unit_cost=invoice_item.unit_price,
         reference=f'FACT-{invoice.number}',
-        source_document_type='invoice_item',
-        source_document_id=invoice_item.pk,
+        content_type=ct,
+        object_id=invoice_item.pk,
         date=timezone.now(),
         notes=f'Sortie automatique — Facture {invoice.number}',
     )

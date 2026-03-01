@@ -42,14 +42,15 @@ def update_stock_level(stock_move):
         # Convention : si source_document_type == 'inventory', on lit la différence
         # directement depuis la ligne d'inventaire. Sinon, on traite comme une entrée.
         if (
-            stock_move.source_document_type == 'inventory'
-            and stock_move.source_document_id
+            stock_move.content_type
+            and stock_move.content_type.model == 'stockinventory'
+            and stock_move.object_id
         ):
             from inventory.models import StockInventoryLine
 
             # Recalculer à partir des lignes d'inventaire validées
             lines = StockInventoryLine.objects.filter(
-                inventory_id=stock_move.source_document_id,
+                inventory_id=stock_move.object_id,
                 product=stock_move.product,
             )
             for line in lines:

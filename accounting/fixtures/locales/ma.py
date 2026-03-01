@@ -9,7 +9,7 @@ CURRENCIES = [
     {
         'code': 'MAD',
         'name': 'Dirham marocain',
-        'symbol': 'MAD',
+        'symbol': 'DH',
         'exchange_rate': 1.000000,
         'decimal_places': 2,
         'decimal_separator': '.',

@@ -446,18 +446,11 @@ class SetupCreateView(APIView):
         init_service.init_all()
 
         try:
-            payroll_module = importlib.import_module(
-                f'payroll.fixtures.locales.{locale_pack.lower()}'
-            )
-            if hasattr(payroll_module, 'load_payroll_data'):
-                payroll_module.load_payroll_data()
-        except (ImportError, ModuleNotFoundError):
-            try:
-                from django.core.management import call_command
+            from django.core.management import call_command
 
-                call_command('init_payroll_data')
-            except Exception:
-                logger.info(f'Pas de données de paie pour le pack {locale_pack}')
+            call_command('init_payroll_data', '--locale', locale_pack, '--force')
+        except Exception as e:
+            logger.warning(f'Paie non initialisée pour {locale_pack}: {e}')
 
         demo_loaded = False
         if install_demo:

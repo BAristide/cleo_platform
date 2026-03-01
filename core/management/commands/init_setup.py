@@ -126,26 +126,12 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('  [OK] Comptabilité initialisée'))
 
             try:
-                import importlib
+                from django.core.management import call_command
 
-                payroll_module = importlib.import_module(
-                    f'payroll.fixtures.locales.{country.lower()}'
-                )
-                if hasattr(payroll_module, 'load_payroll_data'):
-                    payroll_module.load_payroll_data()
-                    self.stdout.write(self.style.SUCCESS('  [OK] Paie initialisée'))
-            except (ImportError, ModuleNotFoundError):
-                try:
-                    from django.core.management import call_command
-
-                    call_command('init_payroll_data')
-                    self.stdout.write(
-                        self.style.SUCCESS('  [OK] Paie initialisée (legacy)')
-                    )
-                except Exception:
-                    self.stdout.write(
-                        self.style.WARNING('  [WARN]  Paie : non disponible')
-                    )
+                call_command('init_payroll_data', '--locale', country, '--force')
+                self.stdout.write(self.style.SUCCESS('  [OK] Paie initialisée'))
+            except Exception as e:
+                self.stdout.write(self.style.WARNING(f'  [WARN] Paie : {e}'))
 
             if install_demo:
                 try:

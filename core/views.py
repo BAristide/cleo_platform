@@ -54,7 +54,7 @@ AVAILABLE_PACKS = {
         'chart_of_accounts': 'SYSCOHADA révisé (2018)',
         'default_currency': 'XOF',
         'taxes_summary': 'TVA 18%, 0%',
-        'legal_id_labels': ['RCCM', 'CC', 'NIF'],
+        'legal_id_labels': ['RCCM', 'NCC', 'IDU'],
     },
     'FR': {
         'code': 'FR',

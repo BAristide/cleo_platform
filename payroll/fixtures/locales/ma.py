@@ -53,6 +53,66 @@ PAYROLL_PARAMETERS = [
         'value': Decimal('2828.71'),
         'description': 'Salaire minimum interprofessionnel garanti mensuel (MAD)',
     },
+    {
+        'code': 'WORKING_DAYS_MONTH',
+        'name': 'Jours ouvrés par mois',
+        'value': Decimal('26.00'),
+        'description': 'Nombre de jours ouvrés par mois (Code du travail marocain)',
+    },
+    {
+        'code': 'WORKING_HOURS_MONTH',
+        'name': 'Heures standard par mois',
+        'value': Decimal('191.00'),
+        'description': "Nombre d'heures standard par mois (2288h/an ÷ 12)",
+    },
+    {
+        'code': 'SENIORITY_2Y_RATE',
+        'name': 'Ancienneté 2-5 ans',
+        'value': Decimal('5.00'),
+        'description': 'Taux prime ancienneté après 2 ans (%)',
+    },
+    {
+        'code': 'SENIORITY_5Y_RATE',
+        'name': 'Ancienneté 5-12 ans',
+        'value': Decimal('10.00'),
+        'description': 'Taux prime ancienneté après 5 ans (%)',
+    },
+    {
+        'code': 'SENIORITY_12Y_RATE',
+        'name': 'Ancienneté 12-20 ans',
+        'value': Decimal('15.00'),
+        'description': 'Taux prime ancienneté après 12 ans (%)',
+    },
+    {
+        'code': 'SENIORITY_20Y_RATE',
+        'name': 'Ancienneté 20-25 ans',
+        'value': Decimal('20.00'),
+        'description': 'Taux prime ancienneté après 20 ans (%)',
+    },
+    {
+        'code': 'SENIORITY_25Y_RATE',
+        'name': 'Ancienneté 25+ ans',
+        'value': Decimal('25.00'),
+        'description': 'Taux prime ancienneté après 25 ans (%)',
+    },
+    {
+        'code': 'SPOUSE_DEDUCTION',
+        'name': 'Déduction IR conjoint',
+        'value': Decimal('360.00'),
+        'description': 'Déduction annuelle IR pour conjoint (DH)',
+    },
+    {
+        'code': 'CHILD_DEDUCTION',
+        'name': 'Déduction IR enfant',
+        'value': Decimal('360.00'),
+        'description': 'Déduction annuelle IR par enfant à charge (DH)',
+    },
+    {
+        'code': 'MAX_DEPENDENT_CHILDREN',
+        'name': 'Maximum enfants à charge',
+        'value': Decimal('6.00'),
+        'description': "Nombre maximum d'enfants à charge pour déduction IR",
+    },
 ]
 
 # ── Composants de cotisation spécifiques Maroc ───────────────────────

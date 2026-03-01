@@ -53,6 +53,66 @@ PAYROLL_PARAMETERS = [
         'value': Decimal('1766.92'),
         'description': 'Salaire minimum interprofessionnel de croissance mensuel brut (EUR)',
     },
+    {
+        'code': 'WORKING_DAYS_MONTH',
+        'name': 'Jours ouvrés par mois',
+        'value': Decimal('21.67'),
+        'description': 'Nombre de jours ouvrés par mois (5j/sem × 52/12)',
+    },
+    {
+        'code': 'WORKING_HOURS_MONTH',
+        'name': 'Heures standard par mois',
+        'value': Decimal('151.67'),
+        'description': "Nombre d'heures standard par mois (35h/sem × 52/12)",
+    },
+    {
+        'code': 'SENIORITY_2Y_RATE',
+        'name': 'Ancienneté 2-5 ans',
+        'value': Decimal('0.00'),
+        'description': 'Non applicable — ancienneté FR régie par conventions collectives',
+    },
+    {
+        'code': 'SENIORITY_5Y_RATE',
+        'name': 'Ancienneté 5-12 ans',
+        'value': Decimal('0.00'),
+        'description': 'Non applicable — ancienneté FR régie par conventions collectives',
+    },
+    {
+        'code': 'SENIORITY_12Y_RATE',
+        'name': 'Ancienneté 12-20 ans',
+        'value': Decimal('0.00'),
+        'description': 'Non applicable — ancienneté FR régie par conventions collectives',
+    },
+    {
+        'code': 'SENIORITY_20Y_RATE',
+        'name': 'Ancienneté 20-25 ans',
+        'value': Decimal('0.00'),
+        'description': 'Non applicable — ancienneté FR régie par conventions collectives',
+    },
+    {
+        'code': 'SENIORITY_25Y_RATE',
+        'name': 'Ancienneté 25+ ans',
+        'value': Decimal('0.00'),
+        'description': 'Non applicable — ancienneté FR régie par conventions collectives',
+    },
+    {
+        'code': 'SPOUSE_DEDUCTION',
+        'name': 'Déduction PAS conjoint',
+        'value': Decimal('0.00'),
+        'description': 'Non applicable — PAS France utilise le quotient familial',
+    },
+    {
+        'code': 'CHILD_DEDUCTION',
+        'name': 'Déduction PAS enfant',
+        'value': Decimal('0.00'),
+        'description': 'Non applicable — PAS France utilise le quotient familial',
+    },
+    {
+        'code': 'MAX_DEPENDENT_CHILDREN',
+        'name': 'Maximum enfants à charge',
+        'value': Decimal('0.00'),
+        'description': 'Non applicable — PAS France utilise le quotient familial',
+    },
 ]
 
 # ── Composants de cotisation (mêmes codes internes) ─────────────────

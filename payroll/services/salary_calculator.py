@@ -1,5 +1,4 @@
 # payroll/services/salary_calculator.py
-import calendar
 from decimal import Decimal
 
 from django.db import models
@@ -231,14 +230,12 @@ class SalaryCalculator:
         """Calcule le salaire de base au prorata des jours travaillés."""
         full_salary = payroll_info.base_salary
 
-        # Calculer le nombre de jours standard dans le mois
-        _period = payslip.payroll_run.period
-        _month_days = calendar.monthrange(
-            _period.start_date.year, _period.start_date.month
-        )[1]
+        # Jours ouvrés par mois depuis les paramètres de paie
+        try:
+            base_days = PayrollParameter.objects.get(code='WORKING_DAYS_MONTH').value
+        except PayrollParameter.DoesNotExist:
+            base_days = Decimal('26.0')  # Fallback Maroc
 
-        # Jours de base (normalement 26 jours ouvrés par mois)
-        base_days = Decimal('26.0')
         actual_days = base_days - payslip.absence_days - payslip.unpaid_leave_days
 
         # Calcul proratisé
@@ -250,8 +247,14 @@ class SalaryCalculator:
         employee = payslip.employee
         payroll_info = EmployeePayroll.objects.get(employee=employee)
 
-        # Calculer le taux horaire
-        monthly_hours = Decimal('191')  # Nombre d'heures standard par mois
+        # Heures standard par mois depuis les paramètres de paie
+        try:
+            monthly_hours = PayrollParameter.objects.get(
+                code='WORKING_HOURS_MONTH'
+            ).value
+        except PayrollParameter.DoesNotExist:
+            monthly_hours = Decimal('191')  # Fallback Maroc
+
         hourly_rate = payroll_info.base_salary / monthly_hours
 
         # Déterminer les heures concernées
@@ -270,7 +273,7 @@ class SalaryCalculator:
 
     @staticmethod
     def _calculate_seniority_bonus(payslip, base_salary):
-        """Calcule la prime d'ancienneté."""
+        """Calcule la prime d'ancienneté selon les paramètres du locale_pack."""
         employee = payslip.employee
 
         # Calculer l'ancienneté en années
@@ -282,18 +285,24 @@ class SalaryCalculator:
         if (today.month, today.day) < (hire_date.month, hire_date.day):
             years -= 1
 
-        # Déterminer le taux selon l'ancienneté (selon le code du travail marocain)
+        # Récupérer les taux d'ancienneté depuis les paramètres de paie
+        def _get_rate(code, fallback):
+            try:
+                return PayrollParameter.objects.get(code=code).value / Decimal('100')
+            except PayrollParameter.DoesNotExist:
+                return fallback
+
         rate = Decimal('0.0')
-        if years >= 2 and years < 5:
-            rate = Decimal('0.05')  # 5% après 2 ans
-        elif years >= 5 and years < 12:
-            rate = Decimal('0.10')  # 10% après 5 ans
-        elif years >= 12 and years < 20:
-            rate = Decimal('0.15')  # 15% après 12 ans
-        elif years >= 20 and years < 25:
-            rate = Decimal('0.20')  # 20% après 20 ans
-        elif years >= 25:
-            rate = Decimal('0.25')  # 25% après 25 ans
+        if years >= 25:
+            rate = _get_rate('SENIORITY_25Y_RATE', Decimal('0.25'))
+        elif years >= 20:
+            rate = _get_rate('SENIORITY_20Y_RATE', Decimal('0.20'))
+        elif years >= 12:
+            rate = _get_rate('SENIORITY_12Y_RATE', Decimal('0.15'))
+        elif years >= 5:
+            rate = _get_rate('SENIORITY_5Y_RATE', Decimal('0.10'))
+        elif years >= 2:
+            rate = _get_rate('SENIORITY_2Y_RATE', Decimal('0.05'))
 
         # Calculer la prime d'ancienneté
         return base_salary * rate
@@ -330,16 +339,39 @@ class SalaryCalculator:
         # Calculer l'IR annuel
         annual_salary = taxable_salary * 12
 
-        # Déductions pour charges de famille
+        # Déductions pour charges de famille (depuis paramètres de paie)
         family_deduction = Decimal('0')
 
-        # Si marié, déduction de base
-        if employee.marital_status == 'married':
-            family_deduction += Decimal('360')  # 30 DH par mois pour le conjoint
+        try:
+            spouse_deduction = PayrollParameter.objects.get(
+                code='SPOUSE_DEDUCTION'
+            ).value
+        except PayrollParameter.DoesNotExist:
+            spouse_deduction = Decimal('360')
 
-        # Déduction pour enfants à charge (maximum 6 enfants)
-        child_count = min(employee.dependent_children, 6)
-        child_deduction = child_count * Decimal('360')  # 360 DH par enfant par an
+        try:
+            child_deduction_unit = PayrollParameter.objects.get(
+                code='CHILD_DEDUCTION'
+            ).value
+        except PayrollParameter.DoesNotExist:
+            child_deduction_unit = Decimal('360')
+
+        try:
+            max_children = int(
+                PayrollParameter.objects.get(code='MAX_DEPENDENT_CHILDREN').value
+            )
+        except PayrollParameter.DoesNotExist:
+            max_children = 6
+
+        # Si marié, déduction pour le conjoint
+        if employee.marital_status == 'married':
+            family_deduction += spouse_deduction
+
+        # Déduction pour enfants à charge
+        child_count = (
+            min(employee.dependent_children, max_children) if max_children > 0 else 0
+        )
+        child_deduction = child_count * child_deduction_unit
         family_deduction += child_deduction
 
         # Appliquer les déductions

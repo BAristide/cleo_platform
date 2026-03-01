@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
         ('core', '0003_company_setup'),
         ('crm', '0002_alter_contact_source'),
         ('inventory', '0001_initial'),
-        ('sales', '0006_add_stock_fields_to_product'),
+        ('catalog', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -177,7 +177,7 @@ class Migration(migrations.Migration):
                     'product',
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        to='sales.product',
+                        to='catalog.product',
                         verbose_name='Produit',
                     ),
                 ),
@@ -295,7 +295,7 @@ class Migration(migrations.Migration):
                     'product',
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        to='sales.product',
+                        to='catalog.product',
                         verbose_name='Produit',
                     ),
                 ),
@@ -626,7 +626,7 @@ class Migration(migrations.Migration):
                     'product',
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        to='sales.product',
+                        to='catalog.product',
                         verbose_name='Produit',
                     ),
                 ),

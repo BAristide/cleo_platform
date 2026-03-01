@@ -35,6 +35,9 @@ const CompanyForm = () => {
   const [industries, setIndustries] = useState([]);
   const [tags, setTags] = useState([]);
   const [newIndustryName, setNewIndustryName] = useState('');
+  const [newTagName, setNewTagName] = useState('');
+  const [addingTag, setAddingTag] = useState(false);
+  const tagInputRef = useRef(null);
   const [addingIndustry, setAddingIndustry] = useState(false);
   const industryInputRef = useRef(null);
   const [company, setCompany] = useState(null);
@@ -101,6 +104,27 @@ const CompanyForm = () => {
 
     fetchFormData();
   }, [id, form, isEditMode]);
+
+  const addTag = async (e) => {
+    e.preventDefault();
+    const name = newTagName.trim();
+    if (!name) return;
+    setAddingTag(true);
+    try {
+      const response = await axios.post('/api/crm/tags/', { name, color: '#1890ff' });
+      setTags(prev => [...prev, response.data]);
+      const current = form.getFieldValue('tag_ids') || [];
+      form.setFieldsValue({ tag_ids: [...current, response.data.id] });
+      setNewTagName('');
+      message.success(`Tag "${name}" créé`);
+    } catch (error) {
+      const msg = error.response?.data?.name?.[0] || 'Erreur lors de la création';
+      message.error(msg);
+    } finally {
+      setAddingTag(false);
+      setTimeout(() => tagInputRef.current?.focus(), 0);
+    }
+  };
 
   const addIndustry = async (e) => {
     e.preventDefault();
@@ -378,6 +402,32 @@ const CompanyForm = () => {
               <Select
                 mode="multiple"
                 placeholder="Sélectionner des tags"
+                showSearch
+                optionFilterProp="children"
+                dropdownRender={(menu) => (
+                  <>
+                    {menu}
+                    <Divider style={{ margin: '8px 0' }} />
+                    <Space style={{ padding: '0 8px 4px' }}>
+                      <Input
+                        placeholder="Nouveau tag"
+                        ref={tagInputRef}
+                        value={newTagName}
+                        onChange={(e) => setNewTagName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addTag(e)}
+                        style={{ width: 150 }}
+                      />
+                      <Button
+                        type="text"
+                        icon={<PlusOutlined />}
+                        loading={addingTag}
+                        onClick={addTag}
+                      >
+                        Ajouter
+                      </Button>
+                    </Space>
+                  </>
+                )}
               >
                 {tags.map(tag => (
                   <Option key={tag.id} value={tag.id}>

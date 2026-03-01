@@ -1,14 +1,14 @@
 // src/components/crm/ContactList.js
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, Card, Tag, Typography, message, Tooltip, Popconfirm } from 'antd';
-import { 
-  SearchOutlined, 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  SearchOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
   UserOutlined,
   MailOutlined,
-  PhoneOutlined 
+  PhoneOutlined
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
@@ -40,12 +40,12 @@ const ContactList = () => {
           search: searchText || undefined
         }
       });
-      
+
       console.log('Contacts API response:', response); // Pour déboguer
-      
+
       // Utiliser l'utilitaire pour extraire les résultats
       const data = extractResultsFromResponse(response);
-      
+
       // Mettre à jour la pagination avec les données de l'API
       if (response.data && response.data.count !== undefined) {
         setPagination({
@@ -53,7 +53,7 @@ const ContactList = () => {
           total: response.data.count
         });
       }
-      
+
       setContacts(data);
     } catch (error) {
       console.error("Erreur lors de la récupération des contacts:", error);
@@ -124,7 +124,7 @@ const ContactList = () => {
       key: 'name',
       render: (text, record) => (
         <Link to={`/crm/contacts/${record.id}`}>
-          {record.first_name} {record.last_name}
+          {record.full_name || `${record.first_name || ''} ${record.last_name || ''}`.trim()}
         </Link>
       ),
       sorter: true

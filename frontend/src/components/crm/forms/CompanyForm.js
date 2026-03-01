@@ -1,21 +1,22 @@
 // src/components/crm/forms/CompanyForm.js
-import React, { useState, useEffect } from 'react';
-import { 
-  Form, 
-  Input, 
-  Button, 
-  Select, 
-  InputNumber, 
-  Space, 
-  Card, 
-  Row, 
-  Col, 
-  Typography, 
-  message, 
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  Form,
+  Input,
+  Button,
+  Select,
+  InputNumber,
+  Space,
+  Card,
+  Row,
+  Col,
+  Typography,
+  message,
   Spin,
   Divider,
   Slider
 } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../../utils/apiUtils';
@@ -33,6 +34,9 @@ const CompanyForm = () => {
   const [submitting, setSubmitting] = useState(false);
   const [industries, setIndustries] = useState([]);
   const [tags, setTags] = useState([]);
+  const [newIndustryName, setNewIndustryName] = useState('');
+  const [addingIndustry, setAddingIndustry] = useState(false);
+  const industryInputRef = useRef(null);
   const [company, setCompany] = useState(null);
 
   const isEditMode = !!id;
@@ -97,6 +101,26 @@ const CompanyForm = () => {
 
     fetchFormData();
   }, [id, form, isEditMode]);
+
+  const addIndustry = async (e) => {
+    e.preventDefault();
+    const name = newIndustryName.trim();
+    if (!name) return;
+    setAddingIndustry(true);
+    try {
+      const response = await axios.post('/api/crm/industries/', { name });
+      setIndustries(prev => [...prev, response.data]);
+      form.setFieldsValue({ industry_id: response.data.id });
+      setNewIndustryName('');
+      message.success(`Industrie "${name}" créée`);
+    } catch (error) {
+      const msg = error.response?.data?.name?.[0] || 'Erreur lors de la création';
+      message.error(msg);
+    } finally {
+      setAddingIndustry(false);
+      setTimeout(() => industryInputRef.current?.focus(), 0);
+    }
+  };
 
   const onFinish = async (values) => {
     setSubmitting(true);
@@ -188,6 +212,32 @@ const CompanyForm = () => {
               <Select
                 placeholder="Sélectionner une industrie"
                 allowClear
+                showSearch
+                optionFilterProp="children"
+                dropdownRender={(menu) => (
+                  <>
+                    {menu}
+                    <Divider style={{ margin: '8px 0' }} />
+                    <Space style={{ padding: '0 8px 4px' }}>
+                      <Input
+                        placeholder="Nouvelle industrie"
+                        ref={industryInputRef}
+                        value={newIndustryName}
+                        onChange={(e) => setNewIndustryName(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addIndustry(e)}
+                        style={{ width: 180 }}
+                      />
+                      <Button
+                        type="text"
+                        icon={<PlusOutlined />}
+                        loading={addingIndustry}
+                        onClick={addIndustry}
+                      >
+                        Ajouter
+                      </Button>
+                    </Space>
+                  </>
+                )}
               >
                 {industries.map(industry => (
                   <Option key={industry.id} value={industry.id}>{industry.name}</Option>

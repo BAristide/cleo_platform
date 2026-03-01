@@ -873,13 +873,6 @@ class Order(SalesDocument):
 
             self.number = generate_document_number('order')
 
-        # S'assurer que le champ status est correctement défini (contournement du problème)
-        if 'status' in kwargs.get('update_fields', []) or not kwargs.get(
-            'update_fields'
-        ):
-            # Mettre à jour explicitement l'attribut sur l'instance
-            self._status = self.status  # Sauvegarde pour vérification
-
         # Sélectionner un compte bancaire par défaut si non défini
         if not self.bank_account and self.currency:
             # Chercher un compte par défaut avec la même devise
@@ -898,22 +891,6 @@ class Order(SalesDocument):
 
         # Appel à la méthode save du parent
         super().save(*args, **kwargs)
-
-        # Vérifier si le statut a été correctement enregistré (contournement du problème)
-        if hasattr(self, '_status') and self._status != self.status:
-            logger.debug(
-                "ALERTE: Le statut n'a pas été correctement enregistré. Tentative supplémentaire."
-            )
-            # Tentative supplémentaire avec une requête directe
-            from django.db import connection
-
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    'UPDATE sales_order SET status = %s WHERE id = %s',
-                    [self._status, self.id],
-                )
-            # Réinitialiser _status
-            del self._status
 
     def get_template_name(self):
         """
@@ -1192,13 +1169,6 @@ class Invoice(SalesDocument):
         # Calculer le montant dû
         self.amount_due = self.total - self.amount_paid
 
-        # S'assurer que le champ payment_status est correctement défini (contournement du problème)
-        if 'payment_status' in kwargs.get('update_fields', []) or not kwargs.get(
-            'update_fields'
-        ):
-            # Mettre à jour explicitement l'attribut sur l'instance
-            self._payment_status = self.payment_status  # Sauvegarde pour vérification
-
         # Mettre à jour le statut de paiement si ce n'est pas une mise à jour explicite du statut
         # ou si le statut n'est pas "cancelled" (qui est un cas spécial)
         if self.payment_status != 'cancelled' and (
@@ -1232,28 +1202,6 @@ class Invoice(SalesDocument):
 
         # Appel à la méthode save du parent
         super().save(*args, **kwargs)
-
-        # Vérifier si le statut a été correctement enregistré (contournement du problème)
-        if (
-            hasattr(self, '_payment_status')
-            and self._payment_status != self.payment_status
-        ):
-            logger.debug(
-                "ALERTE: Le statut de paiement n'a pas été correctement enregistré. Tentative supplémentaire."
-            )
-            logger.debug(
-                f'  Statut attendu: {self._payment_status}, Statut actuel: {self.payment_status}'
-            )
-            # Tentative supplémentaire avec une requête directe
-            from django.db import connection
-
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    'UPDATE sales_invoice SET payment_status = %s WHERE id = %s',
-                    [self._payment_status, self.id],
-                )
-            # Réinitialiser _payment_status
-            del self._payment_status
 
         # Mise à jour de la facture d'origine pour les avoirs
         if (

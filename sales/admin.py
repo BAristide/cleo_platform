@@ -1224,22 +1224,19 @@ class InvoiceAdmin(admin.ModelAdmin):
                         notes="Marqué comme partiellement payé via l'interface d'administration",
                     )
 
-                # Mettre à jour directement la base de données
-                from django.db import connection
+                # Mettre à jour via l'ORM Django
+                amount_paid = (
+                    invoice.amount_paid
+                    if invoice.amount_paid > 0
+                    else (invoice.total * Decimal('0.5'))
+                )
+                amount_due = invoice.total - amount_paid
 
-                with connection.cursor() as cursor:
-                    # Si aucun paiement n'existait, on définit amount_paid à 50% du total
-                    amount_paid = (
-                        invoice.amount_paid
-                        if invoice.amount_paid > 0
-                        else (invoice.total * Decimal('0.5'))
-                    )
-                    amount_due = invoice.total - amount_paid
-
-                    cursor.execute(
-                        'UPDATE sales_invoice SET amount_paid = %s, amount_due = %s, payment_status = %s WHERE id = %s',
-                        [amount_paid, amount_due, 'partial', invoice.id],
-                    )
+                Invoice.objects.filter(pk=invoice.id).update(
+                    amount_paid=amount_paid,
+                    amount_due=amount_due,
+                    payment_status='partial',
+                )
 
                 updated_count += 1
                 self.message_user(
@@ -1303,14 +1300,10 @@ class InvoiceAdmin(admin.ModelAdmin):
                 continue
 
             try:
-                # Mettre à jour directement la base de données
-                from django.db import connection
-
-                with connection.cursor() as cursor:
-                    cursor.execute(
-                        'UPDATE sales_invoice SET payment_status = %s WHERE id = %s',
-                        [status, invoice.id],
-                    )
+                # Mettre à jour via l'ORM Django
+                Invoice.objects.filter(pk=invoice.id).update(
+                    payment_status=status,
+                )
 
                 updated_count += 1
                 self.message_user(

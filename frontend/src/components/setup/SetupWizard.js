@@ -12,6 +12,12 @@ const PACK_COLORS = {
   FR: '#003399',
 };
 
+const PACK_COUNTRIES = {
+  MA: 'Maroc',
+  OHADA: "Côte d'Ivoire",
+  FR: 'France',
+};
+
 const SetupWizard = () => {
   const [current, setCurrent] = useState(0);
   const [packs, setPacks] = useState([]);
@@ -45,6 +51,7 @@ const SetupWizard = () => {
         pack.legal_id_labels.forEach((label, i) => {
           labels[`legal_id_${i + 1}_label`] = label;
         });
+        labels.country = PACK_COUNTRIES[selectedPack] || '';
         form.setFieldsValue(labels);
       }
     }
@@ -54,6 +61,12 @@ const SetupWizard = () => {
     try {
       const values = form.getFieldsValue(true);
       setSubmitting(true);
+
+      // Normaliser le site web : ajouter https:// si absent
+      let website = (values.website || '').trim();
+      if (website && !/^https?:\/\//i.test(website)) {
+        website = 'https://' + website;
+      }
 
       const payload = {
         locale_pack: selectedPack,
@@ -66,7 +79,7 @@ const SetupWizard = () => {
         country: values.country || '',
         phone: values.phone || '',
         email: values.email || '',
-        website: values.website || '',
+        website: website,
         legal_id_1_label: values.legal_id_1_label || '',
         legal_id_1_value: values.legal_id_1_value || '',
         legal_id_2_label: values.legal_id_2_label || '',
@@ -85,7 +98,30 @@ const SetupWizard = () => {
       setSetupResult(res.data);
       setSetupDone(true);
     } catch (err) {
-      const errMsg = err.response?.data?.error || err.response?.data?.detail || 'Erreur lors de la configuration';
+      const data = err.response?.data;
+      if (err.response?.status === 400 && data && typeof data === 'object') {
+        const fieldErrors = [];
+        const fieldLabels = {
+          email: 'Email', website: 'Site web', company_name: 'Raison sociale',
+          phone: 'Téléphone', city: 'Ville', postal_code: 'Code postal',
+        };
+        Object.entries(data).forEach(([field, errors]) => {
+          if (field === 'error' || field === 'detail') return;
+          const msgs = Array.isArray(errors) ? errors : [errors];
+          fieldErrors.push({
+            name: field,
+            errors: msgs.map(m => fieldLabels[field] ? fieldLabels[field] + ' : ' + m : m),
+          });
+        });
+        if (fieldErrors.length > 0) {
+          form.setFields(fieldErrors);
+          setCurrent(1);
+          message.error('Veuillez corriger les erreurs dans le formulaire');
+          setSubmitting(false);
+          return;
+        }
+      }
+      const errMsg = data?.error || data?.detail || 'Erreur lors de la configuration';
       message.error(errMsg);
     } finally {
       setSubmitting(false);
@@ -98,7 +134,7 @@ const SetupWizard = () => {
       return;
     }
     if (current === 1) {
-      form.validateFields(['company_name']).then(() => {
+      form.validateFields(['company_name', 'email', 'website']).then(() => {
         setCurrent(current + 1);
       }).catch(() => {});
       return;
@@ -251,7 +287,7 @@ const SetupWizard = () => {
               </Col>
               <Col span={8}>
                 <Form.Item name="country" label="Pays">
-                  <Input />
+                  <Input disabled style={{ color: '#262626', fontWeight: 500 }} />
                 </Form.Item>
               </Col>
             </Row>
@@ -265,13 +301,13 @@ const SetupWizard = () => {
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item name="email" label="Email">
-                  <Input />
+                <Form.Item name="email" label="Email" rules={[{ type: 'email', message: 'Adresse email invalide' }]}>
+                  <Input placeholder="contact@exemple.com" />
                 </Form.Item>
               </Col>
               <Col span={8}>
-                <Form.Item name="website" label="Site web">
-                  <Input />
+                <Form.Item name="website" label="Site web" rules={[{ pattern: /^(https?:\/\/)?[\w.-]+\.[a-z]{2,}(\/.*)?$/i, message: 'Format invalide (ex: www.exemple.com)' }]}>
+                  <Input placeholder="www.exemple.com" />
                 </Form.Item>
               </Col>
             </Row>

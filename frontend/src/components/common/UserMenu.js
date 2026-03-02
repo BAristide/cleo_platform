@@ -15,16 +15,8 @@ import NotificationBell from '../notifications/NotificationBell';
 
 const { Text } = Typography;
 
-const stringToColor = (str) => {
-  let hash = 0;
-  for (let i = 0; i < (str || '').length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const colors = [
-    '#1890ff', '#52c41a', '#faad14', '#f5222d', '#722ed1',
-    '#13c2c2', '#eb2f96', '#fa8c16', '#a0d911', '#2f54eb',
-  ];
-  return colors[Math.abs(hash) % colors.length];
+const stringToColor = () => {
+  return '#0F172A';
 };
 
 const getDisplayInfo = (user) => {

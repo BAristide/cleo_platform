@@ -12,30 +12,39 @@ const ModuleCard = ({ title, icon, description, path, stats, colorClass, color }
     'solution': <SolutionOutlined />, 'inbox': <InboxOutlined />, 'tag': <TagsOutlined />,
   };
 
+  const cardColor = color || '#3b82f6';
+
   return (
     <Link to={path} className={`module-card-v2 ${colorClass || ''}`} style={{ textDecoration: 'none' }}>
-      <div className="module-header">
-        <div className="module-icon-wrap" style={{ background: color || '#3b82f6' }}>{iconMap[icon]}</div>
-        <ArrowRightOutlined style={{ color: '#cbd5e1', fontSize: 14 }} />
-      </div>
-      <div className="module-title">{title}</div>
-      <div className="module-desc">{description}</div>
-      {stats && (
-        <div className="module-stats">
-          {stats.count !== undefined && (
-            <div className="module-stat-item">
-              <span className="module-stat-value">{stats.count}</span>
-              <span className="module-stat-label">Total</span>
-            </div>
-          )}
-          {stats.recent !== undefined && (
-            <div className="module-stat-item">
-              <span className="module-stat-value">{stats.recent}</span>
-              <span className="module-stat-label">Récents</span>
-            </div>
-          )}
+      <div className="module-strip" style={{ background: `linear-gradient(90deg, ${cardColor}, ${cardColor}80)` }} />
+      <div className="module-body">
+        <div className="module-header">
+          <div className="module-icon-wrap" style={{ background: `${cardColor}14`, color: cardColor }}>
+            {iconMap[icon]}
+          </div>
+          <ArrowRightOutlined className="module-arrow" />
         </div>
-      )}
+        <div className="module-title">{title}</div>
+        <div className="module-desc">{description}</div>
+        {stats && (
+          <div className="module-stats">
+            {stats.count !== undefined && (
+              <div className="module-stat-item">
+                <span className="module-stat-value">{stats.count}</span>
+                <span className="module-stat-label">Total</span>
+              </div>
+            )}
+            {stats.recent !== undefined && (
+              <div className="module-stat-item">
+                <span className="module-stat-value" style={stats.recent > 0 ? { color: '#059669' } : undefined}>
+                  {stats.recent}
+                </span>
+                <span className="module-stat-label">Récents</span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </Link>
   );
 };

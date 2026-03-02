@@ -934,37 +934,44 @@ const AuditTab = () => {
 
 const PlatformSettings = () => {
   return (
-    <Layout style={{ minHeight: '100vh' }}>
+    <Layout style={{ minHeight: '100vh', background: '#F8FAFC' }}>
       <Header style={{
         background: '#fff',
         padding: '0 24px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        boxShadow: '0 1px 4px rgba(0, 21, 41, 0.08)',
+        borderBottom: '1px solid #E5E7EB',
+        boxShadow: '0 1px 3px rgba(15, 23, 42, 0.06)',
         zIndex: 1,
+        height: 64,
+        lineHeight: '64px',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <Link to="/" style={{ textDecoration: 'none' }}>
-            <Title level={4} style={{ margin: 0, color: '#001529' }}>Cleo ERP</Title>
+            <Title level={4} style={{ margin: 0, color: '#0F172A', fontWeight: 700 }}>Cleo ERP</Title>
           </Link>
-          <Divider type="vertical" style={{ height: 24 }} />
-          <Title level={4} style={{ margin: 0 }}>
-            <SettingOutlined /> Configuration
+          <Divider type="vertical" style={{ height: 24, borderColor: '#E5E7EB' }} />
+          <Title level={4} style={{ margin: 0, color: '#0F172A', fontWeight: 600 }}>
+            <SettingOutlined style={{ marginRight: 8, color: '#64748B' }} /> Configuration
           </Title>
         </div>
         <UserMenu />
       </Header>
 
-      <Content style={{ margin: 16 }}>
+      <Content style={{ margin: 24 }}>
         <Breadcrumb style={{ marginBottom: 16 }}>
           <Breadcrumb.Item>
-            <Link to="/"><HomeOutlined /> Home</Link>
+            <Link to="/" style={{ color: '#64748B' }}><HomeOutlined /> Home</Link>
           </Breadcrumb.Item>
-          <Breadcrumb.Item>Configuration</Breadcrumb.Item>
+          <Breadcrumb.Item style={{ color: '#0F172A' }}>Configuration</Breadcrumb.Item>
         </Breadcrumb>
 
-        <Card>
+        <Card style={{
+          borderRadius: 12,
+          border: '1px solid #E5E7EB',
+          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+        }}>
           <Tabs
             defaultActiveKey="company"
             size="large"

@@ -17,7 +17,7 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
             display: flex;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(160deg, #0F172A 0%, #064E3B 60%, #10B981 100%);
             position: relative;
             overflow: hidden;
         }
@@ -42,21 +42,21 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.08) 0%, transparent 60%);
+            background: radial-gradient(circle at 30% 50%, rgba(16, 185, 129, 0.12) 0%, transparent 60%);
             pointer-events: none;
         }
 
         .brand-logo {
             width: 80px;
             height: 80px;
-            background: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.10);
             border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             margin-bottom: 24px;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .brand-logo svg {
@@ -74,7 +74,7 @@
 
         .brand-subtitle {
             font-size: 16px;
-            opacity: 0.85;
+            opacity: 0.80;
             text-align: center;
             max-width: 320px;
             line-height: 1.6;
@@ -98,7 +98,7 @@
         .brand-feature-icon {
             width: 36px;
             height: 36px;
-            background: rgba(255, 255, 255, 0.12);
+            background: rgba(16, 185, 129, 0.20);
             border-radius: 10px;
             display: flex;
             align-items: center;
@@ -123,7 +123,7 @@
             padding: 60px;
             position: relative;
             z-index: 2;
-            box-shadow: -20px 0 60px rgba(0, 0, 0, 0.1);
+            box-shadow: -20px 0 60px rgba(0, 0, 0, 0.15);
         }
 
         .login-header {
@@ -133,14 +133,14 @@
         .login-header h2 {
             font-size: 26px;
             font-weight: 700;
-            color: #1a1a2e;
+            color: #0F172A;
             margin-bottom: 8px;
             letter-spacing: -0.3px;
         }
 
         .login-header p {
             font-size: 15px;
-            color: #6b7280;
+            color: #64748B;
             line-height: 1.5;
         }
 
@@ -178,7 +178,7 @@
             display: block;
             font-size: 14px;
             font-weight: 500;
-            color: #374151;
+            color: #1A202C;
             margin-bottom: 6px;
         }
 
@@ -193,7 +193,7 @@
             transform: translateY(-50%);
             width: 18px;
             height: 18px;
-            fill: #9ca3af;
+            fill: #94a3b8;
             pointer-events: none;
             transition: fill 0.2s;
         }
@@ -202,12 +202,12 @@
             width: 100%;
             height: 48px;
             padding: 0 16px 0 44px;
-            border: 1.5px solid #e5e7eb;
+            border: 1.5px solid #E5E7EB;
             border-radius: 10px;
             font-size: 15px;
             font-family: inherit;
-            color: #1a1a2e;
-            background: #fafafa;
+            color: #0F172A;
+            background: #F9FAFB;
             transition: all 0.2s ease;
             outline: none;
         }
@@ -217,18 +217,18 @@
         }
 
         .form-input:focus {
-            border-color: #667eea;
+            border-color: #10B981;
             background: white;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.12);
         }
 
         .form-input:focus + svg,
         .form-input:focus ~ svg {
-            fill: #667eea;
+            fill: #10B981;
         }
 
         .form-input::placeholder {
-            color: #9ca3af;
+            color: #94a3b8;
         }
 
         /* ── Toggle mot de passe ────────────────────────────── */
@@ -248,21 +248,21 @@
         .password-toggle svg {
             position: static;
             transform: none;
-            fill: #9ca3af;
+            fill: #94a3b8;
             width: 18px;
             height: 18px;
             pointer-events: auto;
         }
 
         .password-toggle:hover svg {
-            fill: #667eea;
+            fill: #10B981;
         }
 
         /* ── Bouton ─────────────────────────────────────────── */
         .btn-login {
             width: 100%;
             height: 48px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #10B981;
             color: white;
             border: none;
             border-radius: 10px;
@@ -277,25 +277,27 @@
         }
 
         .btn-login:hover {
+            background: #059669;
             transform: translateY(-1px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.35);
+            box-shadow: 0 8px 25px rgba(16, 185, 129, 0.30);
         }
 
         .btn-login:active {
             transform: translateY(0);
+            background: #047857;
         }
 
         /* ── Footer ─────────────────────────────────────────── */
         .login-footer {
             margin-top: 48px;
             text-align: center;
-            color: #9ca3af;
+            color: #94a3b8;
             font-size: 13px;
             line-height: 1.5;
         }
 
         .login-footer a {
-            color: #667eea;
+            color: #10B981;
             text-decoration: none;
             font-weight: 500;
         }
@@ -439,7 +441,7 @@
 
         <div class="login-footer">
             Propulsé par <a href="https://www.ecintelligence.ma" target="_blank" rel="noopener">EC Intelligence</a><br>
-            Cleo ERP — v{{ version|default:"3.4" }}
+            Cleo ERP — v{{ version|default:"3.10" }}
         </div>
     </div>
 

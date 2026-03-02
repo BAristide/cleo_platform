@@ -28,6 +28,54 @@ import NotificationPreferences from './components/notifications/NotificationPref
 import PlatformSettings from './components/settings/PlatformSettings';
 import axios from './utils/axiosConfig';
 
+const CLEO_THEME = {
+  token: {
+    colorPrimary: '#10B981',
+    colorInfo: '#10B981',
+    colorSuccess: '#10B981',
+    colorLink: '#10B981',
+    borderRadius: 8,
+    colorBgLayout: '#F8FAFC',
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif",
+  },
+  components: {
+    Button: {
+      colorPrimary: '#10B981',
+      colorPrimaryHover: '#059669',
+      colorPrimaryActive: '#047857',
+      borderRadius: 8,
+    },
+    Menu: {
+      darkItemBg: '#0F172A',
+      darkSubMenuItemBg: '#0F172A',
+      darkItemSelectedBg: 'rgba(16, 185, 129, 0.15)',
+      darkItemSelectedColor: '#10B981',
+    },
+    Input: {
+      activeBorderColor: '#10B981',
+      hoverBorderColor: '#6EE7B7',
+      activeShadow: '0 0 0 2px rgba(16, 185, 129, 0.12)',
+    },
+    Select: {
+      optionSelectedBg: 'rgba(16, 185, 129, 0.08)',
+    },
+    Table: {
+      headerBg: '#F8FAFC',
+      headerColor: '#64748B',
+      rowHoverBg: '#F0FDF4',
+    },
+    Tabs: {
+      inkBarColor: '#10B981',
+      itemActiveColor: '#10B981',
+      itemSelectedColor: '#10B981',
+      itemHoverColor: '#059669',
+    },
+    Tag: {
+      borderRadiusSM: 6,
+    },
+  },
+};
+
 function App() {
   const [setupStatus, setSetupStatus] = useState(null);
   const [checkingSetup, setCheckingSetup] = useState(true);
@@ -57,7 +105,7 @@ function App() {
   if (!setupStatus?.setup_completed) {
     return (
       <AuthProvider>
-        <ConfigProvider locale={frFR}>
+        <ConfigProvider locale={frFR} theme={CLEO_THEME}>
           <Router>
             <Routes>
               <Route path="/setup" element={
@@ -79,7 +127,7 @@ function App() {
     <AuthProvider>
       <CompanyProvider>
         <CurrencyProvider>
-        <ConfigProvider locale={frFR}>
+        <ConfigProvider locale={frFR} theme={CLEO_THEME}>
           <Router>
             <Routes>
               <Route path="/" element={

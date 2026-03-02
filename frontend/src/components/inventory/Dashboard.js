@@ -15,7 +15,7 @@ const Dashboard = () => {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
 
   useEffect(() => {
     const fetchDashboard = async () => {

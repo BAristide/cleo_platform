@@ -452,6 +452,67 @@ class SetupCreateView(APIView):
         except Exception as e:
             logger.warning(f'Paie non initialisée pour {locale_pack}: {e}')
 
+        # ── Données de référence CRM (SalesStage, ActivityType) ────────
+        try:
+            from crm.models import ActivityType, SalesStage
+
+            default_stages = [
+                {
+                    'name': 'Qualification',
+                    'order': 1,
+                    'probability': 10,
+                    'color': '#1890ff',
+                },
+                {
+                    'name': 'Proposition',
+                    'order': 2,
+                    'probability': 30,
+                    'color': '#faad14',
+                },
+                {
+                    'name': 'Négociation',
+                    'order': 3,
+                    'probability': 60,
+                    'color': '#fa8c16',
+                },
+                {'name': 'Closing', 'order': 4, 'probability': 80, 'color': '#52c41a'},
+                {
+                    'name': 'Gagné',
+                    'order': 5,
+                    'probability': 100,
+                    'is_won': True,
+                    'color': '#389e0d',
+                },
+                {
+                    'name': 'Perdu',
+                    'order': 6,
+                    'probability': 0,
+                    'is_lost': True,
+                    'color': '#f5222d',
+                },
+            ]
+            for stage_data in default_stages:
+                SalesStage.objects.get_or_create(
+                    name=stage_data['name'],
+                    defaults=stage_data,
+                )
+
+            default_activity_types = [
+                {'name': 'Appel téléphonique', 'icon': 'phone', 'color': '#1890ff'},
+                {'name': 'Email', 'icon': 'mail', 'color': '#52c41a'},
+                {'name': 'Réunion', 'icon': 'team', 'color': '#faad14'},
+                {'name': 'Rendez-vous', 'icon': 'calendar', 'color': '#722ed1'},
+                {'name': 'Démo', 'icon': 'desktop', 'color': '#13c2c2'},
+                {'name': 'Note interne', 'icon': 'file-text', 'color': '#8c8c8c'},
+            ]
+            for at_data in default_activity_types:
+                ActivityType.objects.get_or_create(
+                    name=at_data['name'],
+                    defaults=at_data,
+                )
+        except Exception as e:
+            logger.warning(f'Données CRM non initialisées: {e}')
+
         demo_loaded = False
         if install_demo:
             try:

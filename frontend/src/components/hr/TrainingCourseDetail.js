@@ -35,7 +35,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const TrainingCourseDetail = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [trainingCourse, setTrainingCourse] = useState(null);
@@ -488,7 +488,7 @@ const TrainingCourseDetail = () => {
 
             <Descriptions bordered column={{ xxl: 3, xl: 3, lg: 3, md: 2, sm: 1, xs: 1 }} style={{ marginBottom: 24 }}>
               <Descriptions.Item label="Durée">{trainingCourse.duration_hours} heures</Descriptions.Item>
-              <Descriptions.Item label="Coût">{trainingCourse.cost ? `${trainingCourse.cost} MAD` : "Non spécifié"}</Descriptions.Item>
+              <Descriptions.Item label="Coût">{trainingCourse.cost ? `${trainingCourse.cost} ${currencySymbol}` : "Non spécifié"}</Descriptions.Item>
               <Descriptions.Item label="Type">
                 <Space>
                   {trainingCourse.is_internal && <Tag color="blue">Interne</Tag>}

@@ -2,6 +2,8 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.utils.translation import gettext_lazy as _
 
+from core.models import Currency
+
 from ..models import Account, Tax
 
 
@@ -246,7 +248,17 @@ class TaxService:
             bool: True si l'opération est exonérée, False sinon
         """
         # Exportations (facturé en devise étrangère)
-        if currency and hasattr(currency, 'code') and currency.code != 'MAD':
+        default_currency = (
+            Currency.objects.filter(is_default=True)
+            .values_list('code', flat=True)
+            .first()
+        )
+        if (
+            currency
+            and hasattr(currency, 'code')
+            and default_currency
+            and currency.code != default_currency
+        ):
             return True
 
         # Autres cas d'exonération selon l'article 92 du CGI

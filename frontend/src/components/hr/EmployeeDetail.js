@@ -36,11 +36,13 @@ import {
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
 
 const EmployeeDetail = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [employee, setEmployee] = useState(null);
@@ -184,7 +186,7 @@ const EmployeeDetail = () => {
           4: '#9c27b0', // Expert - violet
           5: '#f44336'  // Maître - rouge
         };
-        
+
         return (
           <Space>
             <div className={`skill-level skill-level-${record.level}`} style={{ backgroundColor: levelColors[record.level] }}></div>
@@ -241,7 +243,7 @@ const EmployeeDetail = () => {
       title: 'Coût total',
       dataIndex: 'total_cost',
       key: 'total_cost',
-      render: (value) => value ? `${value} MAD` : '0 MAD'
+      render: (value) => value ? `${value} ${currencySymbol}` : `0 ${currencySymbol}`
     },
     {
       title: 'Actions',
@@ -352,9 +354,9 @@ const EmployeeDetail = () => {
         <Col xs={24} sm={24} md={8} lg={6}>
           <Card className="employee-info-card">
             <div style={{ textAlign: 'center', marginBottom: 20 }}>
-              <Avatar 
-                size={100} 
-                icon={<UserOutlined />} 
+              <Avatar
+                size={100}
+                icon={<UserOutlined />}
                 style={{ backgroundColor: '#1890ff' }}
               />
               <Title level={3} style={{ marginTop: 16, marginBottom: 4 }}>
@@ -362,13 +364,13 @@ const EmployeeDetail = () => {
               </Title>
               <Text type="secondary">{employee.job_title && employee.job_title.name}</Text>
               <div style={{ marginTop: 8 }}>
-                {employee.is_active ? 
-                  <Tag color="green">Actif</Tag> : 
+                {employee.is_active ?
+                  <Tag color="green">Actif</Tag> :
                   <Tag color="red">Inactif</Tag>
                 }
                 {employee.is_hr && <Tag color="blue">RH</Tag>}
                 {employee.is_finance && <Tag color="green">Finance</Tag>}
-                {(employee.subordinates && employee.subordinates.length > 0) && 
+                {(employee.subordinates && employee.subordinates.length > 0) &&
                   <Tag color="purple">Manager</Tag>
                 }
               </div>
@@ -414,7 +416,7 @@ const EmployeeDetail = () => {
             )}
 
             <Divider style={{ margin: '12px 0' }} />
-            
+
             <div>
               <Title level={5}>Hiérarchie</Title>
               <p>
@@ -444,15 +446,15 @@ const EmployeeDetail = () => {
         <Col xs={24} sm={24} md={16} lg={18}>
           <Card>
             <Tabs defaultActiveKey="skills">
-              <TabPane 
+              <TabPane
                 tab={<span><ToolOutlined /> Compétences</span>}
                 key="skills"
               >
                 <Title level={4}>Compétences actuelles</Title>
-                <Table 
-                  dataSource={skills} 
-                  columns={skillsColumns} 
-                  rowKey="id" 
+                <Table
+                  dataSource={skills}
+                  columns={skillsColumns}
+                  rowKey="id"
                   pagination={false}
                 />
 
@@ -515,8 +517,8 @@ const EmployeeDetail = () => {
                           dataIndex: 'status',
                           key: 'status',
                           render: (text) => {
-                            return text === 'missing' ? 
-                              <Tag color="red">Manquante</Tag> : 
+                            return text === 'missing' ?
+                              <Tag color="red">Manquante</Tag> :
                               <Tag color="orange">Insuffisante</Tag>;
                           }
                         }
@@ -528,14 +530,14 @@ const EmployeeDetail = () => {
                 )}
               </TabPane>
 
-              <TabPane 
+              <TabPane
                 tab={<span><CarOutlined /> Missions</span>}
                 key="missions"
               >
-                <Table 
-                  dataSource={missions} 
-                  columns={missionsColumns} 
-                  rowKey="id" 
+                <Table
+                  dataSource={missions}
+                  columns={missionsColumns}
+                  rowKey="id"
                   pagination={{ pageSize: 5 }}
                 />
                 <div style={{ marginTop: 16, textAlign: 'right' }}>
@@ -545,14 +547,14 @@ const EmployeeDetail = () => {
                 </div>
               </TabPane>
 
-              <TabPane 
+              <TabPane
                 tab={<span><BookOutlined /> Formations</span>}
                 key="trainings"
               >
-                <Table 
-                  dataSource={trainingPlans} 
-                  columns={trainingPlansColumns} 
-                  rowKey="id" 
+                <Table
+                  dataSource={trainingPlans}
+                  columns={trainingPlansColumns}
+                  rowKey="id"
                   pagination={{ pageSize: 5 }}
                 />
                 <div style={{ marginTop: 16, textAlign: 'right' }}>
@@ -562,14 +564,14 @@ const EmployeeDetail = () => {
                 </div>
               </TabPane>
 
-              <TabPane 
+              <TabPane
                 tab={<span><CalendarOutlined /> Disponibilités</span>}
                 key="availabilities"
               >
-                <Table 
-                  dataSource={availabilities} 
-                  columns={availabilitiesColumns} 
-                  rowKey="id" 
+                <Table
+                  dataSource={availabilities}
+                  columns={availabilitiesColumns}
+                  rowKey="id"
                   pagination={{ pageSize: 5 }}
                 />
                 <div style={{ marginTop: 16, textAlign: 'right' }}>
@@ -580,15 +582,15 @@ const EmployeeDetail = () => {
               </TabPane>
 
               {subordinates && subordinates.length > 0 && (
-                <TabPane 
+                <TabPane
                   tab={<span><TeamOutlined /> Équipe</span>}
                   key="team"
                 >
                   <Title level={4}>Subordonnés directs ({subordinates.length})</Title>
-                  <Table 
-                    dataSource={subordinates} 
-                    columns={subordinatesColumns} 
-                    rowKey="id" 
+                  <Table
+                    dataSource={subordinates}
+                    columns={subordinatesColumns}
+                    rowKey="id"
                     pagination={{ pageSize: 10 }}
                   />
                 </TabPane>

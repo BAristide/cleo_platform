@@ -43,7 +43,7 @@ const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
 const CompanyDetail = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [company, setCompany] = useState(null);
@@ -187,7 +187,7 @@ const CompanyDetail = () => {
                     )}
                     {company.annual_revenue && (
                       <Descriptions.Item label={<><BankOutlined /> Chiffre d'affaires annuel</>}>
-                        {company.annual_revenue.toLocaleString()} {company.currency || 'MAD'}
+                        {company.annual_revenue.toLocaleString()} {company.currency || currencyCode}
                       </Descriptions.Item>
                     )}
                     {company.employee_count && (
@@ -335,7 +335,7 @@ const CompanyDetail = () => {
                           {item.is_lost && <Tag color="red">Perdue</Tag>}
                         </div>
                         <div>
-                          Montant: {item.amount ? item.amount.toLocaleString() : 0} {item.currency || 'MAD'} |
+                          Montant: {item.amount ? item.amount.toLocaleString() : 0} {item.currency || currencyCode} |
                           Probabilité: {item.probability || 0}%
                         </div>
                         {item.expected_close_date && (

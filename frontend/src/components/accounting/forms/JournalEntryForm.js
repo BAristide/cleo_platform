@@ -31,12 +31,14 @@ import {
 import axios from '../../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 const JournalEntryForm = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -106,9 +108,9 @@ const JournalEntryForm = () => {
     try {
       const response = await axios.get(`/api/accounting/journal-entries/${id}/`);
       const entry = response.data;
-      
+
       setSelectedJournal(entry.journal_id);
-      
+
       // Set form values
       form.setFieldsValue({
         journal_id: entry.journal_id,
@@ -128,12 +130,12 @@ const JournalEntryForm = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des détails de l\'écriture:', error);
       setError('Impossible de charger les détails de l\'écriture. Veuillez réessayer plus tard.');
-      
+
       // If API fails, use demo data
       if (demoEntries[id - 1]) {
         const demoEntry = demoEntries[id - 1];
         setSelectedJournal(demoEntry.journal_id);
-        
+
         form.setFieldsValue({
           journal_id: demoEntry.journal_id,
           date: moment(demoEntry.date),
@@ -150,20 +152,20 @@ const JournalEntryForm = () => {
 
   const handleJournalChange = (value) => {
     setSelectedJournal(value);
-    
+
     // Get selected journal
     const journal = journals.find(j => j.id === value);
-    
+
     // If journal has default accounts, add them to first line if it's empty
     if (journal && (journal.default_debit_account_id || journal.default_credit_account_id) && lines.length === 1) {
       const firstLine = lines[0];
       if (!firstLine.account_id && firstLine.debit === 0 && firstLine.credit === 0) {
         const updatedLine = { ...firstLine };
-        
+
         if (journal.default_debit_account_id) {
           updatedLine.account_id = journal.default_debit_account_id;
         }
-        
+
         setLines([updatedLine]);
       }
     }
@@ -180,7 +182,7 @@ const JournalEntryForm = () => {
       date_maturity: null,
       analytic_account_id: null
     };
-    
+
     setLines([...lines, newLine]);
   };
 
@@ -192,19 +194,19 @@ const JournalEntryForm = () => {
     const updatedLines = lines.map(line => {
       if (line.key === key) {
         const updatedLine = { ...line, [field]: value };
-        
+
         // If debit is entered, clear credit and vice versa
         if (field === 'debit' && value > 0) {
           updatedLine.credit = 0;
         } else if (field === 'credit' && value > 0) {
           updatedLine.debit = 0;
         }
-        
+
         return updatedLine;
       }
       return line;
     });
-    
+
     setLines(updatedLines);
   };
 
@@ -212,7 +214,7 @@ const JournalEntryForm = () => {
     const debitTotal = lines.reduce((sum, line) => sum + (parseFloat(line.debit) || 0), 0);
     const creditTotal = lines.reduce((sum, line) => sum + (parseFloat(line.credit) || 0), 0);
     const difference = debitTotal - creditTotal;
-    
+
     setTotals({ debit: debitTotal, credit: creditTotal, difference });
   };
 
@@ -221,24 +223,24 @@ const JournalEntryForm = () => {
     if (lines.length < 2) {
       return { valid: false, message: 'L\'écriture doit contenir au moins 2 lignes.' };
     }
-    
+
     // Check if all lines have an account
     const missingAccount = lines.some(line => !line.account_id);
     if (missingAccount) {
       return { valid: false, message: 'Toutes les lignes doivent avoir un compte comptable.' };
     }
-    
+
     // Check if all lines have either debit or credit
     const invalidAmount = lines.some(line => !line.debit && !line.credit);
     if (invalidAmount) {
       return { valid: false, message: 'Toutes les lignes doivent avoir un montant débit ou crédit.' };
     }
-    
+
     // Check if the entry is balanced
     if (Math.abs(totals.difference) > 0.01) { // Using a small tolerance for rounding errors
-      return { valid: false, message: 'L\'écriture n\'est pas équilibrée. La différence est de ' + totals.difference.toFixed(2) + ' MAD.' };
+      return { valid: false, message: 'L\'écriture n\'est pas équilibrée. La différence est de ' + totals.difference.toFixed(2) + ' ' + currencySymbol + '.' };
     }
-    
+
     return { valid: true };
   };
 
@@ -249,9 +251,9 @@ const JournalEntryForm = () => {
       message.error(validation.message);
       return;
     }
-    
+
     setSubmitting(true);
-    
+
     try {
       const entryData = {
         ...values,
@@ -263,14 +265,14 @@ const JournalEntryForm = () => {
           key: undefined
         }))
       };
-      
+
       let response;
       if (isEditing) {
         response = await axios.put(`/api/accounting/journal-entries/${id}/`, entryData);
       } else {
         response = await axios.post('/api/accounting/journal-entries/', entryData);
       }
-      
+
       message.success(isEditing ? 'Écriture modifiée avec succès.' : 'Écriture créée avec succès.');
       navigate(`/accounting/entries/${response.data.id || id}`);
     } catch (error) {
@@ -316,7 +318,7 @@ const JournalEntryForm = () => {
       default_credit_account_id: null
     }
   ];
-  
+
   const demoAccounts = [
     {
       id: 1,
@@ -375,7 +377,7 @@ const JournalEntryForm = () => {
       is_reconcilable: false
     }
   ];
-  
+
   const demoPartners = [
     { id: 1, name: 'ABC SARL' },
     { id: 2, name: 'XYZ Inc.' },
@@ -383,7 +385,7 @@ const JournalEntryForm = () => {
     { id: 4, name: 'Fournitures Office SA' },
     { id: 5, name: 'DEF SA' }
   ];
-  
+
   const demoEntries = [
     {
       id: 1,
@@ -632,7 +634,7 @@ const JournalEntryForm = () => {
       {!isBalanced && (
         <Alert
           message="Écriture non équilibrée"
-          description={`La différence entre débit et crédit est de ${totals.difference.toFixed(2)} MAD.`}
+          description={`La différence entre débit et crédit est de ${totals.difference.toFixed(2)} ${currencySymbol}.`}
           type="warning"
           showIcon
           icon={<WarningOutlined />}
@@ -707,7 +709,7 @@ const JournalEntryForm = () => {
           </Form.Item>
 
           <Divider />
-          
+
           <div style={{ marginBottom: 16 }}>
             <Button
               type="dashed"

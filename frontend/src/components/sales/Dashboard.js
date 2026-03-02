@@ -18,7 +18,7 @@ const Dashboard = () => {
   });
   const [recentInvoices, setRecentInvoices] = useState([]);
   const [recentQuotes, setRecentQuotes] = useState([]);
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
 
 
   const extractResults = (response) => {

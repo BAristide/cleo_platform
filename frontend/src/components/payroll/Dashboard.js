@@ -30,7 +30,7 @@ const statusColors = {
 };
 
 const Dashboard = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
 
@@ -346,13 +346,13 @@ const Dashboard = () => {
                         title: 'Brut',
                         dataIndex: 'gross_salary',
                         key: 'gross_salary',
-                        render: value => `${value} MAD`
+                        render: value => `${value} ${currencySymbol}`
                       },
                       {
                         title: 'Net',
                         dataIndex: 'net_salary',
                         key: 'net_salary',
-                        render: value => `${value} MAD`
+                        render: value => `${value} ${currencySymbol}`
                       },
                       {
                         title: 'Statut',
@@ -380,7 +380,7 @@ const Dashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="name" />
                     <YAxis />
-                    <Tooltip formatter={(value) => [`${value} MAD`, 'Montant']} />
+                    <Tooltip formatter={(value) => [`${value} ${currencySymbol}`, 'Montant']} />
                     <Legend />
                     <Bar dataKey="gross" name="Salaire brut" fill="#8884d8" />
                     <Bar dataKey="net" name="Salaire net" fill="#82ca9d" />
@@ -412,31 +412,31 @@ const Dashboard = () => {
                       title: 'Salaire Brut',
                       dataIndex: 'total_gross',
                       key: 'total_gross',
-                      render: value => `${value} MAD`
+                      render: value => `${value} ${currencySymbol}`
                     },
                     {
                       title: 'Salaire Net',
                       dataIndex: 'total_net',
                       key: 'total_net',
-                      render: value => `${value} MAD`
+                      render: value => `${value} ${currencySymbol}`
                     },
                     {
                       title: 'CNSS',
                       dataIndex: 'total_cnss',
                       key: 'total_cnss',
-                      render: value => `${value} MAD`
+                      render: value => `${value} ${currencySymbol}`
                     },
                     {
                       title: 'AMO',
                       dataIndex: 'total_amo',
                       key: 'total_amo',
-                      render: value => `${value} MAD`
+                      render: value => `${value} ${currencySymbol}`
                     },
                     {
                       title: 'IR',
                       dataIndex: 'total_ir',
                       key: 'total_ir',
-                      render: value => `${value} MAD`
+                      render: value => `${value} ${currencySymbol}`
                     }
                   ]}
                 />
@@ -477,7 +477,7 @@ const Dashboard = () => {
                     renderItem={item => (
                       <List.Item>
                         <List.Item.Meta
-                          title={`${item.employee_name} - ${item.amount} MAD`}
+                          title={`${item.employee_name} - ${item.amount} ${currencySymbol}`}
                           description={`${item.period_name} - Payé le ${new Date(item.payment_date).toLocaleDateString()}`}
                         />
                         <div>

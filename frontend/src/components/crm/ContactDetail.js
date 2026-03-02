@@ -1,26 +1,26 @@
 // src/components/crm/ContactDetail.js
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { 
-  Card, 
-  Descriptions, 
-  Tag, 
-  Button, 
-  Space, 
-  Row, 
-  Col, 
-  Typography, 
-  Spin, 
-  message, 
-  Tabs, 
+import {
+  Card,
+  Descriptions,
+  Tag,
+  Button,
+  Space,
+  Row,
+  Col,
+  Typography,
+  Spin,
+  message,
+  Tabs,
   List,
   Avatar,
   Divider,
   Popconfirm
 } from 'antd';
-import { 
-  ArrowLeftOutlined, 
-  EditOutlined, 
+import {
+  ArrowLeftOutlined,
+  EditOutlined,
   DeleteOutlined,
   UserOutlined,
   MailOutlined,
@@ -36,11 +36,13 @@ import {
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
 
 const ContactDetail = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [contact, setContact] = useState(null);
@@ -244,7 +246,7 @@ const ContactDetail = () => {
               </Col>
             </Row>
           </TabPane>
-          
+
           <TabPane tab={<span><FundOutlined /> Opportunités</span>} key="2">
             <div style={{ marginBottom: 16, textAlign: 'right' }}>
               <Button type="primary" icon={<PlusOutlined />}>
@@ -277,7 +279,7 @@ const ContactDetail = () => {
                           </Link>
                         </div>
                         <div>
-                          Montant: {item.amount ? item.amount.toLocaleString() : 0} {item.currency || 'MAD'} | 
+                          Montant: {item.amount ? item.amount.toLocaleString() : 0} {item.currency || currencyCode} |
                           Probabilité: {item.probability || 0}%
                         </div>
                         {item.expected_close_date && (
@@ -291,7 +293,7 @@ const ContactDetail = () => {
               locale={{ emptyText: "Aucune opportunité associée à ce contact" }}
             />
           </TabPane>
-          
+
           <TabPane tab={<span><ScheduleOutlined /> Activités</span>} key="3">
             <div style={{ marginBottom: 16, textAlign: 'right' }}>
               <Button type="primary" icon={<PlusOutlined />}>

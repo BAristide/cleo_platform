@@ -38,6 +38,7 @@ import {
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text, Paragraph } = Typography;
 const { Step } = Steps;
@@ -45,13 +46,14 @@ const { TextArea } = Input;
 const { Option } = Select;
 
 const TrainingPlanDetail = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [trainingPlan, setTrainingPlan] = useState(null);
   const [trainingCourses, setTrainingCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  
+
   // États pour les modales
   const [approveModalVisible, setApproveModalVisible] = useState(false);
   const [rejectModalVisible, setRejectModalVisible] = useState(false);
@@ -274,7 +276,7 @@ const TrainingPlanDetail = () => {
   const showEvaluateModal = (item) => {
     setEditingItem(item);
     evaluateForm.resetFields();
-    
+
     // Pré-remplir avec les données existantes si disponibles
     if (item.completion_date) {
       evaluateForm.setFieldsValue({
@@ -285,7 +287,7 @@ const TrainingPlanDetail = () => {
         manager_comments: item.manager_comments
       });
     }
-    
+
     setEvaluateModalVisible(true);
   };
 
@@ -335,7 +337,7 @@ const TrainingPlanDetail = () => {
   // Détermine l'étape actuelle pour le composant Steps
   const getCurrentStep = () => {
     if (!trainingPlan) return 0;
-    
+
     switch (trainingPlan.status) {
       case 'draft': return 0;
       case 'submitted': return 1;
@@ -351,12 +353,12 @@ const TrainingPlanDetail = () => {
   // Détermine le statut de chaque étape
   const getStepStatus = (stepIndex) => {
     const currentStep = getCurrentStep();
-    
+
     if (trainingPlan.status === 'rejected') {
       if (stepIndex <= currentStep) return 'finish';
       return 'error';
     }
-    
+
     if (stepIndex < currentStep) return 'finish';
     if (stepIndex === currentStep) return 'process';
     return 'wait';
@@ -419,14 +421,14 @@ const TrainingPlanDetail = () => {
       key: 'evaluation',
       render: (_, record) => {
         if (record.status !== 'completed') return "—";
-        
+
         return (
           <Space>
-            <span>Employé: {record.employee_rating ? 
-              <Rate disabled value={record.employee_rating} /> : 
+            <span>Employé: {record.employee_rating ?
+              <Rate disabled value={record.employee_rating} /> :
               "Non évalué"}</span>
-            <span>Manager: {record.manager_rating ? 
-              <Rate disabled value={record.manager_rating} /> : 
+            <span>Manager: {record.manager_rating ?
+              <Rate disabled value={record.manager_rating} /> :
               "Non évalué"}</span>
           </Space>
         );
@@ -437,7 +439,7 @@ const TrainingPlanDetail = () => {
       key: 'actions',
       render: (_, record) => {
         const canEdit = trainingPlan && trainingPlan.status === 'draft';
-        
+
         return (
           <Space size="small">
             {canEdit && (
@@ -457,7 +459,7 @@ const TrainingPlanDetail = () => {
                 </Popconfirm>
               </>
             )}
-            
+
             {trainingPlan && trainingPlan.status === 'approved_finance' && (
               <>
                 {record.status === 'planned' && (
@@ -505,11 +507,11 @@ const TrainingPlanDetail = () => {
     const stars = [];
     for (let i = 1; i <= 5; i++) {
       stars.push(
-        <Button 
-          key={i} 
-          type={i <= value ? "primary" : "default"} 
-          shape="circle" 
-          icon={<StarOutlined />} 
+        <Button
+          key={i}
+          type={i <= value ? "primary" : "default"}
+          shape="circle"
+          icon={<StarOutlined />}
           size="small"
           disabled={disabled}
           onClick={() => onChange && onChange(i)}
@@ -547,7 +549,7 @@ const TrainingPlanDetail = () => {
 
       <Card>
         <Title level={3}>Plan de formation {trainingPlan.year} - {trainingPlan.employee_data.first_name} {trainingPlan.employee_data.last_name}</Title>
-        <Tag 
+        <Tag
           color={
             trainingPlan.status === 'completed' ? 'success' :
             trainingPlan.status === 'rejected' ? 'error' :
@@ -602,7 +604,7 @@ const TrainingPlanDetail = () => {
                 {trainingPlan.year}
               </Descriptions.Item>
               <Descriptions.Item label="Coût total">
-                {trainingPlan.total_cost || 0} MAD
+                {trainingPlan.total_cost || 0} {currencySymbol}
               </Descriptions.Item>
               <Descriptions.Item label="Objectifs" span={2}>
                 {trainingPlan.objectives || "Aucun objectif spécifié"}
@@ -649,9 +651,9 @@ const TrainingPlanDetail = () => {
               <Space direction="vertical" style={{ width: '100%' }}>
                 {trainingPlan.status === 'draft' && (
                   <>
-                    <Button 
-                      type="primary" 
-                      icon={<CheckCircleOutlined />} 
+                    <Button
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
                       onClick={handleSubmitPlan}
                       block
                     >
@@ -662,17 +664,17 @@ const TrainingPlanDetail = () => {
 
                 {trainingPlan.status === 'submitted' && (
                   <>
-                    <Button 
-                      type="primary" 
-                      icon={<CheckCircleOutlined />} 
+                    <Button
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
                       onClick={() => showApproveModal('manager')}
                       block
                     >
                       Approuver (Manager)
                     </Button>
-                    <Button 
-                      danger 
-                      icon={<CloseCircleOutlined />} 
+                    <Button
+                      danger
+                      icon={<CloseCircleOutlined />}
                       onClick={() => {
                         setApproveType('manager');
                         setRejectModalVisible(true);
@@ -686,17 +688,17 @@ const TrainingPlanDetail = () => {
 
                 {trainingPlan.status === 'approved_manager' && (
                   <>
-                    <Button 
-                      type="primary" 
-                      icon={<CheckCircleOutlined />} 
+                    <Button
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
                       onClick={() => showApproveModal('hr')}
                       block
                     >
                       Approuver (RH)
                     </Button>
-                    <Button 
-                      danger 
-                      icon={<CloseCircleOutlined />} 
+                    <Button
+                      danger
+                      icon={<CloseCircleOutlined />}
                       onClick={() => {
                         setApproveType('hr');
                         setRejectModalVisible(true);
@@ -710,17 +712,17 @@ const TrainingPlanDetail = () => {
 
                 {trainingPlan.status === 'approved_hr' && (
                   <>
-                    <Button 
-                      type="primary" 
-                      icon={<CheckCircleOutlined />} 
+                    <Button
+                      type="primary"
+                      icon={<CheckCircleOutlined />}
                       onClick={() => showApproveModal('finance')}
                       block
                     >
                       Approuver (Finance)
                     </Button>
-                    <Button 
-                      danger 
-                      icon={<CloseCircleOutlined />} 
+                    <Button
+                      danger
+                      icon={<CloseCircleOutlined />}
                       onClick={() => {
                         setApproveType('finance');
                         setRejectModalVisible(true);
@@ -768,10 +770,10 @@ const TrainingPlanDetail = () => {
           <Button key="back" onClick={() => setApproveModalVisible(false)}>
             Annuler
           </Button>,
-          <Button 
-            key="submit" 
-            type="primary" 
-            loading={submitting} 
+          <Button
+            key="submit"
+            type="primary"
+            loading={submitting}
             onClick={handleApprove}
           >
             Approuver
@@ -804,11 +806,11 @@ const TrainingPlanDetail = () => {
           <Button key="back" onClick={() => setRejectModalVisible(false)}>
             Annuler
           </Button>,
-          <Button 
-            key="submit" 
-            type="primary" 
+          <Button
+            key="submit"
+            type="primary"
             danger
-            loading={submitting} 
+            loading={submitting}
             onClick={handleReject}
           >
             Rejeter
@@ -838,10 +840,10 @@ const TrainingPlanDetail = () => {
           <Button key="back" onClick={() => setItemModalVisible(false)}>
             Annuler
           </Button>,
-          <Button 
-            key="submit" 
-            type="primary" 
-            loading={submitting} 
+          <Button
+            key="submit"
+            type="primary"
+            loading={submitting}
             onClick={handleItemSave}
           >
             {editingItem ? "Mettre à jour" : "Ajouter"}
@@ -906,10 +908,10 @@ const TrainingPlanDetail = () => {
           <Button key="back" onClick={() => setScheduleModalVisible(false)}>
             Annuler
           </Button>,
-          <Button 
-            key="submit" 
-            type="primary" 
-            loading={submitting} 
+          <Button
+            key="submit"
+            type="primary"
+            loading={submitting}
             onClick={handleSchedule}
           >
             Programmer
@@ -925,8 +927,8 @@ const TrainingPlanDetail = () => {
             label="Date programmée"
             rules={[{ required: true, message: 'Veuillez sélectionner une date' }]}
           >
-            <DatePicker 
-              style={{ width: '100%' }} 
+            <DatePicker
+              style={{ width: '100%' }}
               format="DD/MM/YYYY"
             />
           </Form.Item>
@@ -943,19 +945,19 @@ const TrainingPlanDetail = () => {
             Annuler
           </Button>,
           editingItem && editingItem.status !== 'completed' ? (
-            <Button 
-              key="submit" 
-              type="primary" 
-              loading={submitting} 
+            <Button
+              key="submit"
+              type="primary"
+              loading={submitting}
               onClick={handleCompleteTraining}
             >
               Terminer la formation
             </Button>
           ) : (
-            <Button 
-              key="submit" 
-              type="primary" 
-              loading={submitting} 
+            <Button
+              key="submit"
+              type="primary"
+              loading={submitting}
               onClick={handleManagerEvaluation}
             >
               Enregistrer l'évaluation
@@ -976,8 +978,8 @@ const TrainingPlanDetail = () => {
                 rules={[{ required: true, message: 'Veuillez sélectionner une date' }]}
                 initialValue={moment()}
               >
-                <DatePicker 
-                  style={{ width: '100%' }} 
+                <DatePicker
+                  style={{ width: '100%' }}
                   format="DD/MM/YYYY"
                 />
               </Form.Item>
@@ -986,9 +988,9 @@ const TrainingPlanDetail = () => {
                 label="Évaluation par l'employé"
                 rules={[{ required: true, message: 'Veuillez donner une note' }]}
               >
-                <Rate 
-                  value={evaluateForm.getFieldValue('employee_rating') || 0} 
-                  onChange={value => evaluateForm.setFieldsValue({ employee_rating: value })} 
+                <Rate
+                  value={evaluateForm.getFieldValue('employee_rating') || 0}
+                  onChange={value => evaluateForm.setFieldsValue({ employee_rating: value })}
                 />
               </Form.Item>
               <Form.Item
@@ -1023,9 +1025,9 @@ const TrainingPlanDetail = () => {
                 label="Évaluation par le manager"
                 rules={[{ required: true, message: 'Veuillez donner une note' }]}
               >
-                <Rate 
-                  value={evaluateForm.getFieldValue('manager_rating') || 0} 
-                  onChange={value => evaluateForm.setFieldsValue({ manager_rating: value })} 
+                <Rate
+                  value={evaluateForm.getFieldValue('manager_rating') || 0}
+                  onChange={value => evaluateForm.setFieldsValue({ manager_rating: value })}
                 />
               </Form.Item>
               <Form.Item

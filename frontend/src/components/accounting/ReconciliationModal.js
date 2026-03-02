@@ -14,7 +14,7 @@ import { useCurrency } from '../../context/CurrencyContext';
 const { Text } = Typography;
 
 const ReconciliationModal = ({ visible, statementId, line, onClose, onSuccess }) => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [reconciling, setReconciling] = useState(false);
   const [suggestions, setSuggestions] = useState([]);

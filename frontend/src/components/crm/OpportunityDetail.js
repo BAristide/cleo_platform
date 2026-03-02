@@ -2,19 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
-import { 
-  Card, 
-  Descriptions, 
-  Tag, 
-  Statistic, 
-  Button, 
-  Space, 
-  Row, 
-  Col, 
-  Typography, 
-  Spin, 
-  message, 
-  Tabs, 
+import {
+  Card,
+  Descriptions,
+  Tag,
+  Statistic,
+  Button,
+  Space,
+  Row,
+  Col,
+  Typography,
+  Spin,
+  message,
+  Tabs,
   Timeline,
   Modal,
   Form,
@@ -25,10 +25,10 @@ import {
   Avatar,
   Badge
 } from 'antd';
-import { 
-  ArrowLeftOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  ArrowLeftOutlined,
+  EditOutlined,
+  DeleteOutlined,
   HistoryOutlined,
   FileDoneOutlined,
   FileTextOutlined,
@@ -40,6 +40,7 @@ import {
   PhoneOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text, Paragraph } = Typography;
 const { TabPane } = Tabs;
@@ -47,6 +48,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const OpportunityDetail = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [opportunity, setOpportunity] = useState(null);
@@ -68,11 +70,11 @@ const OpportunityDetail = () => {
   try {
     const response = await axios.get('/api/crm/sales-stages/');
     console.log('Stages response:', response);  // Pour déboguer
-    
+
     // Utiliser l'utilitaire pour extraire les résultats
     const data = extractResultsFromResponse(response);
     console.log('Stages data:', data);  // Pour déboguer
-    
+
     if (Array.isArray(data)) {
       setStages(data);
     } else {
@@ -113,7 +115,7 @@ const OpportunityDetail = () => {
         stage_name: 'N/A',
         stage_color: '#ccc',
         amount: 0,
-        currency: 'MAD',
+        currency: currencyCode,
         probability: 0,
         expected_close_date: 'N/A',
         description: 'Impossible de charger les détails.',
@@ -147,14 +149,14 @@ const OpportunityDetail = () => {
         stage_id: values.stage_id,
         notes: values.notes
       });
-      
+
       setOpportunity(response.data);
       message.success('Étape modifiée avec succès');
-      
+
       // Rafraîchir l'historique des étapes
       const historyResponse = await axios.get(`/api/crm/opportunities/${id}/stage_history/`);
       setStageHistory(historyResponse.data);
-      
+
       setIsStageModalVisible(false);
     } catch (error) {
       console.error("Erreur lors du changement d'étape:", error);
@@ -265,7 +267,7 @@ const OpportunityDetail = () => {
               </Col>
             </Row>
           </TabPane>
-          
+
           <TabPane tab={<span><TeamOutlined /> Contacts</span>} key="2">
             <List
               itemLayout="horizontal"
@@ -294,7 +296,7 @@ const OpportunityDetail = () => {
               locale={{ emptyText: "Aucun contact associé à cette opportunité" }}
             />
           </TabPane>
-          
+
           <TabPane tab={<span><ScheduleOutlined /> Activités</span>} key="3">
             <List
               itemLayout="horizontal"
@@ -334,11 +336,11 @@ const OpportunityDetail = () => {
               </Button>
             </div>
           </TabPane>
-          
+
           <TabPane tab={<span><HistoryOutlined /> Historique</span>} key="4">
             <Timeline mode="left">
               {stageHistory.map((history, index) => (
-                <Timeline.Item 
+                <Timeline.Item
                   key={index}
                   color={history.to_stage.color || "blue"}
                   label={new Date(history.changed_at).toLocaleString()}
@@ -353,22 +355,22 @@ const OpportunityDetail = () => {
               ))}
             </Timeline>
           </TabPane>
-          
+
           <TabPane tab={<span><FileDoneOutlined /> Documents</span>} key="5">
             {/* Section pour les devis */}
             <Title level={4}>Devis</Title>
             <p>Aucun devis lié à cette opportunité.</p>
-            
+
             {/* Section pour les commandes */}
             <Title level={4} style={{ marginTop: 16 }}>Commandes</Title>
             <p>Aucune commande liée à cette opportunité.</p>
-            
+
             {/* Section pour les factures */}
             <Title level={4} style={{ marginTop: 16 }}>Factures</Title>
             <p>Aucune facture liée à cette opportunité.</p>
-            
+
             <Divider />
-            
+
             <div style={{ textAlign: 'center' }}>
               <Space>
                 <Button type="primary" icon={<CopyOutlined />} onClick={handleCreateQuote}>

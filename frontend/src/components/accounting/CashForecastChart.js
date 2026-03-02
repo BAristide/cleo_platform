@@ -21,7 +21,7 @@ const { Option } = Select;
 
 const CashForecastChart = () => {
   const navigate = useNavigate();
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);

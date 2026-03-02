@@ -29,12 +29,14 @@ import {
 import axios from '../../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 const BankStatementForm = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -101,7 +103,7 @@ const BankStatementForm = () => {
     try {
       const response = await axios.get(`/api/accounting/bank-statements/${id}/`);
       const statement = response.data;
-      
+
       form.setFieldsValue({
         journal_id: statement.journal_id,
         name: statement.name,
@@ -110,7 +112,7 @@ const BankStatementForm = () => {
         balance_start: statement.balance_start,
         balance_end_real: statement.balance_end_real
       });
-      
+
       if (statement.lines && statement.lines.length > 0) {
         setLines(statement.lines.map(line => ({
           ...line,
@@ -121,11 +123,11 @@ const BankStatementForm = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des détails du relevé:', error);
       setError('Impossible de charger les détails du relevé. Veuillez réessayer plus tard.');
-      
+
       // If API fails, use demo data
       if (demoStatements[id - 1]) {
         const demoStatement = demoStatements[id - 1];
-        
+
         form.setFieldsValue({
           journal_id: demoStatement.journal_id,
           name: demoStatement.name,
@@ -134,7 +136,7 @@ const BankStatementForm = () => {
           balance_start: demoStatement.balance_start,
           balance_end_real: demoStatement.balance_end_real
         });
-        
+
         setLines(demoStatement.lines);
       }
     } finally {
@@ -152,7 +154,7 @@ const BankStatementForm = () => {
       ref: '',
       note: ''
     };
-    
+
     setLines([...lines, newLine]);
   };
 
@@ -167,7 +169,7 @@ const BankStatementForm = () => {
       }
       return line;
     });
-    
+
     setLines(updatedLines);
   };
 
@@ -177,21 +179,21 @@ const BankStatementForm = () => {
     const calculatedEnd = startBalance + linesTotal;
     const endRealValue = parseFloat(form.getFieldValue('balance_end_real') || 0);
     const difference = calculatedEnd - endRealValue;
-    
+
     setBalances({
       start: startBalance,
       end: calculatedEnd,
       calculated: calculatedEnd,
       difference: endRealValue ? difference : 0
     });
-    
+
     // Update the form value
     form.setFieldsValue({ balance_end: calculatedEnd });
   };
 
   const handleSubmit = async (values) => {
     setSubmitting(true);
-    
+
     try {
       const statementData = {
         ...values,
@@ -203,14 +205,14 @@ const BankStatementForm = () => {
           key: undefined
         }))
       };
-      
+
       let response;
       if (isEditing) {
         response = await axios.put(`/api/accounting/bank-statements/${id}/`, statementData);
       } else {
         response = await axios.post('/api/accounting/bank-statements/', statementData);
       }
-      
+
       message.success(isEditing ? 'Relevé modifié avec succès.' : 'Relevé créé avec succès.');
       navigate(`/accounting/bank-statements/${response.data.id || id}`);
     } catch (error) {
@@ -472,7 +474,7 @@ const BankStatementForm = () => {
           <div style={{ marginBottom: 24 }}>
             <Title level={4}>Informations générales</Title>
             <Divider style={{ margin: '12px 0 24px' }} />
-            
+
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
@@ -505,7 +507,7 @@ const BankStatementForm = () => {
                 </Form.Item>
               </Col>
             </Row>
-            
+
             <Row gutter={16}>
               <Col span={12}>
                 <Form.Item
@@ -530,7 +532,7 @@ const BankStatementForm = () => {
           <div style={{ marginBottom: 24 }}>
             <Title level={4}>Soldes</Title>
             <Divider style={{ margin: '12px 0 24px' }} />
-            
+
             <Row gutter={16}>
               <Col span={8}>
                 <Form.Item
@@ -542,8 +544,8 @@ const BankStatementForm = () => {
                     style={{ width: '100%' }}
                     step={0.01}
                     precision={2}
-                    formatter={value => `${value} MAD`}
-                    parser={value => value.replace(' MAD', '')}
+                    formatter={value => `${value} ${currencySymbol}`}
+                    parser={value => value.replace(/[^\d.-]/g, '')}
                     onChange={() => calculateBalances()}
                   />
                 </Form.Item>
@@ -557,8 +559,8 @@ const BankStatementForm = () => {
                     style={{ width: '100%' }}
                     step={0.01}
                     precision={2}
-                    formatter={value => `${value} MAD`}
-                    parser={value => value.replace(' MAD', '')}
+                    formatter={value => `${value} ${currencySymbol}`}
+                    parser={value => value.replace(/[^\d.-]/g, '')}
                     disabled
                   />
                 </Form.Item>
@@ -573,25 +575,25 @@ const BankStatementForm = () => {
                     style={{ width: '100%' }}
                     step={0.01}
                     precision={2}
-                    formatter={value => `${value} MAD`}
-                    parser={value => value.replace(' MAD', '')}
+                    formatter={value => `${value} ${currencySymbol}`}
+                    parser={value => value.replace(/[^\d.-]/g, '')}
                     onChange={() => calculateBalances()}
                   />
                 </Form.Item>
               </Col>
             </Row>
-            
-            <div 
-              style={{ 
-                marginTop: 8, 
-                padding: 12, 
-                background: isBalanced ? '#f6ffed' : '#fff2f0', 
-                border: `1px solid ${isBalanced ? '#b7eb8f' : '#ffccc7'}`, 
-                borderRadius: 4 
+
+            <div
+              style={{
+                marginTop: 8,
+                padding: 12,
+                background: isBalanced ? '#f6ffed' : '#fff2f0',
+                border: `1px solid ${isBalanced ? '#b7eb8f' : '#ffccc7'}`,
+                borderRadius: 4
               }}
             >
               <Text>
-                <strong>Différence :</strong> {balances.difference.toFixed(2)} MAD 
+                <strong>Différence :</strong> {balances.difference.toFixed(2)} {currencySymbol}
                 {isBalanced ? ' (équilibré)' : ' (non équilibré)'}
               </Text>
             </div>
@@ -600,7 +602,7 @@ const BankStatementForm = () => {
           <div style={{ marginBottom: 16 }}>
             <Title level={4}>Lignes du relevé</Title>
             <Divider style={{ margin: '12px 0 24px' }} />
-            
+
             <div style={{ marginBottom: 16 }}>
               <Button
                 type="dashed"

@@ -14,6 +14,7 @@ import {
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -25,6 +26,7 @@ const fmt = (val) => parseFloat(val || 0).toLocaleString('fr-MA', {
 });
 
 const ReportsList = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [form] = Form.useForm();
   const [selectedReport, setSelectedReport] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -319,7 +321,7 @@ const ReportsList = () => {
                   { title: 'Montant', dataIndex: 'balance', align: 'right', render: v => fmt(v) },
                 ]} />
               <div style={{ textAlign: 'right', fontWeight: 700, padding: '8px 16px', fontSize: 15, background: '#ebf8ff' }}>
-                Total Actif : {fmt(d.total_assets)} MAD
+                Total Actif : {fmt(d.total_assets)} {currencySymbol}
               </div>
             </Col>
             <Col span={12}>
@@ -331,7 +333,7 @@ const ReportsList = () => {
                   { title: 'Montant', dataIndex: 'balance', align: 'right', render: v => fmt(v) },
                 ]} />
               <div style={{ textAlign: 'right', fontWeight: 700, padding: '8px 16px', fontSize: 15, background: '#f0fff4' }}>
-                Total Passif : {fmt(d.total_liabilities)} MAD
+                Total Passif : {fmt(d.total_liabilities)} {currencySymbol}
               </div>
             </Col>
           </Row>
@@ -351,7 +353,7 @@ const ReportsList = () => {
                     { title: 'Montant', dataIndex: 'balance', align: 'right', render: v => fmt(v) },
                   ]} />
                 <div style={{ textAlign: 'right', fontWeight: 700, padding: '8px 16px' }}>
-                  Total Produits : {fmt(d.total_income)} MAD
+                  Total Produits : {fmt(d.total_income)} {currencySymbol}
                 </div>
               </Col>
               <Col span={12}>
@@ -363,14 +365,14 @@ const ReportsList = () => {
                     { title: 'Montant', dataIndex: 'balance', align: 'right', render: v => fmt(v) },
                   ]} />
                 <div style={{ textAlign: 'right', fontWeight: 700, padding: '8px 16px' }}>
-                  Total Charges : {fmt(d.total_expenses)} MAD
+                  Total Charges : {fmt(d.total_expenses)} {currencySymbol}
                 </div>
               </Col>
             </Row>
             <Divider />
             <div style={{ textAlign: 'center', fontSize: 18, fontWeight: 700,
               color: parseFloat(d.net_income) >= 0 ? '#276749' : '#e53e3e' }}>
-              Résultat net : {fmt(d.net_income)} MAD
+              Résultat net : {fmt(d.net_income)} {currencySymbol}
             </div>
           </>
         );
@@ -403,10 +405,10 @@ const ReportsList = () => {
             )}
             <Divider />
             <Row gutter={16} justify="center">
-              <Col><Statistic title="TVA collectée" value={fmt(d.total_collected)} suffix="MAD" /></Col>
-              <Col><Statistic title="TVA déductible" value={fmt(d.total_deductible)} suffix="MAD" /></Col>
+              <Col><Statistic title="TVA collectée" value={fmt(d.total_collected)} suffix={currencySymbol} /></Col>
+              <Col><Statistic title="TVA déductible" value={fmt(d.total_deductible)} suffix={currencySymbol} /></Col>
               <Col>
-                <Statistic title="TVA à payer" value={fmt(d.vat_due)}  suffix="MAD"
+                <Statistic title="TVA à payer" value={fmt(d.vat_due)}  suffix={currencySymbol}
                   valueStyle={{ color: parseFloat(d.vat_due) > 0 ? '#e53e3e' : '#276749', fontWeight: 700 }} />
               </Col>
             </Row>
@@ -430,7 +432,7 @@ const ReportsList = () => {
                     </span>
                   )
                 },
-                { title: 'Montant (MAD)', dataIndex: 'value', align: 'right', width: 180,
+                { title: `Montant (${currencySymbol})`, dataIndex: 'value', align: 'right', width: 180,
                   render: (v, r) => (
                     <span style={{
                       fontWeight: r.is_total ? 700 : 400,
@@ -539,7 +541,7 @@ const ReportsList = () => {
             <Row justify="end">
               <Col>
                 <Text strong style={{ fontSize: 15 }}>
-                  Totaux — Débit: {fmt(d.totals?.debit)} MAD | Crédit: {fmt(d.totals?.credit)} MAD
+                  Totaux — Débit: {fmt(d.totals?.debit)} {currencySymbol} | Crédit: {fmt(d.totals?.credit)} {currencySymbol}
                 </Text>
               </Col>
             </Row>

@@ -1,21 +1,21 @@
 // src/components/accounting/BankStatementList.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Table, 
-  Card, 
-  Button, 
-  Tag, 
-  Typography, 
-  Space, 
-  Spin, 
+import {
+  Table,
+  Card,
+  Button,
+  Tag,
+  Typography,
+  Space,
+  Spin,
   Alert,
   Select,
   DatePicker,
   Progress
 } from 'antd';
-import { 
-  PlusOutlined, 
+import {
+  PlusOutlined,
   BankOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -24,12 +24,14 @@ import {
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 const BankStatementList = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [statements, setStatements] = useState([]);
@@ -69,7 +71,7 @@ const BankStatementList = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des données:', error);
       setError('Impossible de charger les données. Veuillez réessayer plus tard.');
-      
+
       setStatements(demoStatements);
       setJournals(demoBankJournals);
     } finally {
@@ -84,23 +86,23 @@ const BankStatementList = () => {
     if (journalFilter !== 'all') {
       filtered = filtered.filter(statement => statement.journal_id.toString() === journalFilter);
     }
-    
+
     // Filter by state
     if (stateFilter !== 'all') {
       filtered = filtered.filter(statement => statement.state === stateFilter);
     }
-    
+
     // Filter by date range
     if (dateRange && dateRange.length === 2) {
       const startDate = dateRange[0].startOf('day');
       const endDate = dateRange[1].endOf('day');
-      
+
       filtered = filtered.filter(statement => {
         const statementDate = moment(statement.date);
         return statementDate.isBetween(startDate, endDate, null, '[]');
       });
     }
-    
+
     // Sort by date (descending) and then by name
     filtered.sort((a, b) => {
       const dateComparison = moment(b.date).unix() - moment(a.date).unix();
@@ -121,7 +123,7 @@ const BankStatementList = () => {
       'open': { text: 'En cours', color: 'blue', icon: <ExclamationCircleOutlined /> },
       'confirm': { text: 'Confirmé', color: 'green', icon: <CheckCircleOutlined /> }
     };
-    
+
     return (
       <Tag color={stateMap[state]?.color} icon={stateMap[state]?.icon}>
         {stateMap[state]?.text || state}
@@ -131,7 +133,7 @@ const BankStatementList = () => {
 
   const calculateReconciliationPercent = (statement) => {
     if (!statement.lines || statement.lines.length === 0) return 0;
-    
+
     const reconciled = statement.lines.filter(line => line.is_reconciled).length;
     return Math.round((reconciled / statement.lines.length) * 100);
   };
@@ -176,14 +178,14 @@ const BankStatementList = () => {
       dataIndex: 'balance_start',
       key: 'balance_start',
       align: 'right',
-      render: (text) => `${parseFloat(text).toFixed(2)} MAD`,
+      render: (text) => `${parseFloat(text).toFixed(2)} ${currencySymbol}`,
     },
     {
       title: 'Solde final',
       dataIndex: 'balance_end',
       key: 'balance_end',
       align: 'right',
-      render: (text) => `${parseFloat(text).toFixed(2)} MAD`,
+      render: (text) => `${parseFloat(text).toFixed(2)} ${currencySymbol}`,
     },
     {
       title: 'Rapprochement',
@@ -191,9 +193,9 @@ const BankStatementList = () => {
       render: (_, record) => {
         const percent = calculateReconciliationPercent(record);
         return (
-          <Progress 
-            percent={percent} 
-            size="small" 
+          <Progress
+            percent={percent}
+            size="small"
             status={percent === 100 ? 'success' : 'active'}
           />
         );

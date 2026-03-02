@@ -1,14 +1,14 @@
 // src/components/accounting/AssetDepreciationList.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Table, 
-  Card, 
-  Button, 
-  Tag, 
-  Typography, 
-  Space, 
-  Spin, 
+import {
+  Table,
+  Card,
+  Button,
+  Tag,
+  Typography,
+  Space,
+  Spin,
   Alert,
   Select,
   DatePicker,
@@ -17,7 +17,7 @@ import {
   Form,
   message
 } from 'antd';
-import { 
+import {
   ToolOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -27,12 +27,14 @@ import {
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 const AssetDepreciationList = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [assets, setAssets] = useState([]);
@@ -69,7 +71,7 @@ const AssetDepreciationList = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des données:', error);
       setError('Impossible de charger les données. Veuillez réessayer plus tard.');
-      
+
       setAssets(demoAssets);
       setDepreciations(demoDepreciations);
     } finally {
@@ -121,7 +123,7 @@ const AssetDepreciationList = () => {
       'posted': { text: 'Comptabilisé', color: 'green', icon: <CheckCircleOutlined /> },
       'cancel': { text: 'Annulé', color: 'red', icon: <CloseCircleOutlined /> }
     };
-    
+
     return (
       <Tag color={stateMap[state]?.color} icon={stateMap[state]?.icon}>
         {stateMap[state]?.text || state}
@@ -135,18 +137,18 @@ const AssetDepreciationList = () => {
     if (assetFilter !== 'all' && depreciation.asset_id.toString() !== assetFilter) {
       return false;
     }
-    
+
     // Filter by state
     if (stateFilter !== 'all' && depreciation.state !== stateFilter) {
       return false;
     }
-    
+
     // Filter by date range
     if (dateRange && dateRange.length === 2) {
       const depreciationDate = moment(depreciation.date);
       return depreciationDate.isBetween(dateRange[0], dateRange[1], null, '[]');
     }
-    
+
     return true;
   });
 
@@ -185,7 +187,7 @@ const AssetDepreciationList = () => {
       dataIndex: 'amount',
       key: 'amount',
       align: 'right',
-      render: (text) => `${parseFloat(text).toFixed(2)} MAD`,
+      render: (text) => `${parseFloat(text).toFixed(2)} ${currencySymbol}`,
       sorter: (a, b) => a.amount - b.amount,
     },
     {
@@ -193,7 +195,7 @@ const AssetDepreciationList = () => {
       dataIndex: 'remaining_value',
       key: 'remaining_value',
       align: 'right',
-      render: (text) => `${parseFloat(text).toFixed(2)} MAD`,
+      render: (text) => `${parseFloat(text).toFixed(2)} ${currencySymbol}`,
       sorter: (a, b) => a.remaining_value - b.remaining_value,
     },
     {
@@ -217,10 +219,10 @@ const AssetDepreciationList = () => {
       key: 'actions',
       render: (_, record) => (
         record.state === 'draft' ? (
-          <Button 
-            type="link" 
-            size="small" 
-            icon={<DollarOutlined />} 
+          <Button
+            type="link"
+            size="small"
+            icon={<DollarOutlined />}
             onClick={() => handlePostDepreciation(record.id)}
           >
             Comptabiliser
@@ -366,9 +368,9 @@ const AssetDepreciationList = () => {
     <div className="asset-depreciations-list">
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
         <Title level={2}>Dotations aux amortissements</Title>
-        <Button 
-          type="primary" 
-          icon={<DollarOutlined />} 
+        <Button
+          type="primary"
+          icon={<DollarOutlined />}
           onClick={handlePostMultipleDepreciations}
           disabled={!hasDraftDepreciations}
         >
@@ -441,16 +443,16 @@ const AssetDepreciationList = () => {
           pagination={{ pageSize: 10 }}
           summary={pageData => {
             let totalAmount = 0;
-            
+
             pageData.forEach(({ amount }) => {
               totalAmount += parseFloat(amount || 0);
             });
-            
+
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={4}><strong>Total</strong></Table.Summary.Cell>
                 <Table.Summary.Cell index={4} align="right">
-                  <strong>{totalAmount.toFixed(2)} MAD</strong>
+                  <strong>{totalAmount.toFixed(2)} {currencySymbol}</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={5} colSpan={4}></Table.Summary.Cell>
               </Table.Summary.Row>
@@ -480,7 +482,7 @@ const AssetDepreciationList = () => {
               <span> ({draftDepreciations.length} dotations)</span>
             )}
           </p>
-          
+
           <Form.Item
             name="journal_id"
             label="Journal comptable"
@@ -492,7 +494,7 @@ const AssetDepreciationList = () => {
               ))}
             </Select>
           </Form.Item>
-          
+
           <Form.Item
             name="date"
             label="Date de comptabilisation"
@@ -500,7 +502,7 @@ const AssetDepreciationList = () => {
           >
             <DatePicker format="DD/MM/YYYY" style={{ width: '100%' }} />
           </Form.Item>
-          
+
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button onClick={() => setModalVisible(false)} style={{ marginRight: 8 }}>
               Annuler

@@ -1,16 +1,17 @@
 // src/components/payroll/PaySlipList.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, Card, Button, Space, Tag, Typography, 
+import {
+  Table, Card, Button, Space, Tag, Typography,
   message, Spin, Input, Select, DatePicker
 } from 'antd';
-import { 
+import {
   EyeOutlined, DownloadOutlined, SearchOutlined,
   CalculatorOutlined, CheckCircleOutlined, DollarOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -33,6 +34,7 @@ const statusDisplay = {
 };
 
 const PaySlipList = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [payslips, setPayslips] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -95,30 +97,30 @@ const PaySlipList = () => {
     setLoading(true);
     try {
       let url = `/api/payroll/payslips/?page=${page}&page_size=${pageSize}`;
-      
+
       if (filters.search) {
         url += `&search=${filters.search}`;
       }
-      
+
       if (filters.status) {
         url += `&status=${filters.status}`;
       }
-      
+
       if (filters.period) {
         url += `&payroll_run__period=${filters.period}`;
       }
-      
+
       if (filters.employee) {
         url += `&employee=${filters.employee}`;
       }
-      
+
       if (filters.date_range && filters.date_range[0] && filters.date_range[1]) {
         url += `&created_at_after=${filters.date_range[0].format('YYYY-MM-DD')}`;
         url += `&created_at_before=${filters.date_range[1].format('YYYY-MM-DD')}`;
       }
-      
+
       const response = await axios.get(url);
-      
+
       if (response.data.results) {
         setPayslips(response.data.results);
         setPagination({
@@ -283,14 +285,14 @@ const PaySlipList = () => {
       title: 'Salaire brut',
       dataIndex: 'gross_salary',
       key: 'gross_salary',
-      render: value => value ? `${value.toLocaleString()} MAD` : '-',
+      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.gross_salary || 0) - (b.gross_salary || 0),
     },
     {
       title: 'Salaire net',
       dataIndex: 'net_salary',
       key: 'net_salary',
-      render: value => value ? `${value.toLocaleString()} MAD` : '-',
+      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.net_salary || 0) - (b.net_salary || 0),
     },
     {
@@ -332,28 +334,28 @@ const PaySlipList = () => {
       key: 'actions',
       render: (_, record) => (
         <Space size="small">
-          <Button 
-            type="primary" 
-            icon={<EyeOutlined />} 
+          <Button
+            type="primary"
+            icon={<EyeOutlined />}
             size="small"
             onClick={() => navigate(`/payroll/payslips/${record.id}`)}
             title="Voir"
           />
-          
+
           {record.status === 'draft' && (
-            <Button 
-              type="default" 
-              icon={<CalculatorOutlined />} 
+            <Button
+              type="default"
+              icon={<CalculatorOutlined />}
               size="small"
               onClick={() => handleCalculate(record.id)}
               title="Calculer"
             />
           )}
-          
+
           {record.status !== 'draft' && (
-            <Button 
-              type="default" 
-              icon={<DownloadOutlined />} 
+            <Button
+              type="default"
+              icon={<DownloadOutlined />}
               size="small"
               onClick={() => handleDownloadPDF(record.id)}
               title="Télécharger PDF"
@@ -373,16 +375,16 @@ const PaySlipList = () => {
       {/* Filtres */}
       <Card style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <Input 
-            placeholder="Rechercher..." 
+          <Input
+            placeholder="Rechercher..."
             value={filters.search}
             onChange={e => handleSearch(e.target.value)}
             prefix={<SearchOutlined />}
             style={{ width: 200 }}
           />
-          <Select 
-            placeholder="Statut" 
-            style={{ width: 150 }} 
+          <Select
+            placeholder="Statut"
+            style={{ width: 150 }}
             allowClear
             value={filters.status}
             onChange={handleStatusChange}
@@ -391,9 +393,9 @@ const PaySlipList = () => {
               <Option key={key} value={key}>{value}</Option>
             ))}
           </Select>
-          <Select 
-            placeholder="Période" 
-            style={{ width: 150 }} 
+          <Select
+            placeholder="Période"
+            style={{ width: 150 }}
             allowClear
             value={filters.period}
             onChange={handlePeriodChange}
@@ -402,9 +404,9 @@ const PaySlipList = () => {
               <Option key={period.id} value={period.id}>{period.name}</Option>
             ))}
           </Select>
-          <Select 
-            placeholder="Employé" 
-            style={{ width: 200 }} 
+          <Select
+            placeholder="Employé"
+            style={{ width: 200 }}
             allowClear
             value={filters.employee}
             onChange={handleEmployeeChange}
@@ -415,7 +417,7 @@ const PaySlipList = () => {
               <Option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</Option>
             ))}
           </Select>
-          <RangePicker 
+          <RangePicker
             format="DD/MM/YYYY"
             onChange={handleDateRangeChange}
             placeholder={['Date début', 'Date fin']}
@@ -426,10 +428,10 @@ const PaySlipList = () => {
       {/* Table des bulletins */}
       <Card>
         <Spin spinning={loading}>
-          <Table 
-            columns={columns} 
-            dataSource={payslips} 
-            rowKey="id" 
+          <Table
+            columns={columns}
+            dataSource={payslips}
+            rowKey="id"
             pagination={pagination}
             onChange={handleTableChange}
           />

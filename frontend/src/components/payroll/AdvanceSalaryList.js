@@ -1,22 +1,24 @@
 // src/components/payroll/AdvanceSalaryList.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, Card, Button, Space, Tag, Typography, 
-  message, Popconfirm, Spin, Input, Select, DatePicker 
+import {
+  Table, Card, Button, Space, Tag, Typography,
+  message, Popconfirm, Spin, Input, Select, DatePicker
 } from 'antd';
-import { 
+import {
   PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
   CheckCircleOutlined, CloseCircleOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 const AdvanceSalaryList = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [advances, setAdvances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -79,30 +81,30 @@ const AdvanceSalaryList = () => {
     setLoading(true);
     try {
       let url = `/api/payroll/advances/?page=${page}&page_size=${pageSize}`;
-      
+
       if (filters.search) {
         url += `&search=${filters.search}`;
       }
-      
+
       if (filters.period) {
         url += `&period=${filters.period}`;
       }
-      
+
       if (filters.employee) {
         url += `&employee=${filters.employee}`;
       }
-      
+
       if (filters.is_paid !== null) {
         url += `&is_paid=${filters.is_paid}`;
       }
-      
+
       if (filters.date_range && filters.date_range[0] && filters.date_range[1]) {
         url += `&payment_date_after=${filters.date_range[0].format('YYYY-MM-DD')}`;
         url += `&payment_date_before=${filters.date_range[1].format('YYYY-MM-DD')}`;
       }
-      
+
       const response = await axios.get(url);
-      
+
       if (response.data.results) {
         setAdvances(response.data.results);
         setPagination({
@@ -256,7 +258,7 @@ const AdvanceSalaryList = () => {
       title: 'Montant',
       dataIndex: 'amount',
       key: 'amount',
-      render: value => `${value.toLocaleString()} MAD`,
+      render: value => `${value.toLocaleString()} ${currencySymbol}`,
       sorter: (a, b) => a.amount - b.amount,
     },
     {
@@ -303,25 +305,25 @@ const AdvanceSalaryList = () => {
       key: 'actions',
       render: (_, record) => (
         <Space size="small">
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
             size="small"
             onClick={() => navigate(`/payroll/advances/${record.id}`)}
             title="Modifier"
             disabled={record.payslip !== null}
           />
-          
+
           {!record.is_paid && (
-            <Button 
-              type="default" 
-              icon={<CheckCircleOutlined />} 
+            <Button
+              type="default"
+              icon={<CheckCircleOutlined />}
               size="small"
               onClick={() => handleMarkAsPaid(record.id)}
               title="Marquer comme payé"
             />
           )}
-          
+
           {record.payslip === null && (
             <Popconfirm
               title="Êtes-vous sûr de vouloir supprimer cet acompte?"
@@ -329,9 +331,9 @@ const AdvanceSalaryList = () => {
               okText="Oui"
               cancelText="Non"
             >
-              <Button 
-                type="danger" 
-                icon={<DeleteOutlined />} 
+              <Button
+                type="danger"
+                icon={<DeleteOutlined />}
                 size="small"
                 title="Supprimer"
               />
@@ -354,16 +356,16 @@ const AdvanceSalaryList = () => {
       {/* Filtres */}
       <Card style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
-          <Input 
-            placeholder="Rechercher..." 
+          <Input
+            placeholder="Rechercher..."
             value={filters.search}
             onChange={e => handleSearch(e.target.value)}
             prefix={<SearchOutlined />}
             style={{ width: 200 }}
           />
-          <Select 
-            placeholder="Période" 
-            style={{ width: 150 }} 
+          <Select
+            placeholder="Période"
+            style={{ width: 150 }}
             allowClear
             value={filters.period}
             onChange={handlePeriodChange}
@@ -372,9 +374,9 @@ const AdvanceSalaryList = () => {
               <Option key={period.id} value={period.id}>{period.name}</Option>
             ))}
           </Select>
-          <Select 
-            placeholder="Employé" 
-            style={{ width: 200 }} 
+          <Select
+            placeholder="Employé"
+            style={{ width: 200 }}
             allowClear
             value={filters.employee}
             onChange={handleEmployeeChange}
@@ -385,9 +387,9 @@ const AdvanceSalaryList = () => {
               <Option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</Option>
             ))}
           </Select>
-          <Select 
-            placeholder="Statut" 
-            style={{ width: 120 }} 
+          <Select
+            placeholder="Statut"
+            style={{ width: 120 }}
             allowClear
             value={filters.is_paid}
             onChange={handlePaidStatusChange}
@@ -395,7 +397,7 @@ const AdvanceSalaryList = () => {
             <Option value={true}>Payé</Option>
             <Option value={false}>Non payé</Option>
           </Select>
-          <RangePicker 
+          <RangePicker
             format="DD/MM/YYYY"
             onChange={handleDateRangeChange}
             placeholder={['Date début', 'Date fin']}
@@ -406,10 +408,10 @@ const AdvanceSalaryList = () => {
       {/* Table des acomptes */}
       <Card>
         <Spin spinning={loading}>
-          <Table 
-            columns={columns} 
-            dataSource={advances} 
-            rowKey="id" 
+          <Table
+            columns={columns}
+            dataSource={advances}
+            rowKey="id"
             pagination={pagination}
             onChange={handleTableChange}
           />

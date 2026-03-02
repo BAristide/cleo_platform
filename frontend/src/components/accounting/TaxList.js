@@ -40,7 +40,7 @@ const { RangePicker } = DatePicker;
 const { Option } = Select;
 
 const TaxList = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [taxes, setTaxes] = useState([]);
@@ -152,7 +152,7 @@ const TaxList = () => {
       dataIndex: 'amount',
       key: 'amount',
       render: (text, record) => {
-        return record.type === 'percent' ? `${text}%` : `${text} MAD`;
+        return record.type === 'percent' ? `${text}%` : `${text} ${currencySymbol}`;
       },
       sorter: (a, b) => a.amount - b.amount,
     },
@@ -397,28 +397,28 @@ const TaxList = () => {
                   dataIndex: 'sales_base',
                   key: 'sales_base',
                   align: 'right',
-                  render: (text) => `${text.toFixed(2)} MAD`,
+                  render: (text) => `${text.toFixed(2)} ${currencySymbol}`,
                 },
                 {
                   title: 'TVA Collectée',
                   dataIndex: 'vat_collected',
                   key: 'vat_collected',
                   align: 'right',
-                  render: (text) => `${text.toFixed(2)} MAD`,
+                  render: (text) => `${text.toFixed(2)} ${currencySymbol}`,
                 },
                 {
                   title: 'Base HT (Achats)',
                   dataIndex: 'purchases_base',
                   key: 'purchases_base',
                   align: 'right',
-                  render: (text) => `${text.toFixed(2)} MAD`,
+                  render: (text) => `${text.toFixed(2)} ${currencySymbol}`,
                 },
                 {
                   title: 'TVA Déductible',
                   dataIndex: 'vat_deductible',
                   key: 'vat_deductible',
                   align: 'right',
-                  render: (text) => `${text.toFixed(2)} MAD`,
+                  render: (text) => `${text.toFixed(2)} ${currencySymbol}`,
                 },
                 {
                   title: 'Solde TVA',
@@ -428,7 +428,7 @@ const TaxList = () => {
                     const balance = record.vat_collected - record.vat_deductible;
                     return (
                       <span style={{ color: balance >= 0 ? '#cf1322' : '#3f8600' }}>
-                        {balance.toFixed(2)} MAD
+                        {balance.toFixed(2)} {currencySymbol}
                       </span>
                     );
                   },
@@ -488,20 +488,20 @@ const TaxList = () => {
                   <Table.Summary.Row>
                     <Table.Summary.Cell index={0}><strong>Total</strong></Table.Summary.Cell>
                     <Table.Summary.Cell index={1} align="right">
-                      <strong>{totalSalesBase.toFixed(2)} MAD</strong>
+                      <strong>{totalSalesBase.toFixed(2)} {currencySymbol}</strong>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={2} align="right">
-                      <strong>{totalVatCollected.toFixed(2)} MAD</strong>
+                      <strong>{totalVatCollected.toFixed(2)} {currencySymbol}</strong>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={3} align="right">
-                      <strong>{totalPurchasesBase.toFixed(2)} MAD</strong>
+                      <strong>{totalPurchasesBase.toFixed(2)} {currencySymbol}</strong>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={4} align="right">
-                      <strong>{totalVatDeductible.toFixed(2)} MAD</strong>
+                      <strong>{totalVatDeductible.toFixed(2)} {currencySymbol}</strong>
                     </Table.Summary.Cell>
                     <Table.Summary.Cell index={5} align="right">
                       <strong style={{ color: totalBalance >= 0 ? '#cf1322' : '#3f8600' }}>
-                        {totalBalance.toFixed(2)} MAD
+                        {totalBalance.toFixed(2)} {currencySymbol}
                       </strong>
                     </Table.Summary.Cell>
                   </Table.Summary.Row>

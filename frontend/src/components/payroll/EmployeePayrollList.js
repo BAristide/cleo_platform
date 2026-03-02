@@ -1,14 +1,15 @@
 // src/components/payroll/EmployeePayrollList.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, Card, Button, Space, Tag, Typography, 
-  message, Popconfirm, Spin, Input, Select 
+import {
+  Table, Card, Button, Space, Tag, Typography,
+  message, Popconfirm, Spin, Input, Select
 } from 'antd';
-import { 
-  PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined 
+import {
+  PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -20,6 +21,7 @@ const paymentMethodDisplay = {
 };
 
 const EmployeePayrollList = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [employeePayrolls, setEmployeePayrolls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -61,21 +63,21 @@ const EmployeePayrollList = () => {
     setLoading(true);
     try {
       let url = `/api/payroll/employee-payrolls/?page=${page}&page_size=${pageSize}`;
-      
+
       if (filters.search) {
         url += `&search=${filters.search}`;
       }
-      
+
       if (filters.contract_type) {
         url += `&contract_type=${filters.contract_type}`;
       }
-      
+
       if (filters.payment_method) {
         url += `&payment_method=${filters.payment_method}`;
       }
-      
+
       const response = await axios.get(url);
-      
+
       if (response.data.results) {
         setEmployeePayrolls(response.data.results);
         setPagination({
@@ -210,7 +212,7 @@ const EmployeePayrollList = () => {
       title: 'Salaire de base',
       dataIndex: 'base_salary',
       key: 'base_salary',
-      render: value => `${value.toLocaleString()} MAD`,
+      render: value => `${value.toLocaleString()} ${currencySymbol}`,
       sorter: (a, b) => a.base_salary - b.base_salary,
     },
     {
@@ -236,14 +238,14 @@ const EmployeePayrollList = () => {
       title: 'Indemnité de transport',
       dataIndex: 'transport_allowance',
       key: 'transport_allowance',
-      render: value => value ? `${value.toLocaleString()} MAD` : '-',
+      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.transport_allowance || 0) - (b.transport_allowance || 0),
     },
     {
       title: 'Prime de panier',
       dataIndex: 'meal_allowance',
       key: 'meal_allowance',
-      render: value => value ? `${value.toLocaleString()} MAD` : '-',
+      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.meal_allowance || 0) - (b.meal_allowance || 0),
     },
     {
@@ -251,9 +253,9 @@ const EmployeePayrollList = () => {
       key: 'actions',
       render: (_, record) => (
         <Space size="small">
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
             size="small"
             onClick={() => navigate(`/payroll/employee-payrolls/${record.id}`)}
             title="Modifier"
@@ -264,9 +266,9 @@ const EmployeePayrollList = () => {
             okText="Oui"
             cancelText="Non"
           >
-            <Button 
-              type="danger" 
-              icon={<DeleteOutlined />} 
+            <Button
+              type="danger"
+              icon={<DeleteOutlined />}
               size="small"
               title="Supprimer"
             />
@@ -288,16 +290,16 @@ const EmployeePayrollList = () => {
       {/* Filtres */}
       <Card style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '16px' }}>
-          <Input 
-            placeholder="Rechercher..." 
+          <Input
+            placeholder="Rechercher..."
             value={filters.search}
             onChange={e => handleSearch(e.target.value)}
             prefix={<SearchOutlined />}
             style={{ width: 250 }}
           />
-          <Select 
-            placeholder="Type de contrat" 
-            style={{ width: 200 }} 
+          <Select
+            placeholder="Type de contrat"
+            style={{ width: 200 }}
             allowClear
             value={filters.contract_type}
             onChange={handleContractTypeChange}
@@ -306,9 +308,9 @@ const EmployeePayrollList = () => {
               <Option key={ct.id} value={ct.id}>{ct.name}</Option>
             ))}
           </Select>
-          <Select 
-            placeholder="Méthode de paiement" 
-            style={{ width: 200 }} 
+          <Select
+            placeholder="Méthode de paiement"
+            style={{ width: 200 }}
             allowClear
             value={filters.payment_method}
             onChange={handlePaymentMethodChange}
@@ -323,10 +325,10 @@ const EmployeePayrollList = () => {
       {/* Table des données de paie */}
       <Card>
         <Spin spinning={loading}>
-          <Table 
-            columns={columns} 
-            dataSource={employeePayrolls} 
-            rowKey="id" 
+          <Table
+            columns={columns}
+            dataSource={employeePayrolls}
+            rowKey="id"
             pagination={pagination}
             onChange={handleTableChange}
           />

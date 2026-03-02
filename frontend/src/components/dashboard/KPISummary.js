@@ -12,7 +12,7 @@ import {
 import { useCurrency } from '../../context/CurrencyContext';
 
 const KPISummary = ({ stats }) => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
 
   const formatNumber = (val, precision = 0) => {
     if (val === null || val === undefined) return '0';

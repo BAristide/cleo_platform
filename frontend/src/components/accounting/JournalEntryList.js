@@ -1,25 +1,25 @@
 // src/components/accounting/JournalEntryList.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Table, 
-  Card, 
-  Input, 
-  Button, 
-  Tag, 
-  Typography, 
-  Space, 
-  Select, 
-  DatePicker, 
-  Spin, 
-  Alert, 
+import {
+  Table,
+  Card,
+  Input,
+  Button,
+  Tag,
+  Typography,
+  Space,
+  Select,
+  DatePicker,
+  Spin,
+  Alert,
   Popover,
   Modal,
   Badge
 } from 'antd';
-import { 
-  SearchOutlined, 
-  PlusOutlined, 
+import {
+  SearchOutlined,
+  PlusOutlined,
   FilterOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
@@ -29,12 +29,14 @@ import {
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
 
 const JournalEntryList = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [journalEntries, setJournalEntries] = useState([]);
@@ -76,7 +78,7 @@ const JournalEntryList = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des données:', error);
       setError('Impossible de charger les données. Veuillez réessayer plus tard.');
-      
+
       // Fallback to demo data
       setJournals(demoJournals);
       setJournalEntries(demoEntries);
@@ -91,8 +93,8 @@ const JournalEntryList = () => {
     // Filter by search text
     if (search) {
       const searchLower = search.toLowerCase();
-      filtered = filtered.filter(entry => 
-        (entry.name && entry.name.toLowerCase().includes(searchLower)) || 
+      filtered = filtered.filter(entry =>
+        (entry.name && entry.name.toLowerCase().includes(searchLower)) ||
         (entry.narration && entry.narration.toLowerCase().includes(searchLower)) ||
         (entry.ref && entry.ref.toLowerCase().includes(searchLower))
       );
@@ -112,7 +114,7 @@ const JournalEntryList = () => {
     if (dateRange && dateRange.length === 2) {
       const startDate = dateRange[0].startOf('day');
       const endDate = dateRange[1].endOf('day');
-      
+
       filtered = filtered.filter(entry => {
         const entryDate = moment(entry.date);
         return entryDate.isBetween(startDate, endDate, null, '[]');
@@ -195,7 +197,7 @@ const JournalEntryList = () => {
       dataIndex: 'total_debit',
       key: 'total_debit',
       align: 'right',
-      render: (text) => `${parseFloat(text).toFixed(2)} MAD`,
+      render: (text) => `${parseFloat(text).toFixed(2)} ${currencySymbol}`,
       sorter: (a, b) => a.total_debit - b.total_debit,
     },
     {
@@ -229,17 +231,17 @@ const JournalEntryList = () => {
           <Link to={`/accounting/entries/${record.id}`}>
             <Button type="text" size="small" icon={<EyeOutlined />} />
           </Link>
-          
+
           {record.state === 'draft' && (
             <>
               <Link to={`/accounting/entries/${record.id}/edit`}>
                 <Button type="text" size="small" icon={<EditOutlined />} />
               </Link>
-              <Button 
-                type="text" 
-                size="small" 
-                danger 
-                icon={<DeleteOutlined />} 
+              <Button
+                type="text"
+                size="small"
+                danger
+                icon={<DeleteOutlined />}
                 onClick={() => showDeleteConfirm(record.id)}
               />
             </>
@@ -404,7 +406,7 @@ const JournalEntryList = () => {
           ))}
         </Select>
       </div>
-      
+
       <div style={{ marginBottom: 16 }}>
         <p>Statut</p>
         <Select
@@ -418,17 +420,17 @@ const JournalEntryList = () => {
           <Option value="cancel">Annulé</Option>
         </Select>
       </div>
-      
+
       <div style={{ marginBottom: 16 }}>
         <p>Période</p>
-        <RangePicker 
+        <RangePicker
           style={{ width: '100%' }}
           value={dateRange}
           onChange={dates => setDateRange(dates)}
           format="DD/MM/YYYY"
         />
       </div>
-      
+
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 16 }}>
         <Button onClick={handleReset}>Réinitialiser</Button>
         <Button type="primary" onClick={() => setFilterVisible(false)}>Appliquer</Button>
@@ -471,7 +473,7 @@ const JournalEntryList = () => {
                 Filtres
                 {(journalFilter !== 'all' || stateFilter !== 'all') && (
                   <Badge count={
-                    (journalFilter !== 'all' ? 1 : 0) + 
+                    (journalFilter !== 'all' ? 1 : 0) +
                     (stateFilter !== 'all' ? 1 : 0)
                   } offset={[5, -5]} />
                 )}
@@ -496,12 +498,12 @@ const JournalEntryList = () => {
             pageData.forEach(({ total_debit }) => {
               totalAmount += parseFloat(total_debit || 0);
             });
-            
+
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={5}><strong>Total</strong></Table.Summary.Cell>
                 <Table.Summary.Cell index={5} align="right">
-                  <strong>{totalAmount.toFixed(2)} MAD</strong>
+                  <strong>{totalAmount.toFixed(2)} {currencySymbol}</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={6} colSpan={2}></Table.Summary.Cell>
               </Table.Summary.Row>

@@ -37,7 +37,7 @@ const statusDisplay = {
 };
 
 const PayrollRunDetail = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [payrollRun, setPayrollRun] = useState(null);
@@ -297,35 +297,35 @@ const PayrollRunDetail = () => {
       title: 'Salaire brut',
       dataIndex: 'gross_salary',
       key: 'gross_salary',
-      render: value => value ? `${value.toLocaleString()} MAD` : '-',
+      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.gross_salary || 0) - (b.gross_salary || 0),
     },
     {
       title: 'CNSS',
       dataIndex: 'cnss_employee',
       key: 'cnss_employee',
-      render: value => value ? `${value.toLocaleString()} MAD` : '-',
+      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.cnss_employee || 0) - (b.cnss_employee || 0),
     },
     {
       title: 'AMO',
       dataIndex: 'amo_employee',
       key: 'amo_employee',
-      render: value => value ? `${value.toLocaleString()} MAD` : '-',
+      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.amo_employee || 0) - (b.amo_employee || 0),
     },
     {
       title: 'IR',
       dataIndex: 'income_tax',
       key: 'income_tax',
-      render: value => value ? `${value.toLocaleString()} MAD` : '-',
+      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.income_tax || 0) - (b.income_tax || 0),
     },
     {
       title: 'Salaire net',
       dataIndex: 'net_salary',
       key: 'net_salary',
-      render: value => value ? `${value.toLocaleString()} MAD` : '-',
+      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.net_salary || 0) - (b.net_salary || 0),
     },
     {
@@ -594,25 +594,25 @@ const PayrollRunDetail = () => {
                   title: 'Base',
                   dataIndex: 'base',
                   key: 'base',
-                  render: value => typeof value === 'number' ? `${value.toLocaleString()} MAD` : value
+                  render: value => typeof value === 'number' ? `${value.toLocaleString()} ${currencySymbol}` : value
                 },
                 {
                   title: 'Part salariale',
                   dataIndex: 'part_salariale',
                   key: 'part_salariale',
-                  render: value => `${value.toLocaleString()} MAD`
+                  render: value => `${value.toLocaleString()} ${currencySymbol}`
                 },
                 {
                   title: 'Part patronale',
                   dataIndex: 'part_patronale',
                   key: 'part_patronale',
-                  render: value => `${value.toLocaleString()} MAD`
+                  render: value => `${value.toLocaleString()} ${currencySymbol}`
                 },
                 {
                   title: 'Total',
                   dataIndex: 'total',
                   key: 'total',
-                  render: value => `${value.toLocaleString()} MAD`
+                  render: value => `${value.toLocaleString()} ${currencySymbol}`
                 }
               ]}
               pagination={false}
@@ -632,13 +632,13 @@ const PayrollRunDetail = () => {
                     <Table.Summary.Row>
                       <Table.Summary.Cell index={0} colSpan={2}><strong>Total</strong></Table.Summary.Cell>
                       <Table.Summary.Cell index={2}>
-                        <strong>{totalSalariale.toLocaleString()} MAD</strong>
+                        <strong>{totalSalariale.toLocaleString()} {currencySymbol}</strong>
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={3}>
-                        <strong>{totalPatronale.toLocaleString()} MAD</strong>
+                        <strong>{totalPatronale.toLocaleString()} {currencySymbol}</strong>
                       </Table.Summary.Cell>
                       <Table.Summary.Cell index={4}>
-                        <strong>{totalTotal.toLocaleString()} MAD</strong>
+                        <strong>{totalTotal.toLocaleString()} {currencySymbol}</strong>
                       </Table.Summary.Cell>
                     </Table.Summary.Row>
                   </Table.Summary>

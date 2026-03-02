@@ -27,7 +27,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const OpportunityForm = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const navigate = useNavigate();
   const { id } = useParams();
   const location = useLocation();
@@ -89,25 +89,26 @@ const OpportunityForm = () => {
           setOpportunity(opportunityData);
 
           // Charger les contacts de l'entreprise associée à l'opportunité
-          if (opportunityData.company_id) {
-            await fetchContactsByCompany(opportunityData.company_id);
+          const companyIdValue = opportunityData.company?.id || opportunityData.company_id;
+          if (companyIdValue) {
+            await fetchContactsByCompany(companyIdValue);
           }
 
           // Formater les données pour le formulaire
           form.setFieldsValue({
             name: opportunityData.name,
-            company_id: opportunityData.company_id,
-            stage_id: opportunityData.stage_id,
+            company_id: opportunityData.company?.id || opportunityData.company_id,
+            stage_id: opportunityData.stage?.id || opportunityData.stage_id,
             amount: opportunityData.amount,
             currency: opportunityData.currency,
             probability: opportunityData.probability,
             expected_close_date: opportunityData.expected_close_date ? moment(opportunityData.expected_close_date) : null,
             description: opportunityData.description,
-            tag_ids: opportunityData.tags?.map(tag => tag.id) || [],
-            contact_ids: opportunityData.contacts?.map(contact => contact.id) || []
+            tag_ids: opportunityData.tags?.map(t => t.id) || opportunityData.tag_ids || [],
+            contact_ids: opportunityData.contacts?.map(c => c.id) || opportunityData.contact_ids || []
           });
 
-          setSelectedCompany(opportunityData.company_id);
+          setSelectedCompany(opportunityData.company?.id || opportunityData.company_id);
         } else {
           // En mode création, pré-remplir avec la première étape de vente
           if (stagesData.length > 0) {
@@ -142,7 +143,7 @@ const OpportunityForm = () => {
     };
 
     fetchFormData();
-  }, [id, form, selectedCompany, companyId, contactId, isEditMode]);
+  }, [id, form, companyId, contactId, isEditMode]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
 const fetchContactsByCompany = async (companyId) => {

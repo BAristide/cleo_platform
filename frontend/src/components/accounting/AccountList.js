@@ -5,11 +5,13 @@ import { Table, Card, Input, Button, Tag, Typography, Space, Switch, Select, Spi
 import { SearchOutlined, BookOutlined, PlusOutlined } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { Option } = Select;
 
 const AccountList = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [accounts, setAccounts] = useState([]);
@@ -43,7 +45,7 @@ const AccountList = () => {
 
       setAccounts(accountsData);
       setAccountTypes(typesData);
-      
+
     } catch (error) {
       console.error('Erreur lors de la récupération des comptes:', error);
       setError('Impossible de charger les comptes. Veuillez réessayer plus tard.');
@@ -58,8 +60,8 @@ const AccountList = () => {
     // Filtrer par texte de recherche
     if (search) {
       const searchLower = search.toLowerCase();
-      filtered = filtered.filter(account => 
-        account.code.toLowerCase().includes(searchLower) || 
+      filtered = filtered.filter(account =>
+        account.code.toLowerCase().includes(searchLower) ||
         account.name.toLowerCase().includes(searchLower)
       );
     }
@@ -111,7 +113,7 @@ const AccountList = () => {
         const value = parseFloat(text);
         return (
           <span style={{ color: value < 0 ? '#cf1322' : value > 0 ? '#3f8600' : 'inherit' }}>
-            {value.toFixed(2)} MAD
+            {value.toFixed(2)} {currencySymbol}
           </span>
         );
       },

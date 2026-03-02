@@ -19,7 +19,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const TrainingCourseList = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [trainingCourses, setTrainingCourses] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -234,7 +234,7 @@ const TrainingCourseList = () => {
       title: 'Coût',
       dataIndex: 'cost',
       key: 'cost',
-      render: (cost) => cost ? `${cost} MAD` : '—',
+      render: (cost) => cost ? `${cost} ${currencySymbol}` : '—',
       sorter: (a, b) => (a.cost || 0) - (b.cost || 0)
     },
     {

@@ -12,7 +12,7 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const JobOpeningForm = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [form] = Form.useForm();

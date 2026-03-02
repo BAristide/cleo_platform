@@ -14,11 +14,13 @@ import {
 import { Link } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { Option } = Select;
 
 const TrainingPlanList = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [trainingPlans, setTrainingPlans] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -53,7 +55,7 @@ const TrainingPlanList = () => {
 
       const response = await axios.get('/api/hr/training-plans/', { params });
       const data = extractResultsFromResponse(response);
-      
+
       // Mettre à jour la pagination
       if (response.data && response.data.count !== undefined) {
         setPagination({
@@ -91,7 +93,7 @@ const TrainingPlanList = () => {
       message.error("Impossible de supprimer le plan de formation");
     }
   };
-  
+
   const handleSubmitPlan = async (id) => {
     try {
       await axios.post(`/api/hr/training-plans/${id}/submit/`);
@@ -113,7 +115,7 @@ const TrainingPlanList = () => {
       } else if (approveType === 'finance') {
         response = await axios.post(`/api/hr/training-plans/${id}/approve_finance/`);
       }
-      
+
       message.success("Plan de formation approuvé avec succès");
       fetchTrainingPlans();
     } catch (error) {
@@ -215,7 +217,7 @@ const TrainingPlanList = () => {
     {
       title: 'Coût total',
       key: 'total_cost',
-      render: (_, record) => `${record.total_cost || 0} MAD`,
+      render: (_, record) => `${record.total_cost || 0} ${currencySymbol}`,
       sorter: true
     },
     {
@@ -224,7 +226,7 @@ const TrainingPlanList = () => {
       render: (_, record) => {
         const { approvals } = record;
         if (!approvals) return "-";
-        
+
         return (
           <Space direction="vertical" size={0}>
             <Tag color={approvals.manager ? "success" : "default"}>
@@ -248,13 +250,13 @@ const TrainingPlanList = () => {
           <Button size="small" type="primary" icon={<FileTextOutlined />}>
             <Link to={`/hr/training-plans/${record.id}`}>Détails</Link>
           </Button>
-          
+
           {record.status === 'draft' && (
             <>
               <Button size="small" icon={<EditOutlined />}>
                 <Link to={`/hr/training-plans/${record.id}/edit`}>Modifier</Link>
               </Button>
-              <Button 
+              <Button
                 size="small"
                 icon={<CheckCircleOutlined />}
                 onClick={() => handleSubmitPlan(record.id)}
@@ -273,17 +275,17 @@ const TrainingPlanList = () => {
               </Popconfirm>
             </>
           )}
-          
+
           {record.status === 'submitted' && (
             <>
-              <Button 
+              <Button
                 size="small"
                 icon={<CheckCircleOutlined />}
                 onClick={() => handleApprovePlan(record.id, 'manager')}
               >
                 Approuver (Manager)
               </Button>
-              <Button 
+              <Button
                 size="small"
                 danger
                 icon={<CloseCircleOutlined />}
@@ -293,17 +295,17 @@ const TrainingPlanList = () => {
               </Button>
             </>
           )}
-          
+
           {record.status === 'approved_manager' && (
             <>
-              <Button 
+              <Button
                 size="small"
                 icon={<CheckCircleOutlined />}
                 onClick={() => handleApprovePlan(record.id, 'hr')}
               >
                 Approuver (RH)
               </Button>
-              <Button 
+              <Button
                 size="small"
                 danger
                 icon={<CloseCircleOutlined />}
@@ -313,17 +315,17 @@ const TrainingPlanList = () => {
               </Button>
             </>
           )}
-          
+
           {record.status === 'approved_hr' && (
             <>
-              <Button 
+              <Button
                 size="small"
                 icon={<BankOutlined />}
                 onClick={() => handleApprovePlan(record.id, 'finance')}
               >
                 Approuver (Finance)
               </Button>
-              <Button 
+              <Button
                 size="small"
                 danger
                 icon={<CloseCircleOutlined />}

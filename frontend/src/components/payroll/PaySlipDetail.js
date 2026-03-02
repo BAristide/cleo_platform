@@ -34,7 +34,7 @@ const statusDisplay = {
 
 const PaySlipDetail = () => {
   const { id } = useParams();
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const navigate = useNavigate();
   const [payslip, setPayslip] = useState(null);
   const [payslipLines, setPayslipLines] = useState([]);

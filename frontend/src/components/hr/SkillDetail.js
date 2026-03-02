@@ -28,12 +28,14 @@ import {
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 const SkillDetail = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [skill, setSkill] = useState(null);
@@ -54,7 +56,7 @@ const SkillDetail = () => {
       // Récupérer les détails de la compétence
       const skillResponse = await axios.get(`/api/hr/skills/${id}/`);
       setSkill(skillResponse.data);
-      
+
       // Initialiser le formulaire avec les données de la compétence
       form.setFieldsValue({
         name: skillResponse.data.name,
@@ -143,8 +145,8 @@ const SkillDetail = () => {
       key: 'employee',
       render: (_, record) => (
         <Link to={`/hr/employees/${record.employee?.id}`}>
-          {record.employee ? 
-           `${record.employee.first_name} ${record.employee.last_name}` : 
+          {record.employee ?
+           `${record.employee.first_name} ${record.employee.last_name}` :
            "Employé inconnu"}
         </Link>
       ),
@@ -155,15 +157,15 @@ const SkillDetail = () => {
       key: 'level',
       render: (_, record) => (
         <Space>
-          <div 
-            className="skill-level" 
-            style={{ 
+          <div
+            className="skill-level"
+            style={{
               display: 'inline-block',
               width: '16px',
               height: '16px',
               borderRadius: '50%',
               marginRight: '4px',
-              backgroundColor: getLevelColor(record.level) 
+              backgroundColor: getLevelColor(record.level)
             }}
           />
           {record.level_display}
@@ -199,7 +201,7 @@ const SkillDetail = () => {
           {record.job_title ? record.job_title.name : "Poste inconnu"}
         </Link>
       ),
-      sorter: (a, b) => 
+      sorter: (a, b) =>
         (a.job_title?.name || '').localeCompare(b.job_title?.name || '')
     },
     {
@@ -212,15 +214,15 @@ const SkillDetail = () => {
       key: 'required_level',
       render: (_, record) => (
         <Space>
-          <div 
-            className="skill-level" 
-            style={{ 
+          <div
+            className="skill-level"
+            style={{
               display: 'inline-block',
               width: '16px',
               height: '16px',
               borderRadius: '50%',
               marginRight: '4px',
-              backgroundColor: getLevelColor(record.required_level) 
+              backgroundColor: getLevelColor(record.required_level)
             }}
           />
           {record.required_level_display}
@@ -254,7 +256,7 @@ const SkillDetail = () => {
           {record.training_course.title}
         </Link>
       ) : "Formation inconnue",
-      sorter: (a, b) => 
+      sorter: (a, b) =>
         (a.training_course?.title || '').localeCompare(b.training_course?.title || '')
     },
     {
@@ -267,15 +269,15 @@ const SkillDetail = () => {
       key: 'level_provided',
       render: (_, record) => (
         <Space>
-          <div 
-            className="skill-level" 
-            style={{ 
+          <div
+            className="skill-level"
+            style={{
               display: 'inline-block',
               width: '16px',
               height: '16px',
               borderRadius: '50%',
               marginRight: '4px',
-              backgroundColor: getLevelColor(record.level_provided) 
+              backgroundColor: getLevelColor(record.level_provided)
             }}
           />
           {record.level_provided_display}
@@ -286,14 +288,14 @@ const SkillDetail = () => {
     {
       title: 'Durée',
       key: 'duration',
-      render: (_, record) => record.training_course ? 
+      render: (_, record) => record.training_course ?
         `${record.training_course.duration_hours} heures` : "—",
     },
     {
       title: 'Coût',
       key: 'cost',
-      render: (_, record) => record.training_course?.cost ? 
-        `${record.training_course.cost} MAD` : "—",
+      render: (_, record) => record.training_course?.cost ?
+        `${record.training_course.cost} ${currencySymbol}` : "—",
     }
   ];
 

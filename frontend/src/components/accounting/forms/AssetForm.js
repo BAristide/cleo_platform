@@ -29,12 +29,14 @@ import {
 import axios from '../../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../../utils/apiUtils';
 import moment from 'moment';
+import { useCurrency } from '../../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
 const AssetForm = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [form] = Form.useForm();
@@ -73,7 +75,7 @@ const AssetForm = () => {
     try {
       const response = await axios.get(`/api/accounting/assets/${id}/`);
       const asset = response.data;
-      
+
       form.setFieldsValue({
         code: asset.code,
         name: asset.name,
@@ -86,18 +88,18 @@ const AssetForm = () => {
         first_depreciation_date: asset.first_depreciation_date ? moment(asset.first_depreciation_date) : null,
         note: asset.note
       });
-      
+
       setSelectedCategory(asset.category_id);
       setCustomMethod(!!asset.method); // true if asset has a custom method
       setCustomDuration(!!asset.duration_years); // true if asset has a custom duration
     } catch (error) {
       console.error('Erreur lors de la récupération des détails de l\'immobilisation:', error);
       setError('Impossible de charger les détails de l\'immobilisation. Veuillez réessayer plus tard.');
-      
+
       // If API fails, use demo data
       if (id && demoAssets[id - 1]) {
         const demoAsset = demoAssets[id - 1];
-        
+
         form.setFieldsValue({
           code: demoAsset.code,
           name: demoAsset.name,
@@ -110,7 +112,7 @@ const AssetForm = () => {
           first_depreciation_date: demoAsset.first_depreciation_date ? moment(demoAsset.first_depreciation_date) : null,
           note: demoAsset.note || ''
         });
-        
+
         setSelectedCategory(demoAsset.category_id);
         setCustomMethod(!!demoAsset.method);
         setCustomDuration(!!demoAsset.duration_years);
@@ -122,11 +124,11 @@ const AssetForm = () => {
 
   const handleCategoryChange = (categoryId) => {
     setSelectedCategory(categoryId);
-    
+
     // Reset custom method and duration when category changes
     setCustomMethod(false);
     setCustomDuration(false);
-    
+
     // Clear method and duration fields
     form.setFieldsValue({
       method: null,
@@ -136,24 +138,24 @@ const AssetForm = () => {
 
   const handleSubmit = async (values) => {
     setSubmitting(true);
-    
+
     try {
       const assetData = {
         ...values,
         acquisition_date: values.acquisition_date.format('YYYY-MM-DD'),
-        first_depreciation_date: values.first_depreciation_date ? 
+        first_depreciation_date: values.first_depreciation_date ?
           values.first_depreciation_date.format('YYYY-MM-DD') : null,
         method: customMethod ? values.method : null,
         duration_years: customDuration ? values.duration_years : null
       };
-      
+
       let response;
       if (isEditing) {
         response = await axios.put(`/api/accounting/assets/${id}/`, assetData);
       } else {
         response = await axios.post('/api/accounting/assets/', assetData);
       }
-      
+
       message.success(isEditing ? 'Immobilisation modifiée avec succès.' : 'Immobilisation créée avec succès.');
       navigate(`/accounting/assets/${response.data.id || id}`);
     } catch (error) {
@@ -166,14 +168,14 @@ const AssetForm = () => {
 
   const getCategoryMethod = () => {
     if (!selectedCategory) return null;
-    
+
     const category = categories.find(cat => cat.id === selectedCategory);
     return category ? category.method : null;
   };
 
   const getCategoryDuration = () => {
     if (!selectedCategory) return null;
-    
+
     const category = categories.find(cat => cat.id === selectedCategory);
     return category ? category.duration_years : null;
   };
@@ -345,7 +347,7 @@ const AssetForm = () => {
           <div style={{ marginBottom: 24 }}>
             <Title level={4}>Informations générales</Title>
             <Divider style={{ margin: '12px 0 24px' }} />
-            
+
             <Row gutter={16}>
               <Form.Item
                 name="code"
@@ -355,7 +357,7 @@ const AssetForm = () => {
               >
                 <Input placeholder="Ex: A-0001" />
               </Form.Item>
-              
+
               <Form.Item
                 name="name"
                 label="Nom"
@@ -365,7 +367,7 @@ const AssetForm = () => {
                 <Input placeholder="Nom de l'immobilisation" />
               </Form.Item>
             </Row>
-            
+
             <Row gutter={16}>
               <Form.Item
                 name="category_id"
@@ -385,7 +387,7 @@ const AssetForm = () => {
                   ))}
                 </Select>
               </Form.Item>
-              
+
               <Form.Item
                 name="acquisition_date"
                 label="Date d'acquisition"
@@ -400,7 +402,7 @@ const AssetForm = () => {
           <div style={{ marginBottom: 24 }}>
             <Title level={4}>Valorisation</Title>
             <Divider style={{ margin: '12px 0 24px' }} />
-            
+
             <Row gutter={16}>
               <Form.Item
                 name="acquisition_value"
@@ -412,11 +414,11 @@ const AssetForm = () => {
                   style={{ width: '100%' }}
                   min={0}
                   step={1000}
-                  formatter={value => `${value} MAD`}
-                  parser={value => value.replace(' MAD', '')}
+                  formatter={value => `${value} ${currencySymbol}`}
+                  parser={value => value.replace(/[^\d.-]/g, '')}
                 />
               </Form.Item>
-              
+
               <Form.Item
                 name="salvage_value"
                 label={
@@ -433,8 +435,8 @@ const AssetForm = () => {
                   style={{ width: '100%' }}
                   min={0}
                   step={1000}
-                  formatter={value => `${value} MAD`}
-                  parser={value => value.replace(' MAD', '')}
+                  formatter={value => `${value} ${currencySymbol}`}
+                  parser={value => value.replace(/[^\d.-]/g, '')}
                 />
               </Form.Item>
             </Row>
@@ -452,7 +454,7 @@ const AssetForm = () => {
               </Button>
             </div>
             <Divider style={{ margin: '12px 0 24px' }} />
-            
+
             <Row gutter={16}>
               <Form.Item
                 label={
@@ -493,7 +495,7 @@ const AssetForm = () => {
                   )}
                 </div>
               </Form.Item>
-              
+
               <Form.Item
                 label={
                   <span>
@@ -522,8 +524,8 @@ const AssetForm = () => {
                   ) : (
                     <Text>
                       {selectedCategory ? (
-                        getCategoryDuration() > 0 ? 
-                        `${getCategoryDuration()} ans` : 
+                        getCategoryDuration() > 0 ?
+                        `${getCategoryDuration()} ans` :
                         'Non amortissable'
                       ) : 'Non définie'}
                     </Text>
@@ -531,7 +533,7 @@ const AssetForm = () => {
                 </div>
               </Form.Item>
             </Row>
-            
+
             <Form.Item
               name="first_depreciation_date"
               label="Date de première dotation"

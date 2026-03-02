@@ -45,7 +45,7 @@ const { Title, Text, Paragraph } = Typography;
 const { confirm } = Modal;
 
 const BankStatementDetail = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);

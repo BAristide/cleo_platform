@@ -6,12 +6,14 @@ import { Row, Col, Card, Statistic, Typography, Spin, Alert } from 'antd';
 import {
   UserOutlined, ShopOutlined, DollarOutlined, FundOutlined
 } from '@ant-design/icons';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 
 const CRMDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { currencySymbol } = useCurrency();
   const [stats, setStats] = useState({
     contacts: 0,
     companies: 0,
@@ -28,8 +30,8 @@ const CRMDashboard = () => {
         // Récupérer les statistiques du CRM
         const response = await axios.get('/api/crm/dashboard/');
         console.log('Dashboard response:', response); // Pour déboguer
-        
-        // Pas besoin d'utiliser extractResultsFromResponse ici car l'endpoint dashboard 
+
+        // Pas besoin d'utiliser extractResultsFromResponse ici car l'endpoint dashboard
         // renvoie directement un objet avec les statistiques
         setStats(response.data);
         setLoading(false);
@@ -106,7 +108,7 @@ const CRMDashboard = () => {
               value={stats.pipeline}
               prefix={<DollarOutlined />}
               valueStyle={{ color: '#3f8600' }}
-              formatter={value => `${value} MAD`}
+              formatter={value => `${value} ${currencySymbol}`}
             />
           </Card>
         </Col>

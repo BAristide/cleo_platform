@@ -4,11 +4,13 @@ import { Form, Input, Button, Card, DatePicker, Select, InputNumber, message } f
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
+import { useCurrency } from '../../../context/CurrencyContext';
 
 const { Option } = Select;
 
 // Formulaire pour les périodes de paie
 export const PayrollPeriodForm = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -357,8 +359,8 @@ export const EmployeePayrollForm = () => {
             style={{ width: '100%' }}
             min={0}
             step={100}
-            formatter={value => `${value} MAD`}
-            parser={value => value.replace(' MAD', '')}
+            formatter={value => `${value} ${currencySymbol}`}
+            parser={value => value.replace(/[^\d.-]/g, '')}
           />
         </Form.Item>
 
@@ -370,8 +372,8 @@ export const EmployeePayrollForm = () => {
             style={{ width: '100%' }}
             min={0}
             step={1}
-            formatter={value => `${value} MAD/h`}
-            parser={value => value.replace(' MAD/h', '')}
+            formatter={value => `${value} ${currencySymbol}/h`}
+            parser={value => value.replace(/[^\d.-]/g, '')}
           />
         </Form.Item>
 
@@ -416,8 +418,8 @@ export const EmployeePayrollForm = () => {
             style={{ width: '100%' }}
             min={0}
             step={100}
-            formatter={value => `${value} MAD`}
-            parser={value => value.replace(' MAD', '')}
+            formatter={value => `${value} ${currencySymbol}`}
+            parser={value => value.replace(/[^\d.-]/g, '')}
           />
         </Form.Item>
 
@@ -429,8 +431,8 @@ export const EmployeePayrollForm = () => {
             style={{ width: '100%' }}
             min={0}
             step={100}
-            formatter={value => `${value} MAD`}
-            parser={value => value.replace(' MAD', '')}
+            formatter={value => `${value} ${currencySymbol}`}
+            parser={value => value.replace(/[^\d.-]/g, '')}
           />
         </Form.Item>
 
@@ -566,8 +568,8 @@ export const AdvanceSalaryForm = () => {
             style={{ width: '100%' }}
             min={0}
             step={100}
-            formatter={value => `${value} MAD`}
-            parser={value => value.replace(' MAD', '')}
+            formatter={value => `${value} ${currencySymbol}`}
+            parser={value => value.replace(/[^\d.-]/g, '')}
           />
         </Form.Item>
 

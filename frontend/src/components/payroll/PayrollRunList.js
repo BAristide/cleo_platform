@@ -1,16 +1,17 @@
 // src/components/payroll/PayrollRunList.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, Card, Button, Space, Tag, Typography, 
-  message, Popconfirm, Spin, Input, Select 
+import {
+  Table, Card, Button, Space, Tag, Typography,
+  message, Popconfirm, Spin, Input, Select
 } from 'antd';
-import { 
+import {
   PlusOutlined, EyeOutlined, DeleteOutlined, CalculatorOutlined,
-  CheckCircleOutlined, DollarOutlined, SearchOutlined 
+  CheckCircleOutlined, DollarOutlined, SearchOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -34,6 +35,7 @@ const statusDisplay = {
 };
 
 const PayrollRunList = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [runs, setRuns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -75,21 +77,21 @@ const PayrollRunList = () => {
     setLoading(true);
     try {
       let url = `/api/payroll/payroll-runs/?page=${page}&page_size=${pageSize}`;
-      
+
       if (filters.search) {
         url += `&search=${filters.search}`;
       }
-      
+
       if (filters.status) {
         url += `&status=${filters.status}`;
       }
-      
+
       if (filters.period) {
         url += `&period=${filters.period}`;
       }
-      
+
       const response = await axios.get(url);
-      
+
       if (response.data.results) {
         setRuns(response.data.results);
         setPagination({
@@ -290,14 +292,14 @@ const PayrollRunList = () => {
       title: 'Brut total',
       dataIndex: ['payslips_summary', 'total_gross'],
       key: 'total_gross',
-      render: value => value ? `${value.toLocaleString()} MAD` : '-',
+      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.payslips_summary?.total_gross || 0) - (b.payslips_summary?.total_gross || 0),
     },
     {
       title: 'Net total',
       dataIndex: ['payslips_summary', 'total_net'],
       key: 'total_net',
-      render: value => value ? `${value.toLocaleString()} MAD` : '-',
+      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.payslips_summary?.total_net || 0) - (b.payslips_summary?.total_net || 0),
     },
     {
@@ -305,14 +307,14 @@ const PayrollRunList = () => {
       key: 'actions',
       render: (_, record) => (
         <Space size="small">
-          <Button 
-            type="primary" 
-            icon={<EyeOutlined />} 
+          <Button
+            type="primary"
+            icon={<EyeOutlined />}
             size="small"
             onClick={() => navigate(`/payroll/runs/${record.id}`)}
             title="Voir"
           />
-          
+
           {record.status === 'draft' && (
             <Popconfirm
               title="Êtes-vous sûr de vouloir supprimer ce lancement?"
@@ -320,39 +322,39 @@ const PayrollRunList = () => {
               okText="Oui"
               cancelText="Non"
             >
-              <Button 
-                type="danger" 
-                icon={<DeleteOutlined />} 
+              <Button
+                type="danger"
+                icon={<DeleteOutlined />}
                 size="small"
                 title="Supprimer"
               />
             </Popconfirm>
           )}
-          
+
           {(record.status === 'draft' || record.status === 'in_progress') && (
-            <Button 
-              type="default" 
-              icon={<CalculatorOutlined />} 
+            <Button
+              type="default"
+              icon={<CalculatorOutlined />}
               size="small"
               onClick={() => handleCalculate(record.id)}
               title="Calculer"
             />
           )}
-          
+
           {record.status === 'calculated' && (
-            <Button 
-              type="default" 
-              icon={<CheckCircleOutlined />} 
+            <Button
+              type="default"
+              icon={<CheckCircleOutlined />}
               size="small"
               onClick={() => handleValidate(record.id)}
               title="Valider"
             />
           )}
-          
+
           {record.status === 'validated' && (
-            <Button 
-              type="default" 
-              icon={<DollarOutlined />} 
+            <Button
+              type="default"
+              icon={<DollarOutlined />}
               size="small"
               onClick={() => handlePay(record.id)}
               title="Payer"
@@ -375,16 +377,16 @@ const PayrollRunList = () => {
       {/* Filtres */}
       <Card style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '16px' }}>
-          <Input 
-            placeholder="Rechercher..." 
+          <Input
+            placeholder="Rechercher..."
             value={filters.search}
             onChange={e => handleSearch(e.target.value)}
             prefix={<SearchOutlined />}
             style={{ width: 250 }}
           />
-          <Select 
-            placeholder="Statut" 
-            style={{ width: 150 }} 
+          <Select
+            placeholder="Statut"
+            style={{ width: 150 }}
             allowClear
             value={filters.status}
             onChange={handleStatusChange}
@@ -393,9 +395,9 @@ const PayrollRunList = () => {
               <Option key={key} value={key}>{value}</Option>
             ))}
           </Select>
-          <Select 
-            placeholder="Période" 
-            style={{ width: 200 }} 
+          <Select
+            placeholder="Période"
+            style={{ width: 200 }}
             allowClear
             value={filters.period}
             onChange={handlePeriodChange}
@@ -410,10 +412,10 @@ const PayrollRunList = () => {
       {/* Table des lancements */}
       <Card>
         <Spin spinning={loading}>
-          <Table 
-            columns={columns} 
-            dataSource={runs} 
-            rowKey="id" 
+          <Table
+            columns={columns}
+            dataSource={runs}
+            rowKey="id"
             pagination={pagination}
             onChange={handleTableChange}
           />

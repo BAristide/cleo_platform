@@ -34,7 +34,7 @@ const { Title, Text } = Typography;
 const { Option } = Select;
 
 const AssetList = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [assets, setAssets] = useState([]);
@@ -184,14 +184,14 @@ const AssetList = () => {
       dataIndex: 'acquisition_value',
       key: 'acquisition_value',
       align: 'right',
-      render: (text) => `${parseFloat(text).toFixed(2)} MAD`,
+      render: (text) => `${parseFloat(text).toFixed(2)} ${currencySymbol}`,
       sorter: (a, b) => a.acquisition_value - b.acquisition_value,
     },
     {
       title: 'Amortissement',
       key: 'depreciation',
       render: (_, record) => (
-        <Tooltip title={`${parseFloat(record.depreciation_value || 0).toFixed(2)} MAD (${calculateDepreciationPercentage(record).toFixed(1)}%)`}>
+        <Tooltip title={`${parseFloat(record.depreciation_value || 0).toFixed(2)} ${currencySymbol} (${calculateDepreciationPercentage(record).toFixed(1)}%)`}>
           <Progress
             percent={calculateDepreciationPercentage(record).toFixed(1)}
             size="small"
@@ -206,7 +206,7 @@ const AssetList = () => {
       align: 'right',
       render: (_, record) => {
         const netValue = parseFloat(record.acquisition_value) - parseFloat(record.depreciation_value || 0);
-        return `${netValue.toFixed(2)} MAD`;
+        return `${netValue.toFixed(2)} ${currencySymbol}`;
       },
       sorter: (a, b) => {
         const netValueA = parseFloat(a.acquisition_value) - parseFloat(a.depreciation_value || 0);
@@ -503,13 +503,13 @@ const AssetList = () => {
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={4}><strong>Total</strong></Table.Summary.Cell>
                 <Table.Summary.Cell index={4} align="right">
-                  <strong>{totalAcquisition.toFixed(2)} MAD</strong>
+                  <strong>{totalAcquisition.toFixed(2)} {currencySymbol}</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={5} align="right">
-                  <strong>{totalDepreciation.toFixed(2)} MAD</strong>
+                  <strong>{totalDepreciation.toFixed(2)} {currencySymbol}</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={6} align="right">
-                  <strong>{totalNetBook.toFixed(2)} MAD</strong>
+                  <strong>{totalNetBook.toFixed(2)} {currencySymbol}</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={7} colSpan={2}></Table.Summary.Cell>
               </Table.Summary.Row>

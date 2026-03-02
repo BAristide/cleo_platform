@@ -44,7 +44,7 @@ const { Step } = Steps;
 const { confirm } = Modal;
 
 const AssetDetail = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const { id } = useParams();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -359,7 +359,7 @@ const AssetDetail = () => {
       key: 'amount',
       width: '15%',
       align: 'right',
-      render: (text) => `${parseFloat(text).toFixed(2)} MAD`,
+      render: (text) => `${parseFloat(text).toFixed(2)} ${currencySymbol}`,
     },
     {
       title: 'Valeur restante',
@@ -367,7 +367,7 @@ const AssetDetail = () => {
       key: 'remaining_value',
       width: '15%',
       align: 'right',
-      render: (text) => `${parseFloat(text).toFixed(2)} MAD`,
+      render: (text) => `${parseFloat(text).toFixed(2)} ${currencySymbol}`,
     },
     {
       title: 'Écriture',
@@ -604,7 +604,7 @@ const AssetDetail = () => {
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={3}><strong>Total</strong></Table.Summary.Cell>
                 <Table.Summary.Cell index={3} align="right">
-                  <strong>{totalAmount.toFixed(2)} MAD</strong>
+                  <strong>{totalAmount.toFixed(2)} {currencySymbol}</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={4} colSpan={4}></Table.Summary.Cell>
               </Table.Summary.Row>
@@ -621,7 +621,7 @@ const AssetDetail = () => {
             <p>
               <strong>Acquisition</strong> - {moment(displayedAsset.acquisition_date).format('DD/MM/YYYY')}
             </p>
-            <p>Valeur d'acquisition: {parseFloat(displayedAsset.acquisition_value).toFixed(2)} MAD</p>
+            <p>Valeur d'acquisition: {parseFloat(displayedAsset.acquisition_value).toFixed(2)} {currencySymbol}</p>
           </Timeline.Item>
 
           {displayedAsset.first_depreciation_date && (
@@ -643,7 +643,7 @@ const AssetDetail = () => {
               <p>
                 <strong>Dernière dotation comptabilisée</strong> - {moment(dep.date).format('DD/MM/YYYY')}
               </p>
-              <p>Montant: {parseFloat(dep.amount).toFixed(2)} MAD - Valeur restante: {parseFloat(dep.remaining_value).toFixed(2)} MAD</p>
+              <p>Montant: {parseFloat(dep.amount).toFixed(2)} {currencySymbol} - Valeur restante: {parseFloat(dep.remaining_value).toFixed(2)} {currencySymbol}</p>
             </Timeline.Item>
           ))}
 
@@ -657,7 +657,7 @@ const AssetDetail = () => {
               <p>
                 <strong>Prochaine dotation</strong> - {moment(dep.date).format('DD/MM/YYYY')}
               </p>
-              <p>Montant: {parseFloat(dep.amount).toFixed(2)} MAD</p>
+              <p>Montant: {parseFloat(dep.amount).toFixed(2)} {currencySymbol}</p>
             </Timeline.Item>
           ))}
 
@@ -670,7 +670,7 @@ const AssetDetail = () => {
               <p>
                 <strong>Fin d'amortissement prévue</strong> - {moment(displayedAsset.first_depreciation_date).add(displayedAsset.duration_years, 'years').format('DD/MM/YYYY')}
               </p>
-              <p>Valeur résiduelle: {parseFloat(displayedAsset.salvage_value).toFixed(2)} MAD</p>
+              <p>Valeur résiduelle: {parseFloat(displayedAsset.salvage_value).toFixed(2)} {currencySymbol}</p>
             </Timeline.Item>
           )}
         </Timeline>

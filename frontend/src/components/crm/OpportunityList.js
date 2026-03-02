@@ -1,21 +1,23 @@
 // src/components/crm/OpportunityList.js
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, Card, Tag, Typography, message, Popconfirm, Select } from 'antd';
-import { 
-  SearchOutlined, 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
-  DollarOutlined 
+import {
+  SearchOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  DollarOutlined
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
 const OpportunityList = () => {
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(false);
   const [opportunities, setOpportunities] = useState([]);
   const [searchText, setSearchText] = useState('');
@@ -51,17 +53,17 @@ const OpportunityList = () => {
         page_size: pagination.pageSize,
         search: searchText || undefined
       };
-      
+
       if (selectedStage) {
         params.stage = selectedStage;
       }
-      
+
       const response = await axios.get('/api/crm/opportunities/', { params });
       console.log('Opportunities API response:', response); // Pour déboguer
-      
+
       // Utiliser l'utilitaire pour extraire les résultats
       const data = extractResultsFromResponse(response);
-      
+
       // Mettre à jour la pagination avec les données de l'API
       if (response.data && response.data.count !== undefined) {
         setPagination({
@@ -69,7 +71,7 @@ const OpportunityList = () => {
           total: response.data.count
         });
       }
-      
+
       setOpportunities(data);
     } catch (error) {
       console.error("Erreur lors de la récupération des opportunités:", error);
@@ -83,7 +85,7 @@ const OpportunityList = () => {
           stage_name: 'Qualification',
           stage_color: '#1890ff',
           amount: 50000,
-          currency: 'MAD',
+          currency: currencyCode,
           probability: 10
         },
         {
@@ -93,7 +95,7 @@ const OpportunityList = () => {
           stage_name: 'Proposition',
           stage_color: '#52c41a',
           amount: 120000,
-          currency: 'MAD',
+          currency: currencyCode,
           probability: 30
         }
       ]);
@@ -164,7 +166,7 @@ const OpportunityList = () => {
       title: 'Montant',
       key: 'amount',
       render: (text, record) => (
-        `${record.amount ? record.amount.toLocaleString() : 0} ${record.currency || 'MAD'}`
+        `${record.amount ? record.amount.toLocaleString() : 0} ${record.currency || currencyCode}`
       ),
       sorter: (a, b) => (a.amount || 0) - (b.amount || 0)
     },
@@ -254,27 +256,27 @@ const OpportunityList = () => {
           summary={pageData => {
             let totalAmount = 0;
             let weightedAmount = 0;
-            
+
             pageData.forEach(({ amount, probability }) => {
               if (amount) {
                 totalAmount += amount;
                 weightedAmount += amount * (probability || 0) / 100;
               }
             });
-            
+
             return (
               <>
                 <Table.Summary.Row>
                   <Table.Summary.Cell index={0} colSpan={3}>Total</Table.Summary.Cell>
                   <Table.Summary.Cell index={1}>
-                    <Text strong>{totalAmount.toLocaleString()} MAD</Text>
+                    <Text strong>{totalAmount.toLocaleString()} {currencySymbol}</Text>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2} colSpan={3}></Table.Summary.Cell>
                 </Table.Summary.Row>
                 <Table.Summary.Row>
                   <Table.Summary.Cell index={0} colSpan={3}>Montant pondéré</Table.Summary.Cell>
                   <Table.Summary.Cell index={1}>
-                    <Text type="success" strong>{weightedAmount.toLocaleString()} MAD</Text>
+                    <Text type="success" strong>{weightedAmount.toLocaleString()} {currencySymbol}</Text>
                   </Table.Summary.Cell>
                   <Table.Summary.Cell index={2} colSpan={3}></Table.Summary.Cell>
                 </Table.Summary.Row>

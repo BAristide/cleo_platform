@@ -19,7 +19,7 @@ const { Title, Text } = Typography;
 const { RangePicker } = DatePicker;
 
 const Dashboard = () => {
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [dateRange, setDateRange] = useState([moment().startOf('month'), moment()]);
@@ -154,7 +154,7 @@ const Dashboard = () => {
       title: 'Montant',
       dataIndex: 'total_debit',
       key: 'total_debit',
-      render: (text) => `${parseFloat(text).toFixed(2)} MAD`,
+      render: (text) => `${parseFloat(text).toFixed(2)} ${currencySymbol}`,
     },
     {
       title: 'Statut',
@@ -193,7 +193,7 @@ const Dashboard = () => {
       title: 'Montant',
       dataIndex: 'amount',
       key: 'amount',
-      render: (text) => `${parseFloat(text).toFixed(2)} MAD`,
+      render: (text) => `${parseFloat(text).toFixed(2)} ${currencySymbol}`,
     },
     {
       title: 'Statut',

@@ -29,7 +29,7 @@ const ExecutiveDashboard = () => {
   const [period, setPeriod] = useState('month');
   const [recentActivity, setRecentActivity] = useState([]);
   const [moduleStats, setModuleStats] = useState({});
-  const { currencyCode } = useCurrency();
+  const { currencySymbol, currencyCode } = useCurrency();
   const { hasAccess } = useModuleAccess();
 
   useEffect(() => {

@@ -19,6 +19,7 @@ const { TextArea } = Input;
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [currencies, setCurrencies] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -35,6 +36,7 @@ const ProductList = () => {
   useEffect(() => {
     fetchProducts();
     fetchCurrencies();
+    fetchCategories();
   }, [statusFilter, pagination.current, pagination.pageSize]);
 
   const fetchProducts = async () => {
@@ -79,6 +81,16 @@ const ProductList = () => {
       setCurrencies(currenciesData);
     } catch (error) {
       console.error('Erreur lors de la recuperation des devises:', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get('/api/catalog/categories/');
+      const categoriesData = extractResultsFromResponse(response);
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Erreur lors de la recuperation des categories:', error);
     }
   };
 
@@ -140,7 +152,7 @@ const ProductList = () => {
   const showCreateModal = () => {
     setCurrentProduct(null);
     form.resetFields();
-    form.setFieldsValue({ is_active: true, tax_rate: 20 });
+    form.setFieldsValue({ is_active: true, tax_rate: 18, product_type: 'stockable' });
     setEditModalVisible(true);
   };
 
@@ -242,18 +254,42 @@ const ProductList = () => {
         <Table columns={columns} dataSource={products} rowKey="id" loading={loading} pagination={pagination} onChange={handleTableChange} locale={{ emptyText: 'Aucun produit trouve' }} />
       </Card>
 
-      <Modal title={currentProduct ? 'Modifier le produit' : 'Nouveau produit'} open={editModalVisible} onCancel={() => setEditModalVisible(false)} footer={null}>
+      <Modal title={currentProduct ? 'Modifier le produit' : 'Nouveau produit'} open={editModalVisible} onCancel={() => setEditModalVisible(false)} footer={null} width={700}>
         <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
           <Row gutter={16}>
             <Col span={12}><Form.Item name="name" label="Nom" rules={[{ required: true, message: 'Veuillez saisir le nom' }]}><Input /></Form.Item></Col>
             <Col span={12}><Form.Item name="reference" label="Reference" rules={[{ required: true, message: 'Veuillez saisir la reference' }]}><Input /></Form.Item></Col>
           </Row>
-          <Form.Item name="description" label="Description"><TextArea rows={3} /></Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="product_type" label="Type de produit" rules={[{ required: true, message: 'Requis' }]}>
+                <Select>
+                  <Option value="stockable">Stockable</Option>
+                  <Option value="service">Service</Option>
+                  <Option value="consumable">Consommable</Option>
+                </Select>
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="category" label="Categorie">
+                <Select allowClear showSearch optionFilterProp="children" placeholder="Selectionner une categorie">
+                  {categories.map(c => <Option key={c.id} value={c.id}>{c.code} - {c.name}</Option>)}
+                </Select>
+              </Form.Item>
+            </Col>
+          </Row>
+          <Form.Item name="description" label="Description"><TextArea rows={2} /></Form.Item>
           <Row gutter={16}>
             <Col span={8}><Form.Item name="unit_price" label="Prix unitaire" rules={[{ required: true, message: 'Requis' }, { type: 'number', min: 0, message: 'Positif' }]}><InputNumber style={{ width: '100%' }} step={0.01} precision={2} /></Form.Item></Col>
             <Col span={8}><Form.Item name="currency" label="Devise" rules={[{ required: true, message: 'Requis' }]}><Select>{currencies.map(c => <Option key={c.id} value={c.id}>{c.code}</Option>)}</Select></Form.Item></Col>
             <Col span={8}><Form.Item name="tax_rate" label="TVA (%)" rules={[{ required: true, message: 'Requis' }, { type: 'number', min: 0, max: 100, message: '0-100' }]}><InputNumber style={{ width: '100%' }} step={0.1} precision={2} /></Form.Item></Col>
           </Row>
+          <Row gutter={16}>
+            <Col span={8}><Form.Item name="unit_of_measure" label="Unite de mesure"><Input placeholder="unite" /></Form.Item></Col>
+            <Col span={8}><Form.Item name="stock_alert_threshold" label="Seuil alerte stock" rules={[{ type: 'number', min: 0 }]}><InputNumber style={{ width: '100%' }} step={1} precision={0} /></Form.Item></Col>
+            <Col span={8}><Form.Item name="weight" label="Poids (kg)" rules={[{ type: 'number', min: 0 }]}><InputNumber style={{ width: '100%' }} step={0.1} precision={3} /></Form.Item></Col>
+          </Row>
+          <Form.Item name="barcode" label="Code-barres"><Input placeholder="EAN13, UPC..." /></Form.Item>
           <Form.Item name="is_active" valuePropName="checked"><Switch checkedChildren="Actif" unCheckedChildren="Inactif" /></Form.Item>
           <Form.Item>
             <div style={{ textAlign: 'right' }}>

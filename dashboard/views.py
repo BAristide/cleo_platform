@@ -61,7 +61,7 @@ def executive_dashboard(request):
     prev_end = dates['prev_end']
 
     # ── Chiffre d'affaires ──
-    ca_filter = Q(state__in=['validated', 'paid'], doc_type='invoice')
+    ca_filter = Q(type='standard') & ~Q(payment_status='cancelled')
     ca_current = Invoice.objects.filter(
         ca_filter, date__gte=start, date__lte=now
     ).aggregate(total=Sum('total'))['total'] or Decimal('0')
@@ -84,9 +84,9 @@ def executive_dashboard(request):
     marge_brute = ca_current - achats_current
 
     # ── Créances clients ──
-    creances = Invoice.objects.filter(state='validated', doc_type='invoice').aggregate(
-        total=Sum(F('total') - F('amount_paid'))
-    )['total'] or Decimal('0')
+    creances = Invoice.objects.filter(
+        payment_status__in=['unpaid', 'partial', 'overdue'], type='standard'
+    ).aggregate(total=Sum(F('total') - F('amount_paid')))['total'] or Decimal('0')
 
     # ── Dettes fournisseurs ──
     dettes = SupplierInvoice.objects.filter(state='validated').aggregate(
@@ -96,9 +96,11 @@ def executive_dashboard(request):
     # ── Factures échues ──
     overdue_invoices = (
         Invoice.objects.filter(
-            state='validated', doc_type='invoice', due_date__lt=now.date()
+            payment_status__in=['unpaid', 'partial', 'overdue'],
+            type='standard',
+            due_date__lt=now.date(),
         )
-        .values('id', 'number', 'company_name', 'total', 'amount_paid', 'due_date')
+        .values('id', 'number', 'company__name', 'total', 'amount_paid', 'due_date')
         .order_by('due_date')[:10]
     )
 
@@ -108,7 +110,7 @@ def executive_dashboard(request):
             {
                 'id': inv['id'],
                 'number': inv['number'],
-                'client': inv['company_name'] or '—',
+                'client': inv.get('company__name') or '—',
                 'total': str(inv['total']),
                 'due': str(inv['total'] - inv['amount_paid']),
                 'due_date': inv['due_date'].isoformat() if inv['due_date'] else None,
@@ -119,16 +121,18 @@ def executive_dashboard(request):
         )
 
     overdue_total = Invoice.objects.filter(
-        state='validated', doc_type='invoice', due_date__lt=now.date()
+        payment_status__in=['unpaid', 'partial', 'overdue'],
+        type='standard',
+        due_date__lt=now.date(),
     ).aggregate(total=Sum(F('total') - F('amount_paid')))['total'] or Decimal('0')
 
     # ── Top 5 produits ──
     top_products = (
         InvoiceItem.objects.filter(
-            invoice__state__in=['validated', 'paid'],
-            invoice__doc_type='invoice',
+            invoice__type='standard',
             invoice__date__gte=start,
         )
+        .exclude(invoice__payment_status='cancelled')
         .values('product__name')
         .annotate(
             total_qty=Sum('quantity'),
@@ -148,17 +152,16 @@ def executive_dashboard(request):
 
     # ── Top 5 clients ──
     top_clients = (
-        Invoice.objects.filter(
-            state__in=['validated', 'paid'], doc_type='invoice', date__gte=start
-        )
-        .values('company_name')
+        Invoice.objects.filter(type='standard', date__gte=start)
+        .exclude(payment_status='cancelled')
+        .values('company__name')
         .annotate(total_ca=Sum('total'), invoice_count=Count('id'))
         .order_by('-total_ca')[:5]
     )
 
     top_clients_list = [
         {
-            'name': c['company_name'] or 'Divers',
+            'name': c.get('company__name') or 'Divers',
             'revenue': str(c['total_ca']),
             'invoices': c['invoice_count'],
         }

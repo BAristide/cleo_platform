@@ -142,8 +142,11 @@
                             <td style="padding-left: 10px;"><strong>Tél:</strong> {{ company_info.phone }}</td>
                         </tr>
                         <tr>
-                            <td><strong>RC:</strong> {{ company_info.rc }} - <strong>IF:</strong> {{ company_info.if_number }}</td>
-                            <td style="padding-left: 10px;"><strong>Patente:</strong> {{ company_info.patente }} - <strong>ICE:</strong> {{ company_info.ice }}</td>
+                            <td colspan="2">
+                                {% for lid in company_info.legal_ids %}
+                                    <strong>{{ lid.label }}:</strong> {{ lid.value }}{% if not forloop.last %} - {% endif %}
+                                {% endfor %}
+                            </td>
                         </tr>
                     </table>
                 </div>

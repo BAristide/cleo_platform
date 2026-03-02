@@ -227,6 +227,8 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
     """Serializer détaillé pour les devis."""
 
     items = QuoteItemSerializer(many=True, read_only=True)
+    company_name = serializers.SerializerMethodField()
+    contact_name = serializers.SerializerMethodField()
     status_display = serializers.SerializerMethodField()
     discount_amount = serializers.SerializerMethodField()
     subtotal_after_discount = serializers.SerializerMethodField()
@@ -237,7 +239,9 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
             'id',
             'number',
             'company',
+            'company_name',
             'contact',
+            'contact_name',
             'opportunity',
             'date',
             'expiration_date',
@@ -281,6 +285,14 @@ class QuoteDetailSerializer(serializers.ModelSerializer):
             'email_sent',
             'email_sent_date',
         ]
+
+    def get_company_name(self, obj):
+        return obj.company.name if obj.company else None
+
+    def get_contact_name(self, obj):
+        return (
+            f'{obj.contact.first_name} {obj.contact.last_name}' if obj.contact else None
+        )
 
     def get_status_display(self, obj):
         status_map = {
@@ -446,6 +458,8 @@ class OrderDetailSerializer(serializers.ModelSerializer):
     """Serializer détaillé pour les commandes."""
 
     items = OrderItemSerializer(many=True, read_only=True)
+    company_name = serializers.SerializerMethodField()
+    contact_name = serializers.SerializerMethodField()
     status_display = serializers.SerializerMethodField()
     discount_amount = serializers.SerializerMethodField()
     subtotal_after_discount = serializers.SerializerMethodField()
@@ -461,7 +475,9 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             'id',
             'number',
             'company',
+            'company_name',
             'contact',
+            'contact_name',
             'opportunity',
             'quote',
             'date',
@@ -512,6 +528,14 @@ class OrderDetailSerializer(serializers.ModelSerializer):
             'email_sent',
             'email_sent_date',
         ]
+
+    def get_company_name(self, obj):
+        return obj.company.name if obj.company else None
+
+    def get_contact_name(self, obj):
+        return (
+            f'{obj.contact.first_name} {obj.contact.last_name}' if obj.contact else None
+        )
 
     def get_status_display(self, obj):
         status_map = {
@@ -765,6 +789,8 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
 
     items = InvoiceItemSerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
+    company_name = serializers.SerializerMethodField()
+    contact_name = serializers.SerializerMethodField()
     payment_status_display = serializers.SerializerMethodField()
     payment_terms_display = serializers.SerializerMethodField()
     amount_due = serializers.SerializerMethodField()
@@ -784,7 +810,9 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             'type',
             'type_display',
             'company',
+            'company_name',
             'contact',
+            'contact_name',
             'opportunity',
             'quote',
             'order',
@@ -836,6 +864,14 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             'email_sent',
             'email_sent_date',
         ]
+
+    def get_company_name(self, obj):
+        return obj.company.name if obj.company else None
+
+    def get_contact_name(self, obj):
+        return (
+            f'{obj.contact.first_name} {obj.contact.last_name}' if obj.contact else None
+        )
 
     def get_type_display(self, obj):
         type_map = {

@@ -259,8 +259,8 @@ const OpportunityList = () => {
 
             pageData.forEach(({ amount, probability }) => {
               if (amount) {
-                totalAmount += amount;
-                weightedAmount += amount * (probability || 0) / 100;
+                totalAmount += parseFloat(amount) || 0;
+                weightedAmount += (parseFloat(amount) || 0) * (probability || 0) / 100;
               }
             });
 

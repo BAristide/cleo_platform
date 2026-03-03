@@ -153,9 +153,6 @@ const QuoteList = () => {
         setContactOptions([]);
       }
 
-
-
-
     } catch (error) {
       console.error('Erreur lors de la récupération des contacts:', error);
       message.error('Impossible de charger les contacts');
@@ -576,11 +573,21 @@ const QuoteList = () => {
           summary={pageData => {
             if (pageData.length === 0) return null;
 
-            // Calculer les statistiques
+            // Calculer le total converti en devise locale
+            const defaultCurr = currencies.find(c => c.is_default);
+            const defaultCode = defaultCurr?.code || '';
             let totalAmount = 0;
 
             pageData.forEach(item => {
-              totalAmount += Number(item.total || 0);
+              const amount = Number(item.total || 0);
+              const itemCurrCode = item.currency_code || defaultCode;
+              if (itemCurrCode !== defaultCode) {
+                const itemCurr = currencies.find(c => c.code === itemCurrCode);
+                const rate = parseFloat(itemCurr?.exchange_rate) || 1;
+                totalAmount += amount * rate;
+              } else {
+                totalAmount += amount;
+              }
             });
 
             return (
@@ -589,7 +596,7 @@ const QuoteList = () => {
                   <strong>Total de la page</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={1}>
-                  <strong>{totalAmount.toLocaleString()} {pageData[0]?.currency_code || ''}</strong>
+                  <strong>{totalAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {defaultCode}</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={2} colSpan={2}></Table.Summary.Cell>
               </Table.Summary.Row>

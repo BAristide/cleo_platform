@@ -1,3 +1,4 @@
+<!-- sales/templates/sales/invoice_pdf.html -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -255,48 +256,48 @@
                     {% if not invoice.is_tax_exempt %}
                     <td class="text-right">{{ item.tax_rate }}%</td>
                     {% endif %}
-                    <td class="text-right">{{ item.subtotal }} {{ invoice.currency.code }}</td>
+                    <td class="text-right">{{ item.subtotal|floatformat:2 }} {{ invoice.currency.code }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
             <tfoot>
                 <tr>
-                    <td colspan="{% if invoice.is_tax_exempt %}4{% else %}5{% endif %}"></td>
+                    <td colspan="{% if invoice.is_tax_exempt %}3{% else %}4{% endif %}"></td>
                     <td class="text-right">Sous-total HT:</td>
                     <td class="text-right">{{ invoice.subtotal }} {{ invoice.currency.code }}</td>
                 </tr>
                 {% if invoice.discount_percentage > 0 %}
                 <tr>
-                    <td colspan="{% if invoice.is_tax_exempt %}4{% else %}5{% endif %}"></td>
+                    <td colspan="{% if invoice.is_tax_exempt %}3{% else %}4{% endif %}"></td>
                     <td class="text-right">Remise ({{ invoice.discount_percentage }}%):</td>
                     <td class="text-right">-{{ invoice.discount_amount }} {{ invoice.currency.code }}</td>
                 </tr>
                 <tr>
-                    <td colspan="{% if invoice.is_tax_exempt %}4{% else %}5{% endif %}"></td>
+                    <td colspan="{% if invoice.is_tax_exempt %}3{% else %}4{% endif %}"></td>
                     <td class="text-right">Total après remise:</td>
                     <td class="text-right">{{ invoice.subtotal_after_discount }} {{ invoice.currency.code }}</td>
                 </tr>
                 {% endif %}
                 {% if not invoice.is_tax_exempt %}
                 <tr>
-                    <td colspan="5"></td>
+                    <td colspan="4"></td>
                     <td class="text-right">TVA:</td>
                     <td class="text-right">{{ invoice.tax_amount }} {{ invoice.currency.code }}</td>
                 </tr>
                 {% endif %}
                 <tr>
-                    <td colspan="{% if invoice.is_tax_exempt %}4{% else %}5{% endif %}"></td>
+                    <td colspan="{% if invoice.is_tax_exempt %}3{% else %}4{% endif %}"></td>
                     <td class="text-right"><strong>Total {{ invoice.is_tax_exempt|yesno:",TTC" }}:</strong></td>
                     <td class="text-right"><strong>{{ invoice.total }} {{ invoice.currency.code }}</strong></td>
                 </tr>
                 {% if invoice.amount_paid > 0 %}
                 <tr>
-                    <td colspan="{% if invoice.is_tax_exempt %}4{% else %}5{% endif %}"></td>
+                    <td colspan="{% if invoice.is_tax_exempt %}3{% else %}4{% endif %}"></td>
                     <td class="text-right">Montant payé:</td>
                     <td class="text-right">{{ invoice.amount_paid }} {{ invoice.currency.code }}</td>
                 </tr>
                 <tr>
-                    <td colspan="{% if invoice.is_tax_exempt %}4{% else %}5{% endif %}"></td>
+                    <td colspan="{% if invoice.is_tax_exempt %}3{% else %}4{% endif %}"></td>
                     <td class="text-right">Reste à payer:</td>
                     <td class="text-right">{{ invoice.amount_due }} {{ invoice.currency.code }}</td>
                 </tr>

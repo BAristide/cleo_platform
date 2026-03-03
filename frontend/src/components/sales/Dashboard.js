@@ -19,7 +19,17 @@ const Dashboard = () => {
   const [recentInvoices, setRecentInvoices] = useState([]);
   const [recentQuotes, setRecentQuotes] = useState([]);
   const { currencySymbol, currencyCode } = useCurrency();
+  const [rateMap, setRateMap] = useState({});
 
+  // Convertit un montant vers la devise locale via le taux de change
+  const convertToLocal = (amount, docCurrencyCode, rates) => {
+    const map = rates || rateMap;
+    if (!docCurrencyCode || docCurrencyCode === currencyCode || !map[docCurrencyCode]) {
+      return amount;
+    }
+    const rate = parseFloat(map[docCurrencyCode]) || 1;
+    return amount * rate;
+  };
 
   const extractResults = (response) => {
     return response?.data?.results || [];
@@ -31,19 +41,30 @@ const Dashboard = () => {
       setError(null);
 
       try {
+        // Charger les taux de change pour conversion
+        let rates = {};
+        try {
+          const currenciesRes = await axios.get('/api/core/currencies/');
+          const currenciesData = currenciesRes?.data?.results || currenciesRes?.data || [];
+          currenciesData.forEach(c => { rates[c.code] = parseFloat(c.exchange_rate) || 1; });
+          setRateMap(rates);
+        } catch (e) {
+          console.warn('Impossible de charger les devises pour conversion:', e);
+        }
+
         const invoicesResponse = await axios.get('/api/sales/invoices/');
         console.log('Réponse invoices:', invoicesResponse);
         const invoicesData = extractResults(invoicesResponse);
 
         const invoiceStats = {
           count: invoicesData.length || 0,
-          amount: invoicesData.reduce((acc, invoice) => acc + (parseFloat(invoice.total) || 0), 0),
+          amount: invoicesData.reduce((acc, inv) => acc + convertToLocal(parseFloat(inv.total) || 0, inv.currency_code, rates), 0),
           paid: invoicesData
-            .filter(invoice => invoice.payment_status === 'paid')
-            .reduce((acc, invoice) => acc + (parseFloat(invoice.total) || 0), 0),
+            .filter(inv => inv.payment_status === 'paid')
+            .reduce((acc, inv) => acc + convertToLocal(parseFloat(inv.total) || 0, inv.currency_code, rates), 0),
           overdue: invoicesData
-            .filter(invoice => invoice.payment_status === 'overdue')
-            .reduce((acc, invoice) => acc + (parseFloat(invoice.total) || 0), 0)
+            .filter(inv => inv.payment_status === 'overdue')
+            .reduce((acc, inv) => acc + convertToLocal(parseFloat(inv.total) || 0, inv.currency_code, rates), 0)
         };
 
         const recentInvoicesList = [...invoicesData].sort((a, b) =>
@@ -57,7 +78,7 @@ const Dashboard = () => {
 
         const quoteStats = {
           count: quotesData.length || 0,
-          amount: quotesData.reduce((acc, quote) => acc + (parseFloat(quote.total) || 0), 0)
+          amount: quotesData.reduce((acc, q) => acc + convertToLocal(parseFloat(q.total) || 0, q.currency_code, rates), 0)
         };
 
         const recentQuotesList = [...quotesData].sort((a, b) =>
@@ -72,7 +93,7 @@ const Dashboard = () => {
 
           const orderStats = {
             count: ordersData.length || 0,
-            amount: ordersData.reduce((acc, order) => acc + (parseFloat(order.total) || 0), 0)
+            amount: ordersData.reduce((acc, o) => acc + convertToLocal(parseFloat(o.total) || 0, o.currency_code, rates), 0)
           };
 
           setStats({

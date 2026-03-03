@@ -101,9 +101,4 @@ class Product(models.Model):
         return f'{self.reference} - {self.name}'
 
     def save(self, *args, **kwargs):
-        """Initialise le taux de TVA depuis la configuration si non défini."""
-        if not self.tax_rate or self.tax_rate == 0:
-            from core.services import get_default_tax_rate
-
-            self.tax_rate = get_default_tax_rate()
         super().save(*args, **kwargs)

@@ -270,6 +270,20 @@ const QuoteForm = () => {
       return;
     }
 
+    // Convertir le prix si devise du produit ≠ devise du document
+    let unitPrice = parseFloat(product.unit_price);
+    const documentCurrencyId = form.getFieldValue('currency');
+    const productCurrency = currencies.find(c => c.id === product.currency);
+    const documentCurrency = currencies.find(c => c.id === documentCurrencyId);
+    if (product.currency !== documentCurrencyId && productCurrency && documentCurrency) {
+      const rateFrom = parseFloat(productCurrency.exchange_rate) || 1;
+      const rateTo = parseFloat(documentCurrency.exchange_rate) || 1;
+      unitPrice = Math.round((unitPrice * rateFrom / rateTo) * 100) / 100;
+    }
+
+    // TVA à 0 si document exonéré de TVA
+    const itemTaxRate = isExempt ? 0 : parseFloat(product.tax_rate);
+
     // Créer le nouvel élément
     const newItem = {
       id: `temp_${Date.now()}`,  // ID temporaire pour l'UI
@@ -278,11 +292,11 @@ const QuoteForm = () => {
       product_reference: product.reference,
       description: currentDescription || product.description,
       quantity: currentQuantity,
-      unit_price: product.unit_price,
-      tax_rate: product.tax_rate,
-      subtotal: product.unit_price * currentQuantity,
-      tax_amount: isExempt ? 0 : (product.unit_price * currentQuantity * (product.tax_rate / 100)),
-      total: product.unit_price * currentQuantity * (isExempt ? 1 : (1 + product.tax_rate / 100))
+      unit_price: unitPrice,
+      tax_rate: itemTaxRate,
+      subtotal: unitPrice * currentQuantity,
+      tax_amount: isExempt ? 0 : (unitPrice * currentQuantity * (itemTaxRate / 100)),
+      total: unitPrice * currentQuantity * (isExempt ? 1 : (1 + itemTaxRate / 100))
     };
 
     // Ajouter l'élément à la liste
@@ -304,6 +318,25 @@ const QuoteForm = () => {
     setQuoteItems(updatedItems);
 
     // Recalculer les totaux
+    calculateTotals(updatedItems, form.getFieldValue('discount_percentage') || 0, isExempt);
+  };
+
+  const handleUnitPriceChange = (itemId, newPrice) => {
+    const updatedItems = quoteItems.map(item => {
+      if (item.id === itemId) {
+        const price = newPrice || 0;
+        const itemTaxRate = isExempt ? 0 : item.tax_rate;
+        return {
+          ...item,
+          unit_price: price,
+          subtotal: price * item.quantity,
+          tax_amount: price * item.quantity * (itemTaxRate / 100),
+          total: price * item.quantity * (1 + itemTaxRate / 100)
+        };
+      }
+      return item;
+    });
+    setQuoteItems(updatedItems);
     calculateTotals(updatedItems, form.getFieldValue('discount_percentage') || 0, isExempt);
   };
 
@@ -404,7 +437,18 @@ const QuoteForm = () => {
       align: 'right',
       render: (text, record) => {
         const currency = currencies.find(c => c.id === form.getFieldValue('currency'));
-        return `${text} ${currency ? currency.code : ''}`;
+        return (
+          <Space size={4}>
+            <InputNumber
+              value={text}
+              min={0}
+              precision={2}
+              style={{ width: 120 }}
+              onChange={(value) => handleUnitPriceChange(record.id, value)}
+            />
+            <span>{currency ? currency.code : ''}</span>
+          </Space>
+        );
       },
     },
     {

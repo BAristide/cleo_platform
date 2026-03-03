@@ -40,10 +40,22 @@ const OrderList = () => {
   });
 
   const navigate = useNavigate();
+  const [currencies, setCurrencies] = useState([]);
 
   useEffect(() => {
     fetchOrders();
+    fetchCurrencies();
   }, [statusFilter, pagination.current, pagination.pageSize]);
+
+  const fetchCurrencies = async () => {
+    try {
+      const response = await axios.get('/api/core/currencies/');
+      const data = extractResultsFromResponse(response);
+      setCurrencies(data);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des devises:', error);
+    }
+  };
 
   const fetchOrders = async () => {
     setLoading(true);
@@ -69,10 +81,10 @@ const OrderList = () => {
       }
 
       const response = await axios.get('/api/sales/orders/', { params });
-      
+
       // Extraire les résultats avec l'utilitaire
       const ordersData = extractResultsFromResponse(response);
-      
+
       // Mettre à jour la pagination avec la réponse
       if (response.data && response.data.count !== undefined) {
         setPagination({
@@ -80,7 +92,7 @@ const OrderList = () => {
           total: response.data.count,
         });
       }
-      
+
       setOrders(ordersData);
     } catch (error) {
       console.error('Erreur lors de la récupération des commandes:', error);
@@ -156,7 +168,7 @@ const OrderList = () => {
 
   const handleCreateDepositInvoice = async () => {
     if (!selectedOrderId) return;
-    
+
     setActionLoading(true);
     try {
       const response = await axios.post(`/api/sales/orders/${selectedOrderId}/create_deposit_invoice/`, {
@@ -164,7 +176,7 @@ const OrderList = () => {
       });
       message.success(`Facture d'acompte créée avec succès (${depositPercentage}%)`);
       setCreateDepositModal(false);
-      
+
       // Si la réponse contient l'ID de la facture, naviguer vers la page de détail
       if (response.data && response.data.invoice && response.data.invoice.id) {
         navigate(`/sales/invoices/${response.data.invoice.id}`);
@@ -190,7 +202,7 @@ const OrderList = () => {
     try {
       const response = await axios.post(`/api/sales/orders/${id}/convert_to_invoice/`);
       message.success('Commande convertie en facture avec succès');
-      
+
       // Si la réponse contient l'ID de la facture, naviguer vers la page de détail
       if (response.data && response.data.invoice && response.data.invoice.id) {
         navigate(`/sales/invoices/${response.data.invoice.id}`);
@@ -322,10 +334,10 @@ const OrderList = () => {
           </Button>
 
           {record.status === 'draft' && (
-            <Button 
-              size="small" 
-              type="primary" 
-              icon={<CheckOutlined />} 
+            <Button
+              size="small"
+              type="primary"
+              icon={<CheckOutlined />}
               onClick={() => handleConfirmOrder(record.id)}
               loading={actionLoading}
             >
@@ -334,10 +346,10 @@ const OrderList = () => {
           )}
 
           {['draft', 'confirmed', 'in_progress'].includes(record.status) && !record.has_final_invoice && (
-            <Button 
-              size="small" 
-              danger 
-              icon={<CloseOutlined />} 
+            <Button
+              size="small"
+              danger
+              icon={<CloseOutlined />}
               onClick={() => handleCancelOrder(record.id)}
               loading={actionLoading}
             >
@@ -348,22 +360,22 @@ const OrderList = () => {
           {record.status === 'confirmed' && (
             <>
               {record.can_create_deposit_invoice && (
-                <Button 
-                  size="small" 
-                  type="primary" 
-                  icon={<BankOutlined />} 
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<BankOutlined />}
                   onClick={() => showCreateDepositModal(record)}
                   loading={actionLoading}
                 >
                   Acompte
                 </Button>
               )}
-              
+
               {record.can_create_final_invoice && (
-                <Button 
-                  size="small" 
-                  type="primary" 
-                  icon={<ShopOutlined />} 
+                <Button
+                  size="small"
+                  type="primary"
+                  icon={<ShopOutlined />}
                   onClick={() => handleConvertToInvoice(record.id)}
                   loading={actionLoading}
                 >
@@ -373,18 +385,18 @@ const OrderList = () => {
             </>
           )}
 
-          <Button 
-            size="small" 
-            icon={<FileOutlined />} 
+          <Button
+            size="small"
+            icon={<FileOutlined />}
             onClick={() => handleGeneratePdf(record.id)}
             loading={actionLoading}
           >
             PDF
           </Button>
 
-          <Button 
-            size="small" 
-            icon={<MailOutlined />} 
+          <Button
+            size="small"
+            icon={<MailOutlined />}
             onClick={() => handleSendByEmail(record.id)}
             loading={actionLoading}
           >
@@ -463,21 +475,30 @@ const OrderList = () => {
           locale={{ emptyText: 'Aucune commande trouvée' }}
           summary={pageData => {
             if (pageData.length === 0) return null;
-            
-            // Calculer les statistiques
+
+            const defaultCurr = currencies.find(c => c.is_default);
+            const defaultCode = defaultCurr?.code || '';
             let totalAmount = 0;
-            
+
             pageData.forEach(item => {
-              totalAmount += Number(item.total || 0);
+              const amount = Number(item.total || 0);
+              const itemCurrCode = item.currency_code || defaultCode;
+              if (itemCurrCode !== defaultCode) {
+                const itemCurr = currencies.find(c => c.code === itemCurrCode);
+                const rate = parseFloat(itemCurr?.exchange_rate) || 1;
+                totalAmount += amount * rate;
+              } else {
+                totalAmount += amount;
+              }
             });
-            
+
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={5}>
                   <strong>Total de la page</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={1}>
-                  <strong>{totalAmount.toLocaleString()} {pageData[0]?.currency_code || ''}</strong>
+                  <strong>{totalAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {defaultCode}</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={2} colSpan={2}></Table.Summary.Cell>
               </Table.Summary.Row>
@@ -510,7 +531,7 @@ const OrderList = () => {
             />
           </Form.Item>
         </Form>
-        
+
         {selectedOrderId && (
           <div style={{ marginTop: 16 }}>
             <Alert
@@ -519,7 +540,7 @@ const OrderList = () => {
                 <>
                   <p>
                     Montant de l'acompte ({depositPercentage}%): {
-                      ((orders.find(order => order.id === selectedOrderId)?.total * depositPercentage) / 100).toFixed(2) 
+                      ((orders.find(order => order.id === selectedOrderId)?.total * depositPercentage) / 100).toFixed(2)
                     } {
                       orders.find(order => order.id === selectedOrderId)?.currency_code
                     }

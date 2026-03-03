@@ -1,3 +1,4 @@
+// frontend/src/components/dashboard/ExecutiveDashboard.js
 // src/components/dashboard/ExecutiveDashboard.js
 import React, { useEffect, useState } from 'react';
 import { Spin, Alert, Select } from 'antd';
@@ -110,7 +111,7 @@ const ExecutiveDashboard = () => {
     );
   }
 
-  const fmt = (val) => parseFloat(val || 0).toLocaleString('fr-MA', { minimumFractionDigits: 2 });
+  const fmt = (val) => parseFloat(val || 0).toLocaleString('fr-MA', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const evo = parseFloat(data?.revenue_evolution || 0);
 
   const kpis = [

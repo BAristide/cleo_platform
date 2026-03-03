@@ -32,10 +32,22 @@ const InvoiceList = () => {
   });
 
   const navigate = useNavigate();
+  const [currencies, setCurrencies] = useState([]);
 
   useEffect(() => {
     fetchInvoices();
+    fetchCurrencies();
   }, [statusFilter, typeFilter, pagination.current, pagination.pageSize]);
+
+  const fetchCurrencies = async () => {
+    try {
+      const response = await axios.get('/api/core/currencies/');
+      const data = extractResultsFromResponse(response);
+      setCurrencies(data);
+    } catch (error) {
+      console.error('Erreur lors de la récupération des devises:', error);
+    }
+  };
 
   const fetchInvoices = async () => {
     setLoading(true);
@@ -232,7 +244,7 @@ const InvoiceList = () => {
       key: 'due_date',
       render: (text, record) => {
         if (!text) return '-';
-        
+
         const dueDate = moment(text);
         const now = moment();
         const isOverdue = dueDate.isBefore(now) && record.payment_status === 'unpaid';
@@ -420,13 +432,24 @@ const InvoiceList = () => {
           summary={pageData => {
             if (pageData.length === 0) return null;
 
-            // Calculer les statistiques
+            const defaultCurr = currencies.find(c => c.is_default);
+            const defaultCode = defaultCurr?.code || '';
             let totalAmount = 0;
             let totalDue = 0;
 
             pageData.forEach(item => {
-              totalAmount += Number(item.total || 0);
-              totalDue += Number(item.amount_due || 0);
+              const amount = Number(item.total || 0);
+              const due = Number(item.amount_due || 0);
+              const itemCurrCode = item.currency_code || defaultCode;
+              if (itemCurrCode !== defaultCode) {
+                const itemCurr = currencies.find(c => c.code === itemCurrCode);
+                const rate = parseFloat(itemCurr?.exchange_rate) || 1;
+                totalAmount += amount * rate;
+                totalDue += due * rate;
+              } else {
+                totalAmount += amount;
+                totalDue += due;
+              }
             });
 
             return (
@@ -435,10 +458,10 @@ const InvoiceList = () => {
                   <strong>Total de la page</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={1}>
-                  <strong>{totalAmount.toLocaleString()} {pageData[0]?.currency_code || ''}</strong>
+                  <strong>{totalAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {defaultCode}</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={2}>
-                  <strong>{totalDue.toLocaleString()} {pageData[0]?.currency_code || ''}</strong>
+                  <strong>{totalDue.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {defaultCode}</strong>
                 </Table.Summary.Cell>
                 <Table.Summary.Cell index={3} colSpan={2}></Table.Summary.Cell>
               </Table.Summary.Row>

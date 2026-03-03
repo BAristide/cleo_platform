@@ -1,3 +1,4 @@
+# dashboard/views.py
 from datetime import timedelta
 from decimal import Decimal
 
@@ -62,13 +63,19 @@ def executive_dashboard(request):
 
     # ── Chiffre d'affaires ──
     ca_filter = Q(type='standard') & ~Q(payment_status='cancelled')
-    ca_current = Invoice.objects.filter(
-        ca_filter, date__gte=start, date__lte=now
-    ).aggregate(total=Sum('total'))['total'] or Decimal('0')
+    ca_current = (
+        Invoice.objects.filter(ca_filter, date__gte=start, date__lte=now).aggregate(
+            total=Sum(F('total') * F('currency__exchange_rate'))
+        )['total']
+        or Decimal('0')
+    ).quantize(Decimal('0.01'))
 
-    ca_previous = Invoice.objects.filter(
-        ca_filter, date__gte=prev_start, date__lte=prev_end
-    ).aggregate(total=Sum('total'))['total'] or Decimal('0')
+    ca_previous = (
+        Invoice.objects.filter(
+            ca_filter, date__gte=prev_start, date__lte=prev_end
+        ).aggregate(total=Sum(F('total') * F('currency__exchange_rate')))['total']
+        or Decimal('0')
+    ).quantize(Decimal('0.01'))
 
     ca_evolution = Decimal('0')
     if ca_previous > 0:
@@ -84,9 +91,14 @@ def executive_dashboard(request):
     marge_brute = ca_current - achats_current
 
     # ── Créances clients ──
-    creances = Invoice.objects.filter(
-        payment_status__in=['unpaid', 'partial', 'overdue'], type='standard'
-    ).aggregate(total=Sum(F('total') - F('amount_paid')))['total'] or Decimal('0')
+    creances = (
+        Invoice.objects.filter(
+            payment_status__in=['unpaid', 'partial', 'overdue'], type='standard'
+        ).aggregate(
+            total=Sum((F('total') - F('amount_paid')) * F('currency__exchange_rate'))
+        )['total']
+        or Decimal('0')
+    ).quantize(Decimal('0.01'))
 
     # ── Dettes fournisseurs ──
     dettes = SupplierInvoice.objects.filter(state='validated').aggregate(
@@ -120,11 +132,16 @@ def executive_dashboard(request):
             }
         )
 
-    overdue_total = Invoice.objects.filter(
-        payment_status__in=['unpaid', 'partial', 'overdue'],
-        type='standard',
-        due_date__lt=now.date(),
-    ).aggregate(total=Sum(F('total') - F('amount_paid')))['total'] or Decimal('0')
+    overdue_total = (
+        Invoice.objects.filter(
+            payment_status__in=['unpaid', 'partial', 'overdue'],
+            type='standard',
+            due_date__lt=now.date(),
+        ).aggregate(
+            total=Sum((F('total') - F('amount_paid')) * F('currency__exchange_rate'))
+        )['total']
+        or Decimal('0')
+    ).quantize(Decimal('0.01'))
 
     # ── Top 5 produits ──
     top_products = (
@@ -136,7 +153,9 @@ def executive_dashboard(request):
         .values('product__name')
         .annotate(
             total_qty=Sum('quantity'),
-            total_revenue=Sum(F('quantity') * F('unit_price')),
+            total_revenue=Sum(
+                F('quantity') * F('unit_price') * F('invoice__currency__exchange_rate')
+            ),
         )
         .order_by('-total_revenue')[:5]
     )
@@ -155,7 +174,10 @@ def executive_dashboard(request):
         Invoice.objects.filter(type='standard', date__gte=start)
         .exclude(payment_status='cancelled')
         .values('company__name')
-        .annotate(total_ca=Sum('total'), invoice_count=Count('id'))
+        .annotate(
+            total_ca=Sum(F('total') * F('currency__exchange_rate')),
+            invoice_count=Count('id'),
+        )
         .order_by('-total_ca')[:5]
     )
 
@@ -201,9 +223,12 @@ def executive_dashboard(request):
         else:
             m_end = m_start.replace(month=m_start.month + 1)
 
-        month_ca = Invoice.objects.filter(
-            ca_filter, date__gte=m_start, date__lt=m_end
-        ).aggregate(total=Sum('total'))['total'] or Decimal('0')
+        month_ca = (
+            Invoice.objects.filter(
+                ca_filter, date__gte=m_start, date__lt=m_end
+            ).aggregate(total=Sum(F('total') * F('currency__exchange_rate')))['total']
+            or Decimal('0')
+        ).quantize(Decimal('0.01'))
 
         month_achats = SupplierInvoice.objects.filter(
             state__in=['validated', 'paid'], date__gte=m_start, date__lt=m_end

@@ -1,7 +1,7 @@
 import mimetypes
 from decimal import Decimal
 
-from django.db.models import Count, Sum
+from django.db.models import Count, F, Sum
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from rest_framework import permissions, status, viewsets
@@ -174,6 +174,9 @@ class ReceptionViewSet(viewsets.ModelViewSet):
                 continue
 
             # Créer le mouvement stock IN
+            from django.contrib.contenttypes.models import ContentType
+
+            reception_ct = ContentType.objects.get_for_model(Reception)
             StockMove.objects.create(
                 product=item.product,
                 warehouse=reception.warehouse,
@@ -181,10 +184,10 @@ class ReceptionViewSet(viewsets.ModelViewSet):
                 quantity=item.quantity_received,
                 unit_cost=item.purchase_order_item.unit_price,
                 reference=f'REC-{reception.number}',
-                source_document_type='reception',
-                source_document_id=reception.pk,
+                content_type=reception_ct,
+                object_id=reception.pk,
                 date=now,
-                notes=f'Réception {reception.number} — BC {reception.purchase_order.number}',
+                notes=f'Reception {reception.number} -- BC {reception.purchase_order.number}',
                 created_by=request.user,
             )
             moves_created += 1
@@ -661,14 +664,20 @@ def dashboard_view(request):
     po_by_state = {item['state']: item['count'] for item in po_stats}
 
     # Total achats (factures validées + payées)
-    total_purchases = SupplierInvoice.objects.filter(
-        state__in=['validated', 'paid']
-    ).aggregate(total=Sum('total'))['total'] or Decimal('0')
+    total_purchases = (
+        SupplierInvoice.objects.filter(state__in=['validated', 'paid']).aggregate(
+            total=Sum(F('total') * F('currency__exchange_rate'))
+        )['total']
+        or Decimal('0')
+    ).quantize(Decimal('0.01'))
 
     # Dettes fournisseurs (montant dû)
-    total_due = SupplierInvoice.objects.filter(state='validated').aggregate(
-        total=Sum('amount_due')
-    )['total'] or Decimal('0')
+    total_due = (
+        SupplierInvoice.objects.filter(state='validated').aggregate(
+            total=Sum(F('amount_due') * F('currency__exchange_rate'))
+        )['total']
+        or Decimal('0')
+    ).quantize(Decimal('0.01'))
 
     # Réceptions en attente
     pending_receptions = Reception.objects.filter(state='draft').count()

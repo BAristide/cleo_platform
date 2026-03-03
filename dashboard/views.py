@@ -84,9 +84,12 @@ def executive_dashboard(request):
         )
 
     # ── Marge brute ──
-    achats_current = SupplierInvoice.objects.filter(
-        state__in=['validated', 'paid'], date__gte=start, date__lte=now
-    ).aggregate(total=Sum('total'))['total'] or Decimal('0')
+    achats_current = (
+        SupplierInvoice.objects.filter(
+            state__in=['validated', 'paid'], date__gte=start, date__lte=now
+        ).aggregate(total=Sum(F('total') * F('currency__exchange_rate')))['total']
+        or Decimal('0')
+    ).quantize(Decimal('0.01'))
 
     marge_brute = ca_current - achats_current
 
@@ -101,9 +104,12 @@ def executive_dashboard(request):
     ).quantize(Decimal('0.01'))
 
     # ── Dettes fournisseurs ──
-    dettes = SupplierInvoice.objects.filter(state='validated').aggregate(
-        total=Sum('amount_due')
-    )['total'] or Decimal('0')
+    dettes = (
+        SupplierInvoice.objects.filter(state='validated').aggregate(
+            total=Sum(F('amount_due') * F('currency__exchange_rate'))
+        )['total']
+        or Decimal('0')
+    ).quantize(Decimal('0.01'))
 
     # ── Factures échues ──
     overdue_invoices = (
@@ -230,9 +236,12 @@ def executive_dashboard(request):
             or Decimal('0')
         ).quantize(Decimal('0.01'))
 
-        month_achats = SupplierInvoice.objects.filter(
-            state__in=['validated', 'paid'], date__gte=m_start, date__lt=m_end
-        ).aggregate(total=Sum('total'))['total'] or Decimal('0')
+        month_achats = (
+            SupplierInvoice.objects.filter(
+                state__in=['validated', 'paid'], date__gte=m_start, date__lt=m_end
+            ).aggregate(total=Sum(F('total') * F('currency__exchange_rate')))['total']
+            or Decimal('0')
+        ).quantize(Decimal('0.01'))
 
         monthly_revenue.append(
             {

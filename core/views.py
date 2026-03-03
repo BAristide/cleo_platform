@@ -513,6 +513,39 @@ class SetupCreateView(APIView):
         except Exception as e:
             logger.warning(f'Données CRM non initialisées: {e}')
 
+        # ── Entrepôt par défaut ────────────────────────────────────────
+        try:
+            from inventory.models import Warehouse
+
+            WAREHOUSE_DEFAULTS = {
+                'MA': {
+                    'code': 'DEP-001',
+                    'name': 'Dépôt Principal',
+                    'address': 'Casablanca, Maroc',
+                },
+                'OHADA': {
+                    'code': 'DEP-001',
+                    'name': 'Dépôt Principal',
+                    'address': "Abidjan, Côte d'Ivoire",
+                },
+                'FR': {
+                    'code': 'DEP-001',
+                    'name': 'Entrepôt Principal',
+                    'address': 'France',
+                },
+            }
+            wh_data = WAREHOUSE_DEFAULTS.get(locale_pack, WAREHOUSE_DEFAULTS['FR'])
+            Warehouse.objects.get_or_create(
+                code=wh_data['code'],
+                defaults={
+                    'name': wh_data['name'],
+                    'address': wh_data['address'],
+                    'is_default': True,
+                },
+            )
+        except Exception as e:
+            logger.warning(f'Entrepôt par défaut non créé: {e}')
+
         demo_loaded = False
         if install_demo:
             try:

@@ -11,15 +11,43 @@ export default function PurchaseOrderForm() {
     supplier: '', currency: '', date: new Date().toISOString().slice(0, 10),
     expected_delivery_date: '', notes: ''
   });
-  const [items, setItems] = useState([{ product: '', description: '', quantity: 1, unit_price: 0, tax_rate: 20 }]);
+  const [items, setItems] = useState([{ product: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0 }]);
 
   useEffect(() => {
     axios.get('/api/purchasing/suppliers/?is_active=true').then(r => setSuppliers(r.data.results || r.data)).catch(console.error);
-    axios.get('/api/sales/currencies/').then(r => setCurrencies(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/core/currencies/').then(r => setCurrencies(r.data.results || r.data)).catch(console.error);
     axios.get('/api/sales/products/').then(r => setProducts(r.data.results || r.data)).catch(console.error);
   }, []);
 
-  const addItem = () => setItems([...items, { product: '', description: '', quantity: 1, unit_price: 0, tax_rate: 20 }]);
+  // Auto-remplir la devise quand on sélectionne un fournisseur
+  const handleSupplierChange = (supplierId) => {
+    if (supplierId) {
+      const supplier = suppliers.find(s => s.id === parseInt(supplierId));
+      if (supplier && supplier.currency) {
+        setForm(prev => ({ ...prev, supplier: supplierId, currency: String(supplier.currency) }));
+      } else {
+        setForm(prev => ({ ...prev, supplier: supplierId }));
+      }
+    } else {
+      setForm(prev => ({ ...prev, supplier: '', currency: '' }));
+    }
+  };
+
+  // Auto-remplir le prix et la TVA quand on sélectionne un produit
+  const handleProductChange = (index, productId) => {
+    const updated = [...items];
+    updated[index] = { ...updated[index], product: productId };
+    if (productId) {
+      const product = products.find(p => p.id === parseInt(productId));
+      if (product) {
+        updated[index].unit_price = product.unit_price || 0;
+        updated[index].tax_rate = product.tax_rate ?? 0;
+      }
+    }
+    setItems(updated);
+  };
+
+  const addItem = () => setItems([...items, { product: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0 }]);
   const removeItem = (i) => setItems(items.filter((_, idx) => idx !== i));
   const updateItem = (i, field, value) => {
     const updated = [...items];
@@ -30,7 +58,15 @@ export default function PurchaseOrderForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const orderRes = await axios.post('/api/purchasing/purchase-orders/', form);
+      const payload = { ...form };
+      if (!payload.currency) {
+        alert('Veuillez sélectionner une devise.');
+        return;
+      }
+      if (!payload.expected_delivery_date) {
+        delete payload.expected_delivery_date;
+      }
+      const orderRes = await axios.post('/api/purchasing/purchase-orders/', payload);
       const orderId = orderRes.data.id;
       for (const item of items) {
         if (item.product || item.description) {
@@ -52,16 +88,16 @@ export default function PurchaseOrderForm() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
           <div>
             <label style={{ fontSize: 13, color: '#4a5568' }}>Fournisseur *</label>
-            <select required style={fieldStyle} value={form.supplier} onChange={e => setForm({ ...form, supplier: e.target.value })}>
+            <select required style={fieldStyle} value={form.supplier} onChange={e => handleSupplierChange(e.target.value)}>
               <option value="">— Sélectionner —</option>
               {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
             </select>
           </div>
           <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Devise</label>
-            <select style={fieldStyle} value={form.currency || ''} onChange={e => setForm({ ...form, currency: e.target.value || null })}>
+            <label style={{ fontSize: 13, color: '#4a5568' }}>Devise *</label>
+            <select required style={fieldStyle} value={form.currency || ''} onChange={e => setForm({ ...form, currency: e.target.value })}>
               <option value="">— Sélectionner —</option>
-              {currencies.map(c => <option key={c.id} value={c.id}>{c.code}</option>)}
+              {currencies.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
             </select>
           </div>
           <div>
@@ -77,7 +113,7 @@ export default function PurchaseOrderForm() {
         <h3 style={{ fontSize: 16, marginBottom: 12 }}>Lignes</h3>
         {items.map((item, i) => (
           <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 40px', gap: 8, marginBottom: 8 }}>
-            <select style={fieldStyle} value={item.product} onChange={e => updateItem(i, 'product', e.target.value)}>
+            <select style={fieldStyle} value={item.product} onChange={e => handleProductChange(i, e.target.value)}>
               <option value="">— Produit —</option>
               {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>

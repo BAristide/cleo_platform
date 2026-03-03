@@ -229,7 +229,7 @@ export default function SupplierInvoiceDetail() {
               </button>
             </>
           )}
-          {invoice.state === 'validated' && invoice.type === 'standard' && (
+          {['validated', 'paid'].includes(invoice.state) && invoice.type === 'standard' && (
             <>
               <Link to={`/purchasing/payments/new?invoice=${id}`}>
                 <button style={btnStyle('#3182ce')}>Enregistrer paiement</button>

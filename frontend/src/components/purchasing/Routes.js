@@ -33,6 +33,7 @@ export default function PurchasingRoutes() {
         <Route path="invoices" element={<SupplierInvoiceList />} />
         <Route path="invoices/new" element={<SupplierInvoiceForm />} />
         <Route path="invoices/:id" element={<SupplierInvoiceDetail />} />
+        <Route path="invoices/:id/edit" element={<SupplierInvoiceForm />} />
         <Route path="payments" element={<PaymentList />} />
         <Route path="payments/new" element={<PaymentForm />} />
       </Route>

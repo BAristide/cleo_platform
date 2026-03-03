@@ -1,10 +1,11 @@
 """
 Service de retour en stock pour les avoirs (clients et fournisseurs).
-Génère des StockMove RETURN_IN ou RETURN_OUT.
+Genere des StockMove RETURN_IN ou RETURN_OUT.
 """
 
 import logging
 
+from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 
 from inventory.models import StockMove, Warehouse
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_default_warehouse():
-    """Récupère l'entrepôt par défaut ou le premier actif."""
+    """Recupere l'entrepot par defaut ou le premier actif."""
     wh = Warehouse.objects.filter(is_default=True).first()
     if not wh:
         wh = Warehouse.objects.filter(is_active=True).first()
@@ -25,25 +26,20 @@ def create_return_stock_move(
     quantity,
     reference,
     move_type='RETURN_IN',
-    source_document_type='credit_note',
-    source_document_id=None,
+    source_object=None,
     unit_cost=None,
     user=None,
     notes='',
 ):
     """
-    Crée un StockMove de retour (RETURN_IN pour avoir client, RETURN_OUT pour avoir fournisseur).
+    Cree un StockMove de retour (RETURN_IN pour avoir client, RETURN_OUT pour avoir fournisseur).
     Ne traite que les produits stockables.
-
-    Returns:
-        StockMove or None
     """
     if not product:
         return None
 
-    # Ne traiter que les produits stockables
     if getattr(product, 'product_type', 'stockable') != 'stockable':
-        logger.info('Produit %s non stockable — retour stock ignoré', product.reference)
+        logger.info('Produit %s non stockable — retour stock ignore', product.reference)
         return None
 
     if quantity <= 0:
@@ -52,25 +48,34 @@ def create_return_stock_move(
     warehouse = _get_default_warehouse()
     if not warehouse:
         logger.warning(
-            'Aucun entrepôt trouvé — retour stock non généré pour %s', reference
+            'Aucun entrepot trouve — retour stock non genere pour %s', reference
         )
         return None
 
-    # Éviter les doublons
-    existing = StockMove.objects.filter(
-        source_document_type=source_document_type,
-        source_document_id=source_document_id,
-        product=product,
-        move_type=move_type,
-    ).exists()
-    if existing:
-        logger.info(
-            'StockMove %s déjà existant pour %s (doc_id=%s)',
-            move_type,
-            product.reference,
-            source_document_id,
-        )
-        return None
+    # Preparer les champs GenericFK
+    ct = None
+    obj_id = None
+    if source_object is not None:
+        ct = ContentType.objects.get_for_model(source_object)
+        obj_id = source_object.pk
+
+    # Eviter les doublons
+    if ct and obj_id:
+        existing = StockMove.objects.filter(
+            content_type=ct,
+            object_id=obj_id,
+            product=product,
+            move_type=move_type,
+        ).exists()
+        if existing:
+            logger.info(
+                'StockMove %s deja existant pour %s (ct=%s, obj_id=%s)',
+                move_type,
+                product.reference,
+                ct,
+                obj_id,
+            )
+            return None
 
     move = StockMove.objects.create(
         product=product,
@@ -79,15 +84,15 @@ def create_return_stock_move(
         quantity=quantity,
         unit_cost=unit_cost,
         reference=reference,
-        source_document_type=source_document_type,
-        source_document_id=source_document_id,
+        content_type=ct,
+        object_id=obj_id,
         date=timezone.now(),
         notes=notes or f'Retour stock — {reference}',
         created_by=user,
     )
 
     logger.info(
-        'StockMove %s créé : produit=%s, qté=%s, ref=%s',
+        'StockMove %s cree : produit=%s, qte=%s, ref=%s',
         move_type,
         product.reference,
         quantity,
@@ -100,13 +105,6 @@ def create_return_stock_move(
 def process_credit_note_returns(credit_note, items_with_return, user=None):
     """
     Traite les retours en stock pour un avoir client.
-
-    Args:
-        credit_note: Instance Invoice (type=credit_note)
-        items_with_return: list of dicts {product, quantity, invoice_item_id}
-        user: Utilisateur courant
-    Returns:
-        list of StockMove created
     """
     moves = []
     for item_data in items_with_return:
@@ -115,8 +113,7 @@ def process_credit_note_returns(credit_note, items_with_return, user=None):
             quantity=item_data['quantity'],
             reference=f'AV-{credit_note.number}',
             move_type='RETURN_IN',
-            source_document_type='credit_note_item',
-            source_document_id=item_data.get('invoice_item_id'),
+            source_object=credit_note,
             unit_cost=item_data.get('unit_cost'),
             user=user,
             notes=f'Retour client — Avoir {credit_note.number} (Facture {credit_note.parent_invoice.number})',
@@ -129,13 +126,6 @@ def process_credit_note_returns(credit_note, items_with_return, user=None):
 def process_supplier_credit_note_returns(credit_note, items_with_return, user=None):
     """
     Traite les retours en stock pour un avoir fournisseur.
-
-    Args:
-        credit_note: Instance SupplierInvoice (type=credit_note)
-        items_with_return: list of dicts {product, quantity, supplier_invoice_item_id}
-        user: Utilisateur courant
-    Returns:
-        list of StockMove created
     """
     moves = []
     for item_data in items_with_return:
@@ -144,8 +134,7 @@ def process_supplier_credit_note_returns(credit_note, items_with_return, user=No
             quantity=item_data['quantity'],
             reference=f'AV-FOURN-{credit_note.number}',
             move_type='RETURN_OUT',
-            source_document_type='supplier_credit_note_item',
-            source_document_id=item_data.get('supplier_invoice_item_id'),
+            source_object=credit_note,
             unit_cost=item_data.get('unit_cost'),
             user=user,
             notes=f'Retour fournisseur — Avoir {credit_note.number}',

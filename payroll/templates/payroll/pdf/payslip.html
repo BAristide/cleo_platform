@@ -1,82 +1,169 @@
-<!DOCTYPE html> <html> <head> <meta charset="UTF-8"> <title>Bulletin de Paie - {{ payslip.number }}</title> 
+{% load payroll_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Bulletin de Paie - {{ payslip.number }}</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.3;
-        }
-        .header { margin-bottom: 20px;
-        }
-        .company-info { float: left; width: 60%;
-        }
-        .payslip-info { float: right; width: 40%; text-align: right;
-        }
-        .clearfix::after { content: ""; display: table; clear: both;
-        }
-        .employee-info { border: 1px solid #333; padding: 10px; margin-bottom: 20px;
-        }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px;
-        }
-        th, td { border: 1px solid #333; padding: 5px;
-        }
-        th { background-color: #f0f0f0;
-        }
-        .no-border { border: none;
-        }
-        .text-right { text-align: right;
-        }
-        .text-center { text-align: center;
-        }
-        .text-bold { font-weight: bold;
-        }
-        .summary { border: 1px solid #333; padding: 10px; margin-top: 20px;
-        }
-        .footer { margin-top: 30px; font-size: 9pt; text-align: center;
-        }
-    </style> </head> <body> <div class="header clearfix"> <div class="company-info"> <h1>{{ company.name 
-            }}</h1>
-            <p>{{ company.address }}</p> <p>{{ company.city }} - {{ company.country }}</p> <p>RC : {{ 
-            company.rc }} | IF : {{ company.tax_id }}</p> <p>ICE : {{ company.ice }}</p>
-        </div> <div class="payslip-info"> <h2>BULLETIN DE PAIE</h2> <p>N° {{ payslip.number }}</p> <p>Période 
-            : {{ payslip.payroll_run.period.name }}</p>
-            <p>Date : {{ generation_date|date:"d/m/Y" }}</p> </div> </div>
-    
-    <div class="employee-info clearfix"> <div style="float: left; width: 50%;"> <p><strong>Nom et prénom 
-            :</strong> {{ employee.first_name }} {{ employee.last_name }}</p>
-            <p><strong>Matricule :</strong> {{ employee.employee_id }}</p> <p><strong>N° CNSS :</strong> {{ 
-            payroll_info.cnss_number }}</p> <p><strong>Date d'embauche :</strong> {{ 
-            employee.hire_date|date:"d/m/Y" }}</p>
-        </div> <div style="float: right; width: 50%;"> <p><strong>Département :</strong> {% if 
-            employee.department %}{{ employee.department.name }}{% endif %}</p> <p><strong>Fonction :</strong> 
-            {% if employee.job_title %}{{ employee.job_title.name }}{% endif %}</p> <p><strong>Type de contrat 
-            :</strong> {{ payroll_info.contract_type.name }}</p>
-            <p><strong>Mode de paiement :</strong> {{ payroll_info.get_payment_method_display }}</p> </div> 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 10pt; line-height: 1.4; color: #333; padding: 20px; }
+        .header { margin-bottom: 15px; overflow: hidden; }
+        .company-info { float: left; width: 58%; }
+        .company-info h1 { font-size: 16pt; margin-bottom: 5px; color: #1a1a2e; }
+        .company-info p { font-size: 9pt; color: #555; margin-bottom: 2px; }
+        .payslip-info { float: right; width: 40%; text-align: right; }
+        .payslip-info h2 { font-size: 14pt; color: #1a1a2e; margin-bottom: 8px; border-bottom: 2px solid #1a1a2e; padding-bottom: 4px; display: inline-block; }
+        .payslip-info p { font-size: 9pt; margin-bottom: 2px; }
+        .payslip-info strong { color: #1a1a2e; }
+        .clearfix::after { content: ""; display: table; clear: both; }
+        .employee-info { border: 1px solid #ccc; padding: 10px; margin-bottom: 15px; overflow: hidden; background: #f9f9f9; border-radius: 3px; }
+        .employee-info .col { float: left; width: 50%; }
+        .employee-info p { font-size: 9pt; margin-bottom: 3px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+        th { background-color: #1a1a2e; color: white; padding: 6px 8px; font-size: 9pt; text-align: left; }
+        td { padding: 5px 8px; font-size: 9pt; border-bottom: 1px solid #e0e0e0; }
+        tr:nth-child(even) { background-color: #f8f8f8; }
+        .text-right { text-align: right; }
+        .text-bold { font-weight: bold; }
+        .totals-row td { border-top: 2px solid #1a1a2e; font-weight: bold; background-color: #f0f0f0; }
+        .summary { border: 1px solid #ccc; padding: 12px; margin-top: 15px; overflow: hidden; border-radius: 3px; }
+        .summary .col { float: left; width: 50%; }
+        .summary p { font-size: 9pt; margin-bottom: 3px; }
+        .net-box { background: #1a1a2e; color: white; padding: 8px 12px; border-radius: 3px; margin-top: 8px; display: inline-block; }
+        .net-box p { color: white; font-size: 11pt; font-weight: bold; margin: 0; }
+        .footer { margin-top: 25px; font-size: 8pt; text-align: center; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="header clearfix">
+        <div class="company-info">
+            <h1>{{ company.name }}</h1>
+            <p>{{ company.address }}</p>
+            <p>{{ company.city }} - {{ company.country }}</p>
+            {% if company.email %}<p>Email : {{ company.email }}</p>{% endif %}
+            {% if company.rc %}<p>RC : {{ company.rc }}{% if company.tax_id %} | IF : {{ company.tax_id }}{% endif %}{% if company.ice %} | ICE : {{ company.ice }}{% endif %}</p>{% endif %}
+        </div>
+        <div class="payslip-info">
+            <h2>BULLETIN DE PAIE</h2>
+            <p><strong>N° :</strong> {{ payslip.number }}</p>
+            <p><strong>Période :</strong> {{ period_name }}</p>
+            <p><strong>Date :</strong> {{ generation_date|date:"d/m/Y" }}</p>
+            <p><strong>Devise :</strong> {{ currency_code }}</p>
+        </div>
     </div>
-    
-    <h3>Détail des éléments de paie</h3> <table> <thead> <tr> <th>Désignation</th> <th>Base</th> <th>Taux</th> 
-                <th>Quantité</th> <th>Gain</th> <th>Retenue</th>
-            </tr> </thead> <tbody> {% for line in lines %} <tr> <td>{{ line.component.name }}</td> <td 
-                    class="text-right">{% if line.base_amount %}{{ line.base_amount }}{% endif %}</td> <td 
-                    class="text-right">{% if line.rate %}{{ line.rate }}%{% endif %}</td> <td 
-                    class="text-right">{% if line.quantity %}{{ line.quantity }}{% endif %}</td> <td 
-                    class="text-right">{% if line.amount > 0 %}{{ line.amount }}{% endif %}</td> <td 
-                    class="text-right">{% if line.amount < 0 %}{{ line.amount|abs }}{% endif %}</td>
-                </tr> {% endfor %} </tbody> <tfoot> <tr> <td colspan="4" class="text-right 
-                text-bold">Total</td> <td class="text-right text-bold">{{ payslip.gross_salary }}</td> <td 
-                class="text-right text-bold">{{ payslip.gross_salary|sub:payslip.net_salary }}</td>
-            </tr> </tfoot> </table>
-    
-    <div class="summary clearfix"> <div style="float: left; width: 50%;"> <p><strong>Jours travaillés 
-            :</strong> {{ payslip.worked_days }}</p>
-            <p><strong>Absences :</strong> {{ payslip.absence_days }}</p> <p><strong>Congés payés :</strong> 
-            {{ payslip.paid_leave_days }}</p> <p><strong>Heures supplémentaires :</strong>
-                {% if payslip.overtime_25_hours %}{{ payslip.overtime_25_hours }} h à 25%, {% endif %} {% if 
-                payslip.overtime_50_hours %}{{ payslip.overtime_50_hours }} h à 50%, {% endif %} {% if 
-                payslip.overtime_100_hours %}{{ payslip.overtime_100_hours }} h à 100%{% endif %}
-            </p> </div> <div style="float: right; width: 50%;"> <p><strong>Salaire brut :</strong> {{ 
-            payslip.gross_salary }} MAD</p> <p><strong>Cotisations salariales :</strong> {{ 
-            payslip.cnss_employee|add:payslip.amo_employee }} MAD</p> <p><strong>Impôt sur le revenu 
-            :</strong> {{ payslip.income_tax }} MAD</p>
-            <p><strong>Salaire net à payer :</strong> {{ payslip.net_salary }} MAD</p> </div> </div>
-    
-    <div class="footer"> <p>Ce bulletin de paie doit être conservé sans limitation de durée.</p> <p>Généré par 
-        Cleo ERP le {{ generation_date|date:"d/m/Y à H:i" }}</p>
-    </div> </body>
+
+    <div class="employee-info clearfix">
+        <div class="col">
+            <p><strong>Nom et prénom :</strong> {{ employee.first_name }} {{ employee.last_name }}</p>
+            <p><strong>Matricule :</strong> {{ employee.employee_id }}</p>
+            {% if payroll_info.cnss_number %}<p><strong>N° CNSS :</strong> {{ payroll_info.cnss_number }}</p>{% endif %}
+            <p><strong>Date d'embauche :</strong> {{ employee.hire_date|date:"d/m/Y" }}</p>
+        </div>
+        <div class="col">
+            {% if employee.department %}<p><strong>Département :</strong> {{ employee.department.name }}</p>{% endif %}
+            {% if employee.job_title %}<p><strong>Fonction :</strong> {{ employee.job_title.name }}</p>{% endif %}
+            <p><strong>Contrat :</strong> {{ contract_type_display }}</p>
+            <p><strong>Mode de paiement :</strong> {{ payment_method_display }}</p>
+        </div>
+    </div>
+
+    <h3 style="margin-bottom: 8px; color: #1a1a2e;">Détail des éléments de paie</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>Désignation</th>
+                <th class="text-right">Base</th>
+                <th class="text-right">Taux</th>
+                <th class="text-right">Quantité</th>
+                <th class="text-right">Gain</th>
+                <th class="text-right">Retenue</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Salaire de base -->
+            <tr>
+                <td>Salaire de base</td>
+                <td class="text-right">{{ payslip.base_salary }}</td>
+                <td class="text-right"></td>
+                <td class="text-right">{{ payslip.worked_days }} j</td>
+                <td class="text-right">{{ payslip.gross_salary }}</td>
+                <td class="text-right"></td>
+            </tr>
+            <!-- CNSS salariale -->
+            {% if payslip.cnss_employee %}
+            <tr>
+                <td>CNSS (part salariale)</td>
+                <td class="text-right">{{ payslip.gross_salary }}</td>
+                <td class="text-right">{{ cnss_employee_rate }}%</td>
+                <td class="text-right"></td>
+                <td class="text-right"></td>
+                <td class="text-right">{{ payslip.cnss_employee }}</td>
+            </tr>
+            {% endif %}
+            <!-- AMO salariale -->
+            {% if payslip.amo_employee %}
+            <tr>
+                <td>AMO (part salariale)</td>
+                <td class="text-right">{{ payslip.gross_salary }}</td>
+                <td class="text-right">{{ amo_employee_rate }}%</td>
+                <td class="text-right"></td>
+                <td class="text-right"></td>
+                <td class="text-right">{{ payslip.amo_employee }}</td>
+            </tr>
+            {% endif %}
+            <!-- IR -->
+            {% if payslip.income_tax %}
+            <tr>
+                <td>Impôt sur le revenu (IR)</td>
+                <td class="text-right"></td>
+                <td class="text-right"></td>
+                <td class="text-right"></td>
+                <td class="text-right"></td>
+                <td class="text-right">{{ payslip.income_tax }}</td>
+            </tr>
+            {% endif %}
+        </tbody>
+        <tfoot>
+            <tr class="totals-row">
+                <td colspan="4" class="text-right">TOTAUX</td>
+                <td class="text-right">{{ payslip.gross_salary }}</td>
+                <td class="text-right">{{ total_deductions }}</td>
+            </tr>
+        </tfoot>
+    </table>
+
+    <div class="summary clearfix">
+        <div class="col">
+            <p><strong>Jours travaillés :</strong> {{ payslip.worked_days }}</p>
+            <p><strong>Absences :</strong> {{ payslip.absence_days }}</p>
+            <p><strong>Congés payés :</strong> {{ payslip.paid_leave_days }}</p>
+            {% if payslip.overtime_25_hours %}<p><strong>HS 25% :</strong> {{ payslip.overtime_25_hours }} h</p>{% endif %}
+            {% if payslip.overtime_50_hours %}<p><strong>HS 50% :</strong> {{ payslip.overtime_50_hours }} h</p>{% endif %}
+            {% if payslip.overtime_100_hours %}<p><strong>HS 100% :</strong> {{ payslip.overtime_100_hours }} h</p>{% endif %}
+        </div>
+        <div class="col" style="text-align: right;">
+            <p><strong>Salaire brut :</strong> {{ payslip.gross_salary }} {{ currency_code }}</p>
+            <p><strong>Cotisations CNSS :</strong> {{ payslip.cnss_employee }} {{ currency_code }}</p>
+            <p><strong>Cotisations AMO :</strong> {{ payslip.amo_employee }} {{ currency_code }}</p>
+            <p><strong>Impôt sur le revenu :</strong> {{ payslip.income_tax }} {{ currency_code }}</p>
+            <div class="net-box">
+                <p>NET À PAYER : {{ payslip.net_salary }} {{ currency_code }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div style="margin-top: 20px; overflow: hidden;">
+        <div style="float: left; width: 50%;">
+            <p style="font-size: 9pt;"><strong>Charges patronales :</strong></p>
+            <p style="font-size: 8pt;">CNSS employeur : {{ payslip.cnss_employer }} {{ currency_code }}</p>
+            <p style="font-size: 8pt;">AMO employeur : {{ payslip.amo_employer }} {{ currency_code }}</p>
+            <p style="font-size: 8pt; font-weight: bold;">Total charges : {{ total_employer }} {{ currency_code }}</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Ce bulletin de paie doit être conservé sans limitation de durée.</p>
+        <p>Généré par Cleo ERP le {{ generation_date|date:"d/m/Y à H:i" }}</p>
+    </div>
+</body>
 </html>

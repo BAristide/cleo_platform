@@ -650,6 +650,7 @@ class BankStatementSerializer(serializers.ModelSerializer):
             'created_by_name',
             'lines_count',
         ]
+        read_only_fields = ['created_by']
 
     def get_journal_code(self, obj):
         return obj.journal_id.code if obj.journal_id else None
@@ -706,6 +707,7 @@ class BankStatementDetailSerializer(serializers.ModelSerializer):
             'updated_at',
             'lines',
         ]
+        read_only_fields = ['created_by', 'created_at', 'updated_at']
 
     def get_journal_code(self, obj):
         return obj.journal_id.code if obj.journal_id else None

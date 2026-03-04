@@ -21,6 +21,7 @@ import ReportsList from './ReportsList';
 import { JournalEntryForm, BankStatementForm, AssetForm } from './forms';
 import CurrencyList from './CurrencyList';
 import CashForecastChart from './CashForecastChart';
+import AccountMappingList from './AccountMappingList';
 const AccountingRoutes = () => {
   return (
     <Layout>
@@ -69,6 +70,9 @@ const AccountingRoutes = () => {
 
         {/* États et rapports */}
         <Route path="/reports" element={<ReportsList />} />
+
+        {/* Mappings de comptes */}
+        <Route path="/mappings" element={<AccountMappingList />} />
 
         {/* Redirection par défaut */}
         <Route path="*" element={<Navigate to="/accounting" replace />} />

@@ -3,7 +3,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   DashboardOutlined, BookOutlined, AccountBookOutlined, CalendarOutlined,
-  BankOutlined, BuildOutlined, CalculatorOutlined, BarChartOutlined, DollarOutlined,
+  BankOutlined, BuildOutlined, CalculatorOutlined, BarChartOutlined, DollarOutlined, ApiOutlined,
 } from '@ant-design/icons';
 import ModuleLayout from '../common/ModuleLayout';
 
@@ -36,6 +36,7 @@ const menuItems = [
   { key: 'taxes', icon: <CalculatorOutlined />, label: <Link to="/accounting/taxes">Taxes & TVA</Link> },
   { key: 'reports', icon: <BarChartOutlined />, label: <Link to="/accounting/reports">États et rapports</Link> },
   { key: 'currencies', icon: <DollarOutlined />, label: <Link to="/accounting/currencies">Devises</Link> },
+  { key: 'mappings', icon: <ApiOutlined />, label: <Link to="/accounting/mappings">Rôles comptables</Link> },
 ];
 
 const breadcrumbMap = {

@@ -253,13 +253,17 @@ def executive_dashboard(request):
             }
         )
 
-    # ── Trésorerie (soldes bancaires) ──
+    # ── Trésorerie (soldes comptables banque + caisse) ──
     try:
-        from sales.models import BankAccount
+        from accounting.services.account_resolver import AccountResolver
 
-        bank_total = BankAccount.objects.filter(is_active=True).aggregate(
-            total=Sum('balance')
-        )['total'] or Decimal('0')
+        bank_total = Decimal('0')
+        for role in ('bank', 'cash'):
+            try:
+                account = AccountResolver.get_account(role)
+                bank_total += account.get_balance()
+            except (ValueError, Exception):
+                pass
     except Exception:
         bank_total = Decimal('0')
 

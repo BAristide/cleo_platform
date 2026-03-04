@@ -433,10 +433,10 @@ class JournalEntryService:
     def create_invoice_entry(invoice, user=None):
         """
         Crée une écriture comptable pour une facture client.
-        Résolution dynamique des comptes via les journaux configurés.
+        Résolution des comptes via AccountResolver (indépendant du pack comptable).
         Gère les factures standard, acomptes et avoirs.
         """
-        from ..models import Account, Journal
+        from accounting.services.account_resolver import AccountResolver
 
         # Vérifier qu'aucune écriture n'existe déjà
         existing = JournalEntry.objects.filter(
@@ -447,26 +447,10 @@ class JournalEntryService:
         if existing:
             return existing
 
-        # Journal des ventes → comptes par défaut
-        journal = Journal.objects.get(code='VEN')
-        client_account = journal.default_debit_account_id  # 411
-        revenue_account = journal.default_credit_account_id  # 701
-
-        if not client_account or not revenue_account:
-            raise ValueError(
-                'Le journal VEN doit avoir des comptes débit/crédit par défaut configurés'
-            )
-
-        # TVA collectée sur ventes (exclure parent et prestations)
-        vat_account = (
-            Account.objects.filter(
-                is_tax_account=True,
-                tax_type='vat_collected',
-            )
-            .exclude(code__in=['443', '4432'])
-            .order_by('code')
-            .first()
-        )
+        # Résolution des comptes via AccountResolver
+        client_code = AccountResolver.get_code('client_receivable')
+        revenue_code = AccountResolver.get_code('sales_revenue')
+        vat_code = AccountResolver.get_code('vat_collected')
 
         is_credit_note = getattr(invoice, 'type', 'standard') == 'credit_note'
 
@@ -488,16 +472,16 @@ class JournalEntryService:
             if subtotal > 0:
                 lines.append(
                     {
-                        'account_code': revenue_account.code,
+                        'account_code': revenue_code,
                         'name': f'{prefix} {ref}',
                         'debit': subtotal,
                         'credit': 0,
                     }
                 )
-            if tax_amount > 0 and vat_account and not is_tax_exempt:
+            if tax_amount > 0 and not is_tax_exempt:
                 lines.append(
                     {
-                        'account_code': vat_account.code,
+                        'account_code': vat_code,
                         'name': f'TVA {prefix.lower()} {ref}',
                         'debit': tax_amount,
                         'credit': 0,
@@ -505,7 +489,7 @@ class JournalEntryService:
                 )
             lines.append(
                 {
-                    'account_code': client_account.code,
+                    'account_code': client_code,
                     'name': f'{prefix} {ref}',
                     'debit': 0,
                     'credit': total,
@@ -515,7 +499,7 @@ class JournalEntryService:
             # Facture standard/acompte: Débit 411, Crédit 701 + TVA
             lines.append(
                 {
-                    'account_code': client_account.code,
+                    'account_code': client_code,
                     'name': f'{prefix} {ref}',
                     'debit': total,
                     'credit': 0,
@@ -525,16 +509,16 @@ class JournalEntryService:
             if subtotal > 0:
                 lines.append(
                     {
-                        'account_code': revenue_account.code,
+                        'account_code': revenue_code,
                         'name': f'{prefix} {ref}',
                         'debit': 0,
                         'credit': subtotal,
                     }
                 )
-            if tax_amount > 0 and vat_account and not is_tax_exempt:
+            if tax_amount > 0 and not is_tax_exempt:
                 lines.append(
                     {
-                        'account_code': vat_account.code,
+                        'account_code': vat_code,
                         'name': f'TVA {prefix.lower()} {ref}',
                         'debit': 0,
                         'credit': tax_amount,
@@ -563,9 +547,9 @@ class JournalEntryService:
     def create_payment_entry(payment, user=None):
         """
         Crée une écriture comptable pour un paiement client.
-        Résolution dynamique des comptes via les journaux configurés.
+        Résolution des comptes via AccountResolver (indépendant du pack comptable).
         """
-        from ..models import Journal
+        from accounting.services.account_resolver import AccountResolver
 
         # Vérifier qu'aucune écriture n'existe déjà
         existing = JournalEntry.objects.filter(
@@ -579,21 +563,14 @@ class JournalEntryService:
         # Journal banque ou caisse selon le mode de paiement
         method = getattr(payment, 'method', 'bank_transfer')
         if method == 'cash':
-            journal = Journal.objects.get(code='CSH')
+            journal_code = 'CSH'
+            bank_code = AccountResolver.get_code('cash')
         else:
-            journal = Journal.objects.get(code='BNK')
+            journal_code = 'BNK'
+            bank_code = AccountResolver.get_code('bank')
 
-        bank_account = journal.default_debit_account_id
-        if not bank_account:
-            raise ValueError(
-                f'Le journal {journal.code} doit avoir un compte débit par défaut'
-            )
-
-        # Compte client via journal VEN
-        ven_journal = Journal.objects.get(code='VEN')
-        client_account = ven_journal.default_debit_account_id  # 411
-        if not client_account:
-            raise ValueError('Le journal VEN doit avoir un compte débit par défaut')
+        # Compte client via AccountResolver
+        client_code = AccountResolver.get_code('client_receivable')
 
         invoice = payment.invoice
         client_name = invoice.company.name if invoice and invoice.company else ''
@@ -603,13 +580,13 @@ class JournalEntryService:
 
         lines = [
             {
-                'account_code': bank_account.code,
+                'account_code': bank_code,
                 'name': f'Paiement {ref}',
                 'debit': amount,
                 'credit': 0,
             },
             {
-                'account_code': client_account.code,
+                'account_code': client_code,
                 'name': f'Paiement {ref}',
                 'debit': 0,
                 'credit': amount,
@@ -617,7 +594,7 @@ class JournalEntryService:
         ]
 
         entry = JournalEntryService.create_entry(
-            journal_code=journal.code,
+            journal_code=journal_code,
             entry_date=payment.date,
             narration=narration,
             lines=lines,
@@ -821,9 +798,9 @@ class JournalEntryService:
     def create_supplier_invoice_entry(supplier_invoice, user=None):
         """
         Crée une écriture comptable pour une facture fournisseur.
-        Résolution dynamique des comptes via les journaux configurés.
+        Résolution des comptes via AccountResolver (indépendant du pack comptable).
         """
-        from ..models import Account, Journal
+        from accounting.services.account_resolver import AccountResolver
 
         # Vérifier qu'aucune écriture n'existe déjà
         existing = JournalEntry.objects.filter(
@@ -834,26 +811,10 @@ class JournalEntryService:
         if existing:
             return existing
 
-        # Journal des achats → comptes par défaut
-        journal = Journal.objects.get(code='ACH')
-        purchase_account = journal.default_debit_account_id  # 601
-        supplier_account = journal.default_credit_account_id  # 401
-
-        if not purchase_account or not supplier_account:
-            raise ValueError(
-                'Le journal ACH doit avoir des comptes débit/crédit par défaut configurés'
-            )
-
-        # TVA déductible sur achats (exclure parent, immobilisations, transports)
-        vat_account = (
-            Account.objects.filter(
-                is_tax_account=True,
-                tax_type='vat_deductible',
-            )
-            .exclude(code__in=['445', '4451', '4453'])
-            .order_by('code')
-            .first()
-        )
+        # Résolution des comptes via AccountResolver
+        purchase_code = AccountResolver.get_code('purchase_expense')
+        supplier_code = AccountResolver.get_code('supplier_payable')
+        vat_code = AccountResolver.get_code('vat_deductible')
 
         is_credit_note = getattr(supplier_invoice, 'type', 'standard') == 'credit_note'
 
@@ -878,7 +839,7 @@ class JournalEntryService:
             # Avoir: Débit 401, Crédit 601 + TVA
             lines.append(
                 {
-                    'account_code': supplier_account.code,
+                    'account_code': supplier_code,
                     'name': f'{prefix} {ref}',
                     'debit': total,
                     'credit': 0,
@@ -887,16 +848,16 @@ class JournalEntryService:
             if subtotal > 0:
                 lines.append(
                     {
-                        'account_code': purchase_account.code,
+                        'account_code': purchase_code,
                         'name': f'{prefix} {ref}',
                         'debit': 0,
                         'credit': subtotal,
                     }
                 )
-            if tax_amount > 0 and vat_account:
+            if tax_amount > 0:
                 lines.append(
                     {
-                        'account_code': vat_account.code,
+                        'account_code': vat_code,
                         'name': f'TVA {prefix.lower()} {ref}',
                         'debit': 0,
                         'credit': tax_amount,
@@ -907,16 +868,16 @@ class JournalEntryService:
             if subtotal > 0:
                 lines.append(
                     {
-                        'account_code': purchase_account.code,
+                        'account_code': purchase_code,
                         'name': f'{prefix} {ref}',
                         'debit': subtotal,
                         'credit': 0,
                     }
                 )
-            if tax_amount > 0 and vat_account:
+            if tax_amount > 0:
                 lines.append(
                     {
-                        'account_code': vat_account.code,
+                        'account_code': vat_code,
                         'name': f'TVA {prefix.lower()} {ref}',
                         'debit': tax_amount,
                         'credit': 0,
@@ -924,7 +885,7 @@ class JournalEntryService:
                 )
             lines.append(
                 {
-                    'account_code': supplier_account.code,
+                    'account_code': supplier_code,
                     'name': f'{prefix} {ref}',
                     'debit': 0,
                     'credit': total,
@@ -954,9 +915,9 @@ class JournalEntryService:
     def create_supplier_payment_entry(supplier_payment, user=None):
         """
         Crée une écriture comptable pour un paiement fournisseur.
-        Résolution dynamique des comptes via les journaux configurés.
+        Résolution des comptes via AccountResolver (indépendant du pack comptable).
         """
-        from ..models import Journal
+        from accounting.services.account_resolver import AccountResolver
 
         # Vérifier qu'aucune écriture n'existe déjà
         existing = JournalEntry.objects.filter(
@@ -970,21 +931,14 @@ class JournalEntryService:
         # Journal banque ou caisse selon le mode de paiement
         method = getattr(supplier_payment, 'method', 'bank_transfer')
         if method == 'cash':
-            journal = Journal.objects.get(code='CSH')
+            journal_code = 'CSH'
+            bank_code = AccountResolver.get_code('cash')
         else:
-            journal = Journal.objects.get(code='BNK')
+            journal_code = 'BNK'
+            bank_code = AccountResolver.get_code('bank')
 
-        bank_account = journal.default_debit_account_id
-        if not bank_account:
-            raise ValueError(
-                f'Le journal {journal.code} doit avoir un compte débit par défaut'
-            )
-
-        # Compte fournisseur via journal ACH
-        ach_journal = Journal.objects.get(code='ACH')
-        supplier_account = ach_journal.default_credit_account_id  # 401
-        if not supplier_account:
-            raise ValueError('Le journal ACH doit avoir un compte crédit par défaut')
+        # Compte fournisseur via AccountResolver
+        supplier_code = AccountResolver.get_code('supplier_payable')
 
         invoice = supplier_payment.invoice
         ref = supplier_payment.reference or ''
@@ -994,13 +948,13 @@ class JournalEntryService:
 
         lines = [
             {
-                'account_code': supplier_account.code,
+                'account_code': supplier_code,
                 'name': f'Paiement {ref}',
                 'debit': amount,
                 'credit': 0,
             },
             {
-                'account_code': bank_account.code,
+                'account_code': bank_code,
                 'name': f'Paiement {ref}',
                 'debit': 0,
                 'credit': amount,
@@ -1008,7 +962,7 @@ class JournalEntryService:
         ]
 
         entry = JournalEntryService.create_entry(
-            journal_code=journal.code,
+            journal_code=journal_code,
             entry_date=supplier_payment.date,
             narration=narration,
             lines=lines,

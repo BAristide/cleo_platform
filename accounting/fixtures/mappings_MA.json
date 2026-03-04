@@ -1,14 +1,14 @@
 [
-    {"role": "client_receivable",           "account_code": "3421", "description": "Clients"},
-    {"role": "sales_revenue",               "account_code": "7111", "description": "Ventes de marchandises"},
-    {"role": "vat_collected",               "account_code": "4455", "description": "TVA facturée"},
-    {"role": "supplier_payable",            "account_code": "4411", "description": "Fournisseurs"},
-    {"role": "purchase_expense",            "account_code": "6111", "description": "Achats de marchandises"},
-    {"role": "vat_deductible",              "account_code": "3456", "description": "TVA récupérable"},
-    {"role": "bank",                        "account_code": "5141", "description": "Banques"},
-    {"role": "cash",                        "account_code": "5161", "description": "Caisse"},
+    {"role": "client_receivable",           "account_code": "342",  "description": "Clients et comptes rattachés"},
+    {"role": "sales_revenue",               "account_code": "711",  "description": "Ventes de marchandises"},
+    {"role": "vat_collected",               "account_code": "4455", "description": "État - TVA facturée"},
+    {"role": "supplier_payable",            "account_code": "441",  "description": "Fournisseurs et comptes rattachés"},
+    {"role": "purchase_expense",            "account_code": "611",  "description": "Achats revendus de marchandises"},
+    {"role": "vat_deductible",              "account_code": "3455", "description": "État - TVA récupérable"},
+    {"role": "bank",                        "account_code": "514",  "description": "Banques"},
+    {"role": "cash",                        "account_code": "516",  "description": "Caisse"},
     {"role": "salary_expense",              "account_code": "6171", "description": "Rémunérations du personnel"},
     {"role": "social_charges_expense",      "account_code": "6174", "description": "Charges sociales patronales"},
-    {"role": "salary_payable",              "account_code": "4432", "description": "Rémunérations dues au personnel"},
-    {"role": "social_charges_payable",      "account_code": "4441", "description": "CNSS"}
+    {"role": "salary_payable",              "account_code": "443",  "description": "Personnel créditeur"},
+    {"role": "social_charges_payable",      "account_code": "444",  "description": "Organismes sociaux"}
 ]

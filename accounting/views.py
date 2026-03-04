@@ -9,6 +9,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from users.permissions import HasModulePermission, module_permission_required
 
@@ -2186,3 +2187,45 @@ def cash_forecast(request):
             'weeks': weeks,
         }
     )
+
+
+class AccountMappingValidateView(APIView):
+    """
+    GET /api/accounting/mappings/validate/
+    Vérifie que tous les rôles comptables critiques sont configurés.
+    Health check utilisable après setup ou pour diagnostic.
+    """
+
+    permission_classes = [permissions.IsAdminUser]
+
+    def get(self, request):
+        from accounting.services.account_resolver import AccountResolver
+
+        result = AccountResolver.validate_all_roles()
+        status_code = 200 if result['valid'] else 206
+        return Response(result, status=status_code)
+
+
+class AccountMappingListView(APIView):
+    """
+    GET /api/accounting/mappings/
+    Liste tous les mappings configurés avec le détail du compte.
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from accounting.models import AccountMapping
+
+        mappings = AccountMapping.objects.select_related('account').all()
+        data = [
+            {
+                'role': m.role,
+                'role_label': m.get_role_display(),
+                'account_code': m.account.code,
+                'account_name': m.account.name,
+                'description': m.description,
+            }
+            for m in mappings
+        ]
+        return Response({'count': len(data), 'results': data})

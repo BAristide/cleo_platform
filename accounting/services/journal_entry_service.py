@@ -701,16 +701,14 @@ class JournalEntryService:
                     if hasattr(payslip, 'gross_salary')
                     else Decimal(0)
                 )
+                # employer = cnss_employer + amo_employer
                 total_employer += (
-                    payslip.employer_contribution
-                    if hasattr(payslip, 'employer_contribution')
-                    else Decimal(0)
-                )
+                    getattr(payslip, 'cnss_employer', Decimal(0)) or Decimal(0)
+                ) + (getattr(payslip, 'amo_employer', Decimal(0)) or Decimal(0))
+                # employee = cnss_employee + amo_employee
                 total_employee += (
-                    payslip.employee_contribution
-                    if hasattr(payslip, 'employee_contribution')
-                    else Decimal(0)
-                )
+                    getattr(payslip, 'cnss_employee', Decimal(0)) or Decimal(0)
+                ) + (getattr(payslip, 'amo_employee', Decimal(0)) or Decimal(0))
                 total_net += (
                     payslip.net_salary if hasattr(payslip, 'net_salary') else Decimal(0)
                 )
@@ -741,13 +739,21 @@ class JournalEntryService:
         if total_gross <= 0 or total_net <= 0:
             raise ValueError(_('Les montants de paie sont invalides ou manquants'))
 
+        # Résolution dynamique des comptes via AccountResolver (indépendant du pack)
+        from accounting.services.account_resolver import AccountResolver
+
+        salary_code = AccountResolver.get_code('salary_expense')
+        charges_code = AccountResolver.get_code('social_charges_expense')
+        dues_code = AccountResolver.get_code('salary_payable')
+        social_code = AccountResolver.get_code('social_charges_payable')
+
         # Préparer les lignes
         lines = []
 
         # 1. Salaires bruts (débit)
         lines.append(
             {
-                'account_code': '661',  # Rémunérations du personnel (SYSCOHADA)
+                'account_code': salary_code,
                 'name': _('Salaires bruts'),
                 'debit': total_gross,
                 'credit': 0,
@@ -757,7 +763,7 @@ class JournalEntryService:
         # 2. Charges patronales (débit)
         lines.append(
             {
-                'account_code': '664',  # Charges sociales (SYSCOHADA)
+                'account_code': charges_code,
                 'name': _('Charges sociales patronales'),
                 'debit': total_employer,
                 'credit': 0,
@@ -767,7 +773,7 @@ class JournalEntryService:
         # 3. Salaires nets à payer (crédit)
         lines.append(
             {
-                'account_code': '421',  # Personnel, rémunérations dues (SYSCOHADA)
+                'account_code': dues_code,
                 'name': _('Salaires nets à payer'),
                 'debit': 0,
                 'credit': total_net,
@@ -777,7 +783,7 @@ class JournalEntryService:
         # 4. Charges sociales à payer (crédit)
         lines.append(
             {
-                'account_code': '431',  # Sécurité sociale (SYSCOHADA)
+                'account_code': social_code,
                 'name': _('Charges sociales à payer'),
                 'debit': 0,
                 'credit': total_employer + total_employee,

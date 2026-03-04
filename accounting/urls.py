@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from . import views
+from .views import AccountMappingListView, AccountMappingValidateView
 
 # Créer un routeur pour enregistrer les viewsets
 router = DefaultRouter()
@@ -60,5 +61,11 @@ urlpatterns = [
     path('reports/esg/', views.esg_report, name='esg_report'),
     path('reports/asset-schedule/', views.asset_schedule, name='asset_schedule'),
     path('reports/journal/', views.journal_officiel, name='journal_officiel'),
+    path('mappings/', AccountMappingListView.as_view(), name='account-mappings-list'),
+    path(
+        'mappings/validate/',
+        AccountMappingValidateView.as_view(),
+        name='account-mappings-validate',
+    ),
 ]
 # Rapports réglementaires additionnels

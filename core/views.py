@@ -445,6 +445,44 @@ class SetupCreateView(APIView):
         init_service = InitAccountingService(locale_pack=locale_pack, force=False)
         init_service.init_all()
 
+        # ── Chargement des mappings de comptes (AccountMapping) ─────────
+        try:
+            import json as _json
+
+            from accounting.models import Account, AccountMapping
+
+            fixture_path = os.path.join(
+                django_settings.BASE_DIR,
+                'accounting',
+                'fixtures',
+                f'mappings_{locale_pack}.json',
+            )
+            if os.path.exists(fixture_path):
+                with open(fixture_path, encoding='utf-8') as _f:
+                    _mappings = _json.load(_f)
+                _created = 0
+                for item in _mappings:
+                    _account = Account.objects.filter(code=item['account_code']).first()
+                    if _account:
+                        _, _is_new = AccountMapping.objects.update_or_create(
+                            role=item['role'],
+                            defaults={
+                                'account': _account,
+                                'description': item.get('description', ''),
+                            },
+                        )
+                        if _is_new:
+                            _created += 1
+                logger.info(
+                    f'AccountMapping: {_created} rôles créés pour le pack {locale_pack}'
+                )
+            else:
+                logger.warning(
+                    f'Aucun fichier de mappings trouvé pour le pack {locale_pack}: {fixture_path}'
+                )
+        except Exception as e:
+            logger.warning(f'Mappings de comptes non chargés pour {locale_pack}: {e}')
+
         try:
             from django.core.management import call_command
 

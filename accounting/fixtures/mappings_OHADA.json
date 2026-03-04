@@ -1,0 +1,14 @@
+[
+    {"role": "client_receivable",           "account_code": "411",  "description": "Clients"},
+    {"role": "sales_revenue",               "account_code": "701",  "description": "Ventes de marchandises"},
+    {"role": "vat_collected",               "account_code": "4431", "description": "TVA collectée"},
+    {"role": "supplier_payable",            "account_code": "401",  "description": "Fournisseurs"},
+    {"role": "purchase_expense",            "account_code": "601",  "description": "Achats de marchandises"},
+    {"role": "vat_deductible",              "account_code": "4452", "description": "TVA déductible sur achats"},
+    {"role": "bank",                        "account_code": "521",  "description": "Banque"},
+    {"role": "cash",                        "account_code": "571",  "description": "Caisse"},
+    {"role": "salary_expense",              "account_code": "661",  "description": "Rémunérations du personnel"},
+    {"role": "social_charges_expense",      "account_code": "664",  "description": "Charges sociales patronales"},
+    {"role": "salary_payable",              "account_code": "421",  "description": "Personnel, rémunérations dues"},
+    {"role": "social_charges_payable",      "account_code": "431",  "description": "Sécurité sociale"}
+]

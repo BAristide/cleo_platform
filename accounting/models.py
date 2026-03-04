@@ -1106,3 +1106,66 @@ class AssetDepreciation(models.Model):
 
     def __str__(self):
         return f'{self.asset_id.code} - {self.name} ({self.date})'
+
+
+class AccountMapping(models.Model):
+    """
+    Association entre un rôle fonctionnel et un compte du plan comptable.
+    Permet au code applicatif de résoudre les comptes sans connaître
+    la numérotation spécifique du pays.
+    Un seul pack étant actif à la fois, chaque rôle est unique en base.
+    """
+
+    ROLE_CHOICES = [
+        # ── Ventes ──
+        ('client_receivable', 'Créances clients'),
+        ('sales_revenue', 'Produits des ventes'),
+        ('vat_collected', 'TVA collectée sur ventes'),
+        # ── Achats ──
+        ('supplier_payable', 'Dettes fournisseurs'),
+        ('purchase_expense', 'Charges des achats'),
+        ('vat_deductible', 'TVA déductible sur achats'),
+        # ── Trésorerie ──
+        ('bank', 'Banque'),
+        ('cash', 'Caisse'),
+        # ── Paie ──
+        ('salary_expense', 'Charges de personnel — salaires bruts'),
+        ('social_charges_expense', 'Charges sociales patronales'),
+        ('salary_payable', 'Personnel — rémunérations dues'),
+        ('social_charges_payable', 'Organismes sociaux'),
+        # ── Stocks (futur) ──
+        ('inventory_asset', 'Stocks de marchandises'),
+        ('inventory_variation', 'Variation de stocks'),
+        ('goods_received_not_invoiced', 'Marchandises reçues non facturées'),
+        # ── Immobilisations (futur) ──
+        ('fixed_asset', 'Immobilisations'),
+        ('depreciation_expense', 'Dotations aux amortissements'),
+        ('accumulated_depreciation', 'Amortissements cumulés'),
+    ]
+
+    role = models.CharField(
+        _('Rôle fonctionnel'),
+        max_length=50,
+        choices=ROLE_CHOICES,
+        unique=True,
+    )
+    account = models.ForeignKey(
+        Account,
+        on_delete=models.PROTECT,
+        verbose_name=_('Compte comptable'),
+        related_name='role_mappings',
+    )
+    description = models.CharField(
+        _('Description'),
+        max_length=200,
+        blank=True,
+        help_text=_('Explication du rôle pour les administrateurs'),
+    )
+
+    class Meta:
+        verbose_name = _('Mapping de compte')
+        verbose_name_plural = _('Mappings de comptes')
+        ordering = ['role']
+
+    def __str__(self):
+        return f'{self.get_role_display()} → {self.account.code} {self.account.name}'

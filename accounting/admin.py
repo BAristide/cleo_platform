@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .models import (
     Account,
+    AccountMapping,
     AccountType,
     AnalyticAccount,
     Asset,
@@ -956,3 +957,33 @@ class PostDepreciationForm(forms.Form):
         required=True,
         widget=forms.DateInput(attrs={'type': 'date'}),
     )
+
+
+@admin.register(AccountMapping)
+class AccountMappingAdmin(admin.ModelAdmin):
+    list_display = [
+        'role',
+        'get_role_display_label',
+        'get_account_code',
+        'get_account_name',
+        'description',
+    ]
+    list_filter = ['role']
+    search_fields = ['role', 'account__code', 'account__name', 'description']
+    readonly_fields = ['role']
+    raw_id_fields = ['account']
+
+    def get_role_display_label(self, obj):
+        return obj.get_role_display()
+
+    get_role_display_label.short_description = 'Libellé du rôle'
+
+    def get_account_code(self, obj):
+        return obj.account.code
+
+    get_account_code.short_description = 'Code compte'
+
+    def get_account_name(self, obj):
+        return obj.account.name
+
+    get_account_name.short_description = 'Nom du compte'

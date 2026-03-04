@@ -2071,7 +2071,7 @@ def cash_forecast(request):
         ).select_related('period')
 
         for run in upcoming_runs:
-            total_net = run.payslip_set.aggregate(total=Sum('net_salary'))[
+            total_net = run.payslips.aggregate(total=Sum('net_salary'))[
                 'total'
             ] or Decimal('0.00')
             if total_net > 0:

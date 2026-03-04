@@ -2,7 +2,7 @@
 import React from 'react';
 import { Form, Input, Button, Card, DatePicker, Select, InputNumber, message } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
-import axios from '../../utils/axiosConfig';
+import axios from '../../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../../context/CurrencyContext';
 
@@ -252,6 +252,7 @@ export const PayrollRunForm = () => {
 
 // Formulaire pour les données de paie des employés
 export const EmployeePayrollForm = () => {
+  const { currencySymbol } = useCurrency();
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -451,6 +452,7 @@ export const EmployeePayrollForm = () => {
 
 // Formulaire pour les acomptes
 export const AdvanceSalaryForm = () => {
+  const { currencySymbol } = useCurrency();
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { id } = useParams();

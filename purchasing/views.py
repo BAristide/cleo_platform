@@ -267,12 +267,35 @@ class SupplierInvoiceViewSet(viewsets.ModelViewSet):
         invoice.state = 'validated'
         invoice.save()
 
+        # Génération de l'écriture comptable
+        journal_entry = None
+        try:
+            from accounting.services.journal_entry_service import JournalEntryService
+
+            journal_entry = JournalEntryService.create_supplier_invoice_entry(
+                invoice, user=request.user
+            )
+            if journal_entry:
+                invoice.journal_entry = journal_entry
+                invoice.save(update_fields=['journal_entry'])
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                f'Écriture comptable facture fournisseur {invoice.number}: {e}'
+            )
+
         # Mettre à jour le statut du BC si lié
         if invoice.purchase_order and invoice.purchase_order.state == 'received':
             invoice.purchase_order.state = 'invoiced'
             invoice.purchase_order.save(update_fields=['state'])
 
-        return Response({'detail': _('Facture fournisseur validée.')})
+        return Response(
+            {
+                'detail': _('Facture fournisseur validée.'),
+                'journal_entry_id': journal_entry.id if journal_entry else None,
+            }
+        )
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
@@ -648,7 +671,20 @@ class SupplierPaymentViewSet(viewsets.ModelViewSet):
     filterset_fields = ['invoice', 'method']
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user)
+        payment = serializer.save(created_by=self.request.user)
+        # Génération de l'écriture comptable
+        try:
+            from accounting.services.journal_entry_service import JournalEntryService
+
+            JournalEntryService.create_supplier_payment_entry(
+                payment, user=self.request.user
+            )
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).warning(
+                f'Écriture comptable paiement fournisseur {payment.id}: {e}'
+            )
 
 
 @api_view(['GET'])

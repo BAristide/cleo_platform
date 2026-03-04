@@ -814,3 +814,211 @@ class JournalEntryService:
                     str(e)
                 )
             )
+
+    @staticmethod
+    def create_supplier_invoice_entry(supplier_invoice, user=None):
+        """
+        Crée une écriture comptable pour une facture fournisseur.
+        Résolution dynamique des comptes via les journaux configurés.
+        """
+        from ..models import Account, Journal
+
+        # Vérifier qu'aucune écriture n'existe déjà
+        existing = JournalEntry.objects.filter(
+            source_module='purchasing',
+            source_model='SupplierInvoice',
+            source_id=supplier_invoice.id,
+        ).first()
+        if existing:
+            return existing
+
+        # Journal des achats → comptes par défaut
+        journal = Journal.objects.get(code='ACH')
+        purchase_account = journal.default_debit_account_id  # 601
+        supplier_account = journal.default_credit_account_id  # 401
+
+        if not purchase_account or not supplier_account:
+            raise ValueError(
+                'Le journal ACH doit avoir des comptes débit/crédit par défaut configurés'
+            )
+
+        # TVA déductible sur achats (exclure parent, immobilisations, transports)
+        vat_account = (
+            Account.objects.filter(
+                is_tax_account=True,
+                tax_type='vat_deductible',
+            )
+            .exclude(code__in=['445', '4451', '4453'])
+            .order_by('code')
+            .first()
+        )
+
+        is_credit_note = getattr(supplier_invoice, 'type', 'standard') == 'credit_note'
+
+        subtotal = abs(supplier_invoice.subtotal)
+        tax_amount = (
+            abs(supplier_invoice.tax_amount)
+            if supplier_invoice.tax_amount
+            else Decimal('0')
+        )
+        total = abs(supplier_invoice.total)
+
+        ref = supplier_invoice.number or ''
+        supplier_name = (
+            supplier_invoice.supplier.name if supplier_invoice.supplier else ''
+        )
+        prefix = 'Avoir' if is_credit_note else 'Facture'
+        narration = f'{prefix} fournisseur {ref} — {supplier_name}'
+
+        lines = []
+
+        if is_credit_note:
+            # Avoir: Débit 401, Crédit 601 + TVA
+            lines.append(
+                {
+                    'account_code': supplier_account.code,
+                    'name': f'{prefix} {ref}',
+                    'debit': total,
+                    'credit': 0,
+                }
+            )
+            if subtotal > 0:
+                lines.append(
+                    {
+                        'account_code': purchase_account.code,
+                        'name': f'{prefix} {ref}',
+                        'debit': 0,
+                        'credit': subtotal,
+                    }
+                )
+            if tax_amount > 0 and vat_account:
+                lines.append(
+                    {
+                        'account_code': vat_account.code,
+                        'name': f'TVA {prefix.lower()} {ref}',
+                        'debit': 0,
+                        'credit': tax_amount,
+                    }
+                )
+        else:
+            # Facture: Débit 601 + TVA, Crédit 401
+            if subtotal > 0:
+                lines.append(
+                    {
+                        'account_code': purchase_account.code,
+                        'name': f'{prefix} {ref}',
+                        'debit': subtotal,
+                        'credit': 0,
+                    }
+                )
+            if tax_amount > 0 and vat_account:
+                lines.append(
+                    {
+                        'account_code': vat_account.code,
+                        'name': f'TVA {prefix.lower()} {ref}',
+                        'debit': tax_amount,
+                        'credit': 0,
+                    }
+                )
+            lines.append(
+                {
+                    'account_code': supplier_account.code,
+                    'name': f'{prefix} {ref}',
+                    'debit': 0,
+                    'credit': total,
+                    'date_maturity': getattr(supplier_invoice, 'due_date', None),
+                }
+            )
+
+        entry = JournalEntryService.create_entry(
+            journal_code='ACH',
+            entry_date=supplier_invoice.date,
+            narration=narration,
+            lines=lines,
+            ref=ref,
+            is_manual=False,
+            user=user,
+            source_info={
+                'module': 'purchasing',
+                'model': 'SupplierInvoice',
+                'id': supplier_invoice.id,
+            },
+        )
+
+        entry.post()
+        return entry
+
+    @staticmethod
+    def create_supplier_payment_entry(supplier_payment, user=None):
+        """
+        Crée une écriture comptable pour un paiement fournisseur.
+        Résolution dynamique des comptes via les journaux configurés.
+        """
+        from ..models import Journal
+
+        # Vérifier qu'aucune écriture n'existe déjà
+        existing = JournalEntry.objects.filter(
+            source_module='purchasing',
+            source_model='SupplierPayment',
+            source_id=supplier_payment.id,
+        ).first()
+        if existing:
+            return existing
+
+        # Journal banque ou caisse selon le mode de paiement
+        method = getattr(supplier_payment, 'method', 'bank_transfer')
+        if method == 'cash':
+            journal = Journal.objects.get(code='CSH')
+        else:
+            journal = Journal.objects.get(code='BNK')
+
+        bank_account = journal.default_debit_account_id
+        if not bank_account:
+            raise ValueError(
+                f'Le journal {journal.code} doit avoir un compte débit par défaut'
+            )
+
+        # Compte fournisseur via journal ACH
+        ach_journal = Journal.objects.get(code='ACH')
+        supplier_account = ach_journal.default_credit_account_id  # 401
+        if not supplier_account:
+            raise ValueError('Le journal ACH doit avoir un compte crédit par défaut')
+
+        invoice = supplier_payment.invoice
+        ref = supplier_payment.reference or ''
+        supplier_name = invoice.supplier.name if invoice and invoice.supplier else ''
+        narration = f'Paiement fournisseur {ref} — {supplier_name}'
+        amount = abs(supplier_payment.amount)
+
+        lines = [
+            {
+                'account_code': supplier_account.code,
+                'name': f'Paiement {ref}',
+                'debit': amount,
+                'credit': 0,
+            },
+            {
+                'account_code': bank_account.code,
+                'name': f'Paiement {ref}',
+                'debit': 0,
+                'credit': amount,
+            },
+        ]
+
+        entry = JournalEntryService.create_entry(
+            journal_code=journal.code,
+            entry_date=supplier_payment.date,
+            narration=narration,
+            lines=lines,
+            ref=ref,
+            is_manual=False,
+            user=user,
+            source_info={
+                'module': 'purchasing',
+                'model': 'SupplierPayment',
+                'id': supplier_payment.id,
+            },
+        )
+
+        entry.post()
+        return entry

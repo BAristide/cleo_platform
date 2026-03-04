@@ -56,9 +56,9 @@ class SalaryCalculator:
         )
 
         # Calculer les heures supplémentaires
-        hs_25_amount = SalaryCalculator._calculate_overtime(payslip, 0.25)
-        hs_50_amount = SalaryCalculator._calculate_overtime(payslip, 0.50)
-        hs_100_amount = SalaryCalculator._calculate_overtime(payslip, 1.00)
+        hs_25_amount = SalaryCalculator._calculate_overtime(payslip, Decimal('0.25'))
+        hs_50_amount = SalaryCalculator._calculate_overtime(payslip, Decimal('0.50'))
+        hs_100_amount = SalaryCalculator._calculate_overtime(payslip, Decimal('1.00'))
 
         # Ajouter les lignes d'heures supplémentaires si nécessaire
         if payslip.overtime_25_hours > 0:
@@ -259,11 +259,11 @@ class SalaryCalculator:
         hourly_rate = payroll_info.base_salary / monthly_hours
 
         # Déterminer les heures concernées
-        if rate == 0.25:
+        if rate == Decimal('0.25'):
             hours = payslip.overtime_25_hours
-        elif rate == 0.50:
+        elif rate == Decimal('0.50'):
             hours = payslip.overtime_50_hours
-        elif rate == 1.00:
+        elif rate == Decimal('1.00'):
             hours = payslip.overtime_100_hours
         else:
             hours = Decimal('0.0')
@@ -363,14 +363,18 @@ class SalaryCalculator:
         for bracket in brackets:
             if bracket.max_amount is None:  # Dernière tranche
                 if taxable_annual > bracket.min_amount:
-                    tax += (taxable_annual - bracket.min_amount) * (bracket.rate / 100)
+                    tax += (taxable_annual - bracket.min_amount) * (
+                        bracket.rate / Decimal('100')
+                    )
             elif taxable_annual > bracket.min_amount:
                 if taxable_annual > bracket.max_amount:
                     tax += (bracket.max_amount - bracket.min_amount) * (
-                        bracket.rate / 100
+                        bracket.rate / Decimal('100')
                     )
                 else:
-                    tax += (taxable_annual - bracket.min_amount) * (bracket.rate / 100)
+                    tax += (taxable_annual - bracket.min_amount) * (
+                        bracket.rate / Decimal('100')
+                    )
 
         # Soustraire la somme à déduire si applicable
         for bracket in brackets:

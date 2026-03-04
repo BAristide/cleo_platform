@@ -364,14 +364,34 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
         # Mettre à jour le statut du lancement
         payroll_run.status = 'validated'
         payroll_run.validated_date = timezone.now()
-        payroll_run.validated_by = request.user.employee
+        try:
+            payroll_run.validated_by = request.user.employee
+        except Exception:
+            payroll_run.validated_by = None
         payroll_run.save(update_fields=['status', 'validated_date', 'validated_by'])
 
         # Mettre à jour les bulletins
         PaySlip.objects.filter(payroll_run=payroll_run).update(status='validated')
 
+        # Générer l'écriture comptable automatiquement
+        accounting_error = None
+        try:
+            from accounting.services.journal_entry_service import JournalEntryService
+
+            entry = JournalEntryService.create_payroll_entry(
+                payroll_run, user=request.user
+            )
+            accounting_message = f'Écriture comptable {entry.name} créée et validée'
+        except Exception as e:
+            accounting_error = str(e)
+            accounting_message = f'Écriture comptable non générée : {accounting_error}'
+
         return Response(
-            {'success': True, 'message': 'Lancement de paie validé avec succès'}
+            {
+                'success': True,
+                'message': 'Lancement de paie validé avec succès',
+                'accounting': accounting_message,
+            }
         )
 
     @action(detail=True, methods=['post'])

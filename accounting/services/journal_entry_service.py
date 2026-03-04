@@ -612,187 +612,133 @@ class JournalEntryService:
         return entry
 
     @staticmethod
-    def create_payroll_entry(payroll_run):
+    def create_payroll_entry(payroll_run, user=None):
         """
         Crée une écriture comptable pour un lancement de paie.
-        Méthode de convenance pour les intégrations avec le module Payroll.
+        Résolution des comptes via AccountResolver (indépendant du pack comptable).
 
-        Args:
-            payroll_run: Objet lancement de paie du module Payroll
-
-        Returns:
-            JournalEntry: L'écriture créée
-
-        Raises:
-            ValueError: Si des données sont invalides ou manquantes
-            Exception: Si une erreur se produit lors de la création
+        Schéma comptable :
+            Débit  : salary_expense (brut) + social_charges_expense (patronales)
+            Crédit : salary_payable (net) + social_charges_payable (cotisations + IR)
         """
-        # Vérifier que le lancement de paie est valide
-        if not hasattr(payroll_run, 'state') or payroll_run.state not in [
-            'calculated',
-            'validated',
-            'paid',
-        ]:
+        from accounting.services.account_resolver import AccountResolver
+
+        # Protection anti-doublon
+        existing = JournalEntry.objects.filter(
+            source_module='payroll',
+            source_model='PayrollRun',
+            source_id=payroll_run.id,
+        ).first()
+        if existing:
+            return existing
+
+        # Vérifier que le lancement est dans un état valide
+        if payroll_run.status not in ['calculated', 'validated', 'paid']:
             raise ValueError(
-                _('Seuls les lancements de paie validés peuvent être comptabilisés')
+                _(
+                    'Seuls les lancements calculés, validés ou payés peuvent être comptabilisés'
+                )
             )
 
-        # Préparer les données de base
-        journal_code = 'SAL'  # Journal des salaires
+        # Date de l'écriture = fin de période
+        entry_date = payroll_run.period.end_date
 
-        # Déterminer la date de l'écriture (date de fin de période)
-        if hasattr(payroll_run, 'period') and hasattr(payroll_run.period, 'end_date'):
-            entry_date = payroll_run.period.end_date
-        else:
-            entry_date = (
-                payroll_run.date
-                if hasattr(payroll_run, 'date')
-                else timezone.now().date()
-            )
-
-        # Libellé de l'écriture
+        # Libellé et référence
         period_name = (
             payroll_run.period.name
-            if hasattr(payroll_run, 'period') and payroll_run.period
+            if payroll_run.period
             else entry_date.strftime('%m/%Y')
         )
-        narration = _('Salaires {}').format(period_name)
+        narration = f'Salaires {period_name}'
+        ref = f'PAIE-{payroll_run.id}'
 
-        # Référence de l'écriture
-        ref = _('PAIE-{}').format(payroll_run.id)
-
-        # Informations de source
-        source_info = {'module': 'payroll', 'model': 'PayrollRun', 'id': payroll_run.id}
-
-        # Récupérer les montants totaux
+        # Agréger les montants depuis les bulletins calculés
         total_gross = Decimal(0)
         total_employer = Decimal(0)
         total_employee = Decimal(0)
+        total_ir = Decimal(0)
         total_net = Decimal(0)
 
-        # Si l'objet a des bulletins associés
-        if hasattr(payroll_run, 'payslips'):
-            for payslip in payroll_run.payslips.all():
-                total_gross += (
-                    payslip.gross_salary
-                    if hasattr(payslip, 'gross_salary')
-                    else Decimal(0)
-                )
-                # employer = cnss_employer + amo_employer
-                total_employer += (
-                    getattr(payslip, 'cnss_employer', Decimal(0)) or Decimal(0)
-                ) + (getattr(payslip, 'amo_employer', Decimal(0)) or Decimal(0))
-                # employee = cnss_employee + amo_employee
-                total_employee += (
-                    getattr(payslip, 'cnss_employee', Decimal(0)) or Decimal(0)
-                ) + (getattr(payslip, 'amo_employee', Decimal(0)) or Decimal(0))
-                total_net += (
-                    payslip.net_salary if hasattr(payslip, 'net_salary') else Decimal(0)
-                )
-        else:
-            # Utiliser les montants globaux du lancement
-            total_gross = (
-                payroll_run.total_gross
-                if hasattr(payroll_run, 'total_gross')
-                else Decimal(0)
+        payslips = payroll_run.payslips.exclude(status='draft')
+        if not payslips.exists():
+            raise ValueError(_('Aucun bulletin calculé dans ce lancement'))
+
+        for payslip in payslips:
+            total_gross += payslip.gross_salary or Decimal(0)
+            total_employer += (payslip.cnss_employer or Decimal(0)) + (
+                payslip.amo_employer or Decimal(0)
             )
-            total_employer = (
-                payroll_run.total_employer_contribution
-                if hasattr(payroll_run, 'total_employer_contribution')
-                else Decimal(0)
+            total_employee += (payslip.cnss_employee or Decimal(0)) + (
+                payslip.amo_employee or Decimal(0)
             )
-            total_employee = (
-                payroll_run.total_employee_contribution
-                if hasattr(payroll_run, 'total_employee_contribution')
-                else Decimal(0)
-            )
-            total_net = (
-                payroll_run.total_net
-                if hasattr(payroll_run, 'total_net')
-                else Decimal(0)
+            total_ir += payslip.income_tax or Decimal(0)
+            total_net += payslip.net_salary or Decimal(0)
+
+        if total_gross <= 0:
+            raise ValueError(
+                _('Le salaire brut total est nul — vérifiez les bulletins')
             )
 
-        # Vérifier que les montants sont cohérents
-        if total_gross <= 0 or total_net <= 0:
-            raise ValueError(_('Les montants de paie sont invalides ou manquants'))
-
-        # Résolution dynamique des comptes via AccountResolver (indépendant du pack)
-        from accounting.services.account_resolver import AccountResolver
-
+        # Résolution dynamique des comptes
         salary_code = AccountResolver.get_code('salary_expense')
         charges_code = AccountResolver.get_code('social_charges_expense')
         dues_code = AccountResolver.get_code('salary_payable')
         social_code = AccountResolver.get_code('social_charges_payable')
 
-        # Préparer les lignes
-        lines = []
-
-        # 1. Salaires bruts (débit)
-        lines.append(
+        # Lignes d'écriture
+        # Débit : brut + charges patronales
+        # Crédit : net à payer + cotisations sociales (salariales + patronales) + IR
+        lines = [
             {
                 'account_code': salary_code,
-                'name': _('Salaires bruts'),
+                'name': f'Salaires bruts {period_name}',
                 'debit': total_gross,
                 'credit': 0,
-            }
-        )
-
-        # 2. Charges patronales (débit)
-        lines.append(
+            },
             {
                 'account_code': charges_code,
-                'name': _('Charges sociales patronales'),
+                'name': f'Charges patronales {period_name}',
                 'debit': total_employer,
                 'credit': 0,
-            }
-        )
-
-        # 3. Salaires nets à payer (crédit)
-        lines.append(
+            },
             {
                 'account_code': dues_code,
-                'name': _('Salaires nets à payer'),
+                'name': f'Net à payer {period_name}',
                 'debit': 0,
                 'credit': total_net,
-            }
-        )
-
-        # 4. Charges sociales à payer (crédit)
-        lines.append(
+            },
             {
                 'account_code': social_code,
-                'name': _('Charges sociales à payer'),
+                'name': f'Cotisations et IR à payer {period_name}',
                 'debit': 0,
-                'credit': total_employer + total_employee,
-            }
+                'credit': total_employer + total_employee + total_ir,
+            },
+        ]
+
+        # Déterminer le user auth.User pour l'écriture
+        entry_user = user
+        if not entry_user and payroll_run.validated_by:
+            entry_user = getattr(payroll_run.validated_by, 'user', None)
+        if not entry_user and payroll_run.created_by:
+            entry_user = getattr(payroll_run.created_by, 'user', None)
+
+        entry = JournalEntryService.create_entry(
+            journal_code='SAL',
+            entry_date=entry_date,
+            narration=narration,
+            lines=lines,
+            ref=ref,
+            is_manual=False,
+            user=entry_user,
+            source_info={
+                'module': 'payroll',
+                'model': 'PayrollRun',
+                'id': payroll_run.id,
+            },
         )
 
-        # Créer l'écriture
-        try:
-            entry = JournalEntryService.create_entry(
-                journal_code=journal_code,
-                entry_date=entry_date,
-                narration=narration,
-                lines=lines,
-                ref=ref,
-                is_manual=False,
-                user=payroll_run.created_by
-                if hasattr(payroll_run, 'created_by')
-                else None,
-                source_info=source_info,
-            )
-
-            # Valider l'écriture
-            entry.post()
-
-            return entry
-        except Exception as e:
-            # Propager l'erreur pour permettre à l'appelant de la gérer
-            raise ValueError(
-                _("Erreur lors de la création de l'écriture comptable: {}").format(
-                    str(e)
-                )
-            )
+        entry.post()
+        return entry
 
     @staticmethod
     def create_supplier_invoice_entry(supplier_invoice, user=None):

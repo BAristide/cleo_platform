@@ -47,6 +47,10 @@ class JournalEntryService:
         if not journal_code:
             raise ValueError(_('Le code du journal est requis'))
 
+        if isinstance(entry_date, str):
+            from datetime import datetime as dt
+
+            entry_date = dt.strptime(entry_date, '%Y-%m-%d').date()
         if not isinstance(entry_date, date):
             raise ValueError(_('La date doit être un objet date'))
 
@@ -426,217 +430,209 @@ class JournalEntryService:
             return reversal_entry
 
     @staticmethod
-    def create_invoice_entry(invoice):
+    def create_invoice_entry(invoice, user=None):
         """
-        Crée une écriture comptable pour une facture.
-        Méthode de convenance pour les intégrations avec le module Sales.
-
-        Args:
-            invoice: Objet facture du module Sales
-
-        Returns:
-            JournalEntry: L'écriture créée
-
-        Raises:
-            ValueError: Si des données sont invalides ou manquantes
-            Exception: Si une erreur se produit lors de la création
+        Crée une écriture comptable pour une facture client.
+        Résolution dynamique des comptes via les journaux configurés.
+        Gère les factures standard, acomptes et avoirs.
         """
-        # Vérifier que la facture est valide
-        if not hasattr(invoice, 'state') or invoice.state != 'validated':
+        from ..models import Account, Journal
+
+        # Vérifier qu'aucune écriture n'existe déjà
+        existing = JournalEntry.objects.filter(
+            source_module='sales',
+            source_model='Invoice',
+            source_id=invoice.id,
+        ).first()
+        if existing:
+            return existing
+
+        # Journal des ventes → comptes par défaut
+        journal = Journal.objects.get(code='VEN')
+        client_account = journal.default_debit_account_id  # 411
+        revenue_account = journal.default_credit_account_id  # 701
+
+        if not client_account or not revenue_account:
             raise ValueError(
-                _('Seules les factures validées peuvent être comptabilisées')
+                'Le journal VEN doit avoir des comptes débit/crédit par défaut configurés'
             )
 
-        # Préparer les données de base
-        journal_code = 'VEN'  # Journal des ventes
-        entry_date = invoice.date
-        narration = _('Facture {} - {}').format(
-            invoice.number,
-            invoice.customer.name
-            if hasattr(invoice, 'customer') and invoice.customer
-            else '',
+        # TVA collectée sur ventes (exclure parent et prestations)
+        vat_account = (
+            Account.objects.filter(
+                is_tax_account=True,
+                tax_type='vat_collected',
+            )
+            .exclude(code__in=['443', '4432'])
+            .order_by('code')
+            .first()
         )
-        ref = invoice.number
 
-        # Informations de source
-        source_info = {'module': 'sales', 'model': 'Invoice', 'id': invoice.id}
+        is_credit_note = getattr(invoice, 'type', 'standard') == 'credit_note'
 
-        # Préparer les lignes
+        subtotal = abs(invoice.subtotal)
+        tax_amount = abs(invoice.tax_amount) if invoice.tax_amount else Decimal('0')
+        total = abs(invoice.total)
+        is_tax_exempt = getattr(invoice, 'is_tax_exempt', False)
+
+        # Nom du client
+        client_name = invoice.company.name if invoice.company else ''
+        ref = invoice.number or ''
+        prefix = 'Avoir' if is_credit_note else 'Facture'
+        narration = f'{prefix} {ref} — {client_name}'
+
         lines = []
 
-        # 1. Ligne client (débit)
-        lines.append(
-            {
-                'account_code': '411000',  # Compte client
-                'name': _('Facture {}').format(invoice.number),
-                'partner_id': invoice.customer.id
-                if hasattr(invoice, 'customer') and invoice.customer
-                else None,
-                'debit': invoice.total_amount,
-                'credit': 0,
-                'date_maturity': invoice.due_date
-                if hasattr(invoice, 'due_date')
-                else None,
-            }
-        )
-
-        # 2. Ligne produit (crédit)
-        lines.append(
-            {
-                'account_code': '701000',  # Ventes de produits
-                'name': _('Facture {}').format(invoice.number),
-                'partner_id': invoice.customer.id
-                if hasattr(invoice, 'customer') and invoice.customer
-                else None,
-                'debit': 0,
-                'credit': invoice.total_untaxed
-                if hasattr(invoice, 'total_untaxed')
-                else invoice.total_amount,
-            }
-        )
-
-        # 3. Ligne TVA (crédit) - uniquement si non exonéré
-        is_tax_exempt = hasattr(invoice, 'is_tax_exempt') and invoice.is_tax_exempt
-        has_tax = hasattr(invoice, 'total_tax') and invoice.total_tax > 0
-
-        if has_tax and not is_tax_exempt:
+        if is_credit_note:
+            # Avoir: Débit 701 + TVA, Crédit 411
+            if subtotal > 0:
+                lines.append(
+                    {
+                        'account_code': revenue_account.code,
+                        'name': f'{prefix} {ref}',
+                        'debit': subtotal,
+                        'credit': 0,
+                    }
+                )
+            if tax_amount > 0 and vat_account and not is_tax_exempt:
+                lines.append(
+                    {
+                        'account_code': vat_account.code,
+                        'name': f'TVA {prefix.lower()} {ref}',
+                        'debit': tax_amount,
+                        'credit': 0,
+                    }
+                )
             lines.append(
                 {
-                    'account_code': '445500',  # TVA collectée
-                    'name': _('TVA sur facture {}').format(invoice.number),
-                    'partner_id': invoice.customer.id
-                    if hasattr(invoice, 'customer') and invoice.customer
-                    else None,
+                    'account_code': client_account.code,
+                    'name': f'{prefix} {ref}',
                     'debit': 0,
-                    'credit': invoice.total_tax,
+                    'credit': total,
                 }
             )
-
-        # Créer l'écriture
-        try:
-            entry = JournalEntryService.create_entry(
-                journal_code=journal_code,
-                entry_date=entry_date,
-                narration=narration,
-                lines=lines,
-                ref=ref,
-                is_manual=False,
-                user=invoice.created_by if hasattr(invoice, 'created_by') else None,
-                source_info=source_info,
+        else:
+            # Facture standard/acompte: Débit 411, Crédit 701 + TVA
+            lines.append(
+                {
+                    'account_code': client_account.code,
+                    'name': f'{prefix} {ref}',
+                    'debit': total,
+                    'credit': 0,
+                    'date_maturity': getattr(invoice, 'due_date', None),
+                }
             )
-
-            # Valider l'écriture
-            entry.post()
-
-            return entry
-        except Exception as e:
-            # Propager l'erreur pour permettre à l'appelant de la gérer
-            raise ValueError(
-                _("Erreur lors de la création de l'écriture comptable: {}").format(
-                    str(e)
+            if subtotal > 0:
+                lines.append(
+                    {
+                        'account_code': revenue_account.code,
+                        'name': f'{prefix} {ref}',
+                        'debit': 0,
+                        'credit': subtotal,
+                    }
                 )
-            )
+            if tax_amount > 0 and vat_account and not is_tax_exempt:
+                lines.append(
+                    {
+                        'account_code': vat_account.code,
+                        'name': f'TVA {prefix.lower()} {ref}',
+                        'debit': 0,
+                        'credit': tax_amount,
+                    }
+                )
+
+        entry = JournalEntryService.create_entry(
+            journal_code='VEN',
+            entry_date=invoice.date,
+            narration=narration,
+            lines=lines,
+            ref=ref,
+            is_manual=False,
+            user=user,
+            source_info={
+                'module': 'sales',
+                'model': 'Invoice',
+                'id': invoice.id,
+            },
+        )
+
+        entry.post()
+        return entry
 
     @staticmethod
-    def create_payment_entry(payment):
+    def create_payment_entry(payment, user=None):
         """
-        Crée une écriture comptable pour un paiement.
-        Méthode de convenance pour les intégrations avec le module Sales.
-
-        Args:
-            payment: Objet paiement du module Sales
-
-        Returns:
-            JournalEntry: L'écriture créée
-
-        Raises:
-            ValueError: Si des données sont invalides ou manquantes
-            Exception: Si une erreur se produit lors de la création
+        Crée une écriture comptable pour un paiement client.
+        Résolution dynamique des comptes via les journaux configurés.
         """
-        # Vérifier que le paiement est valide
-        if not hasattr(payment, 'state') or payment.state != 'validated':
-            raise ValueError(
-                _('Seuls les paiements validés peuvent être comptabilisés')
-            )
+        from ..models import Journal
 
-        # Déterminer le journal et le compte selon le mode de paiement
-        if hasattr(payment, 'payment_method'):
-            if payment.payment_method in ['bank_transfer', 'check', 'credit_card']:
-                journal_code = 'BNK'  # Journal de banque
-                bank_account_code = '514000'  # Compte bancaire
-            else:
-                journal_code = 'CSH'  # Journal de caisse
-                bank_account_code = '516000'  # Compte caisse
+        # Vérifier qu'aucune écriture n'existe déjà
+        existing = JournalEntry.objects.filter(
+            source_module='sales',
+            source_model='Payment',
+            source_id=payment.id,
+        ).first()
+        if existing:
+            return existing
+
+        # Journal banque ou caisse selon le mode de paiement
+        method = getattr(payment, 'method', 'bank_transfer')
+        if method == 'cash':
+            journal = Journal.objects.get(code='CSH')
         else:
-            # Par défaut, on utilise le journal de banque
-            journal_code = 'BNK'
-            bank_account_code = '514000'
+            journal = Journal.objects.get(code='BNK')
 
-        # Préparer les données de base
-        entry_date = payment.date
-        narration = _('Paiement {} - {}').format(
-            payment.reference if hasattr(payment, 'reference') else '',
-            payment.customer.name
-            if hasattr(payment, 'customer') and payment.customer
-            else '',
-        )
-        ref = payment.reference if hasattr(payment, 'reference') else ''
-
-        # Informations de source
-        source_info = {'module': 'sales', 'model': 'Payment', 'id': payment.id}
-
-        # Préparer les lignes
-        debit_lines = [
-            {
-                'account_code': bank_account_code,
-                'name': _('Paiement {}').format(
-                    payment.reference if hasattr(payment, 'reference') else ''
-                ),
-                'partner_id': payment.customer.id
-                if hasattr(payment, 'customer') and payment.customer
-                else None,
-                'amount': payment.amount,
-            }
-        ]
-
-        credit_lines = [
-            {
-                'account_code': '411000',  # Compte client
-                'name': _('Paiement {}').format(
-                    payment.reference if hasattr(payment, 'reference') else ''
-                ),
-                'partner_id': payment.customer.id
-                if hasattr(payment, 'customer') and payment.customer
-                else None,
-                'amount': payment.amount,
-            }
-        ]
-
-        # Créer l'écriture
-        try:
-            entry = JournalEntryService.create_simple_entry(
-                journal_code=journal_code,
-                entry_date=entry_date,
-                narration=narration,
-                debit_lines=debit_lines,
-                credit_lines=credit_lines,
-                ref=ref,
-                is_manual=False,
-                user=payment.created_by if hasattr(payment, 'created_by') else None,
-                source_info=source_info,
-            )
-
-            # Valider l'écriture
-            entry.post()
-
-            return entry
-        except Exception as e:
-            # Propager l'erreur pour permettre à l'appelant de la gérer
+        bank_account = journal.default_debit_account_id
+        if not bank_account:
             raise ValueError(
-                _("Erreur lors de la création de l'écriture comptable: {}").format(
-                    str(e)
-                )
+                f'Le journal {journal.code} doit avoir un compte débit par défaut'
             )
+
+        # Compte client via journal VEN
+        ven_journal = Journal.objects.get(code='VEN')
+        client_account = ven_journal.default_debit_account_id  # 411
+        if not client_account:
+            raise ValueError('Le journal VEN doit avoir un compte débit par défaut')
+
+        invoice = payment.invoice
+        client_name = invoice.company.name if invoice and invoice.company else ''
+        ref = payment.reference or ''
+        narration = f'Paiement client {ref} — {client_name}'
+        amount = abs(payment.amount)
+
+        lines = [
+            {
+                'account_code': bank_account.code,
+                'name': f'Paiement {ref}',
+                'debit': amount,
+                'credit': 0,
+            },
+            {
+                'account_code': client_account.code,
+                'name': f'Paiement {ref}',
+                'debit': 0,
+                'credit': amount,
+            },
+        ]
+
+        entry = JournalEntryService.create_entry(
+            journal_code=journal.code,
+            entry_date=payment.date,
+            narration=narration,
+            lines=lines,
+            ref=ref,
+            is_manual=False,
+            user=user,
+            source_info={
+                'module': 'sales',
+                'model': 'Payment',
+                'id': payment.id,
+            },
+        )
+
+        entry.post()
+        return entry
 
     @staticmethod
     def create_payroll_entry(payroll_run):
@@ -751,7 +747,7 @@ class JournalEntryService:
         # 1. Salaires bruts (débit)
         lines.append(
             {
-                'account_code': '641000',  # Salaires
+                'account_code': '661',  # Rémunérations du personnel (SYSCOHADA)
                 'name': _('Salaires bruts'),
                 'debit': total_gross,
                 'credit': 0,
@@ -761,7 +757,7 @@ class JournalEntryService:
         # 2. Charges patronales (débit)
         lines.append(
             {
-                'account_code': '645000',  # Charges sociales
+                'account_code': '664',  # Charges sociales (SYSCOHADA)
                 'name': _('Charges sociales patronales'),
                 'debit': total_employer,
                 'credit': 0,
@@ -771,7 +767,7 @@ class JournalEntryService:
         # 3. Salaires nets à payer (crédit)
         lines.append(
             {
-                'account_code': '421000',  # Salaires à payer
+                'account_code': '421',  # Personnel, rémunérations dues (SYSCOHADA)
                 'name': _('Salaires nets à payer'),
                 'debit': 0,
                 'credit': total_net,
@@ -781,7 +777,7 @@ class JournalEntryService:
         # 4. Charges sociales à payer (crédit)
         lines.append(
             {
-                'account_code': '431000',  # Organismes sociaux
+                'account_code': '431',  # Sécurité sociale (SYSCOHADA)
                 'name': _('Charges sociales à payer'),
                 'debit': 0,
                 'credit': total_employer + total_employee,

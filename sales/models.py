@@ -1081,6 +1081,16 @@ class Invoice(SalesDocument):
         blank=True,
     )
 
+    # Lien vers l'écriture comptable
+    journal_entry = models.ForeignKey(
+        'accounting.JournalEntry',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='sales_invoices',
+        verbose_name=_('Écriture comptable'),
+    )
+
     # Nouveau champ pour le type de facture
     INVOICE_TYPE_CHOICES = [
         ('standard', _('Facture standard')),

@@ -38,6 +38,39 @@ from .serializers import (
 )
 
 
+def _generate_invoice_entry(invoice, user=None):
+    """Génère l'écriture comptable pour une facture (tous types)."""
+    try:
+        from accounting.services.journal_entry_service import JournalEntryService
+
+        journal_entry = JournalEntryService.create_invoice_entry(invoice, user=user)
+        if journal_entry:
+            invoice.journal_entry = journal_entry
+            invoice.save(update_fields=['journal_entry'])
+        return journal_entry
+    except Exception as e:
+        import logging
+
+        logging.getLogger(__name__).warning(
+            f'Écriture comptable facture {invoice.number}: {e}'
+        )
+        return None
+
+
+def _generate_payment_entry(payment, user=None):
+    """Génère l'écriture comptable pour un paiement."""
+    try:
+        from accounting.services.journal_entry_service import JournalEntryService
+
+        JournalEntryService.create_payment_entry(payment, user=user)
+    except Exception as e:
+        import logging
+
+        logging.getLogger(__name__).warning(
+            f'Écriture comptable paiement {payment.id}: {e}'
+        )
+
+
 # Filtres personnalisés
 class InvoiceFilter(django_filters.FilterSet):
     """Filtre personnalisé pour les factures."""
@@ -380,6 +413,9 @@ class QuoteViewSet(viewsets.ModelViewSet):
             # Utilisation de la méthode convert_to_invoice du modèle
             invoice = quote.convert_to_invoice()
 
+            # Génération de l'écriture comptable
+            _generate_invoice_entry(invoice, user=request.user)
+
             # Retourner la facture créée
             serializer = InvoiceSerializer(invoice)
             return Response(
@@ -658,6 +694,9 @@ class OrderViewSet(viewsets.ModelViewSet):
             order.converted_to_invoice = True
             order.save(update_fields=['has_final_invoice', 'converted_to_invoice'])
 
+            # Génération de l'écriture comptable
+            _generate_invoice_entry(invoice, user=request.user)
+
             # Retourner la facture créée
             serializer = InvoiceSerializer(invoice)
             return Response(
@@ -693,6 +732,9 @@ class OrderViewSet(viewsets.ModelViewSet):
 
             # Créer la facture d'acompte
             deposit_invoice = Invoice.create_deposit_invoice(order, deposit_percentage)
+
+            # Génération de l'écriture comptable
+            _generate_invoice_entry(deposit_invoice, user=request.user)
 
             serializer = InvoiceSerializer(deposit_invoice)
             return Response(
@@ -763,9 +805,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         return InvoiceSerializer
 
     def perform_create(self, serializer):
-        serializer.save()
+        instance = serializer.save()
+        _generate_invoice_entry(instance, user=self.request.user)
 
-    @action(detail=True, methods=['post'])
     def generate_pdf(self, request, pk=None):
         """Générer un PDF pour une facture."""
         invoice = self.get_object()
@@ -884,6 +926,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
                 invoice.save(
                     update_fields=['amount_paid', 'amount_due', 'payment_status']
                 )
+
+                # Génération de l'écriture comptable du paiement
+                _generate_payment_entry(payment, user=request.user)
 
                 # Retourner le paiement créé
                 serializer = PaymentSerializer(payment)
@@ -1023,6 +1068,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
             process_credit_note_returns(credit_note, return_items, user=user)
 
+        # Génération de l'écriture comptable pour l'avoir
+        _generate_invoice_entry(credit_note, user=user)
+
         # Mettre à jour la facture d'origine si avoir total
         if proportion >= Decimal('0.99') and invoice.payment_status == 'paid':
             invoice.amount_paid = Decimal('0')
@@ -1132,6 +1180,9 @@ class InvoiceViewSet(viewsets.ModelViewSet):
 
             process_credit_note_returns(credit_note, return_items, user=user)
 
+        # Génération de l'écriture comptable pour l'avoir
+        _generate_invoice_entry(credit_note, user=user)
+
         return credit_note
 
     @action(detail=True, methods=['get'])
@@ -1211,9 +1262,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
     ordering = ['-date']
 
     def perform_create(self, serializer):
-        serializer.save()
+        instance = serializer.save()
+        _generate_payment_entry(instance, user=self.request.user)
 
-    @action(detail=False, methods=['get'])
     def stats(self, request):
         """Récupérer des statistiques sur les paiements."""
         # Somme totale des paiements

@@ -742,6 +742,12 @@ class BankStatement(models.Model):
     )
     created_at = models.DateTimeField(_('Créé le'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Modifié le'), auto_now=True)
+    source_pdf = models.FileField(
+        _('Relevé PDF source'),
+        upload_to='accounting/bank_statements/',
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         verbose_name = _('Relevé bancaire')

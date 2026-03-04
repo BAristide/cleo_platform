@@ -32,13 +32,15 @@ import {
   LinkOutlined,
   SearchOutlined,
   UploadOutlined,
-  ThunderboltOutlined
+  ThunderboltOutlined,
+  FilePdfOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
 import OFXImportModal from './OFXImportModal';
+import PDFImportModal from './PDFImportModal';
 import ReconciliationModal from './ReconciliationModal';
 
 const { Title, Text, Paragraph } = Typography;
@@ -56,6 +58,7 @@ const BankStatementDetail = () => {
   const [showReconcileModal, setShowReconcileModal] = useState(false);
   const [selectedLine, setSelectedLine] = useState(null);
   const [showOFXModal, setShowOFXModal] = useState(false);
+  const [showPDFModal, setShowPDFModal] = useState(false);
   const [autoReconciling, setAutoReconciling] = useState(false);
 
   useEffect(() => {
@@ -400,6 +403,12 @@ const BankStatementDetail = () => {
                 Importer OFX
               </Button>
               <Button
+                icon={<FilePdfOutlined />}
+                onClick={() => setShowPDFModal(true)}
+              >
+                Importer PDF
+              </Button>
+              <Button
                 icon={<ThunderboltOutlined />}
                 onClick={handleAutoReconcile}
                 loading={autoReconciling}
@@ -428,6 +437,15 @@ const BankStatementDetail = () => {
                 Confirmer
               </Button>
             </>
+          )}
+          {displayedStatement.source_pdf_url && (
+            <Button
+              icon={<FilePdfOutlined style={{ color: '#ff4d4f' }} />}
+              href={displayedStatement.source_pdf_url}
+              target="_blank"
+            >
+              Télécharger PDF
+            </Button>
           )}
           <Button onClick={() => navigate('/accounting/bank-statements')}>
             Retour à la liste
@@ -550,6 +568,16 @@ const BankStatementDetail = () => {
         onClose={() => setShowOFXModal(false)}
         onSuccess={() => {
           setShowOFXModal(false);
+          fetchStatementDetails();
+        }}
+      />
+      {/* Modal import PDF */}
+      <PDFImportModal
+        visible={showPDFModal}
+        statementId={id}
+        onClose={() => setShowPDFModal(false)}
+        onSuccess={() => {
+          setShowPDFModal(false);
           fetchStatementDetails();
         }}
       />

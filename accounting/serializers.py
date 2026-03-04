@@ -629,6 +629,7 @@ class BankStatementSerializer(serializers.ModelSerializer):
     lines_count = serializers.SerializerMethodField()
     difference = serializers.SerializerMethodField()
     state_display = serializers.SerializerMethodField()
+    source_pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = BankStatement
@@ -649,6 +650,7 @@ class BankStatementSerializer(serializers.ModelSerializer):
             'created_by',
             'created_by_name',
             'lines_count',
+            'source_pdf_url',
         ]
         read_only_fields = ['created_by']
 
@@ -674,6 +676,14 @@ class BankStatementSerializer(serializers.ModelSerializer):
     def get_state_display(self, obj):
         return obj.get_state_display()
 
+    def get_source_pdf_url(self, obj):
+        if obj.source_pdf:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.source_pdf.url)
+            return obj.source_pdf.url
+        return None
+
 
 class BankStatementDetailSerializer(serializers.ModelSerializer):
     """Serializer détaillé pour les relevés bancaires."""
@@ -684,6 +694,7 @@ class BankStatementDetailSerializer(serializers.ModelSerializer):
     lines = BankStatementLineSerializer(many=True, read_only=True)
     difference = serializers.SerializerMethodField()
     state_display = serializers.SerializerMethodField()
+    source_pdf_url = serializers.SerializerMethodField()
 
     class Meta:
         model = BankStatement
@@ -706,6 +717,7 @@ class BankStatementDetailSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
             'lines',
+            'source_pdf_url',
         ]
         read_only_fields = ['created_by', 'created_at', 'updated_at']
 
@@ -727,6 +739,14 @@ class BankStatementDetailSerializer(serializers.ModelSerializer):
 
     def get_state_display(self, obj):
         return obj.get_state_display()
+
+    def get_source_pdf_url(self, obj):
+        if obj.source_pdf:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.source_pdf.url)
+            return obj.source_pdf.url
+        return None
 
 
 class AnalyticAccountSerializer(serializers.ModelSerializer):

@@ -765,6 +765,124 @@ class BankStatementViewSet(viewsets.ModelViewSet):
             )
 
     @action(detail=True, methods=['post'])
+    def import_from_pdf(self, request, pk=None):
+        """Importe un relevé bancaire depuis un fichier PDF."""
+        statement = self.get_object()
+
+        if statement.state != 'draft':
+            return Response(
+                {
+                    'success': False,
+                    'message': 'Le relevé doit être en brouillon pour importer',
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        pdf_file = request.FILES.get('file')
+        if not pdf_file:
+            return Response(
+                {'success': False, 'message': 'Aucun fichier fourni'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not pdf_file.name.lower().endswith('.pdf'):
+            return Response(
+                {'success': False, 'message': 'Le fichier doit être au format PDF'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            from io import BytesIO
+
+            from django.core.files.base import ContentFile
+
+            from accounting.services.pdf_bank_parser import PDFBankParser
+
+            raw_bytes = pdf_file.read()
+            result = PDFBankParser.parse(BytesIO(raw_bytes))
+            transactions = result['transactions']
+
+            if not transactions:
+                return Response(
+                    {'success': False, 'message': 'Aucune transaction extraite du PDF'},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            lines_created = 0
+            duplicates_skipped = 0
+
+            for txn in transactions:
+                if (
+                    txn.get('ref')
+                    and BankStatementLine.objects.filter(
+                        statement_id=statement, ref=txn['ref']
+                    ).exists()
+                ):
+                    duplicates_skipped += 1
+                    continue
+
+                BankStatementLine.objects.create(
+                    statement_id=statement,
+                    date=txn['date'],
+                    name=txn['name'],
+                    ref=txn['ref'],
+                    amount=txn['amount'],
+                )
+                lines_created += 1
+
+            # Recalcul du solde final
+            if lines_created > 0:
+                total = sum(line.amount for line in statement.lines.all())
+                statement.balance_end = statement.balance_start + total
+                statement.save(update_fields=['balance_end'])
+
+            # Soldes détectés dans le PDF
+            if result.get('balance_start') and statement.balance_start == 0:
+                statement.balance_start = result['balance_start']
+                statement.save(update_fields=['balance_start'])
+            if result.get('balance_end'):
+                statement.balance_end_real = result['balance_end']
+                statement.save(update_fields=['balance_end_real'])
+
+            # Sauvegarde du fichier PDF source (une seule fois)
+            if not statement.source_pdf:
+                statement.source_pdf.save(
+                    pdf_file.name, ContentFile(raw_bytes), save=True
+                )
+
+            msg = f'{lines_created} lignes importées'
+            if duplicates_skipped:
+                msg += f', {duplicates_skipped} doublons ignorés'
+
+            return Response(
+                {
+                    'success': True,
+                    'message': msg,
+                    'lines_created': lines_created,
+                    'duplicates_skipped': duplicates_skipped,
+                    'balance_start_detected': float(result['balance_start'])
+                    if result.get('balance_start')
+                    else None,
+                    'balance_end_detected': float(result['balance_end'])
+                    if result.get('balance_end')
+                    else None,
+                    'parser_used': result.get('parser_used', 'unknown'),
+                    'confidence': result.get('confidence', 'unknown'),
+                }
+            )
+
+        except ValueError as e:
+            return Response(
+                {'success': False, 'message': str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except Exception as e:
+            return Response(
+                {'success': False, 'message': f'Erreur import PDF: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    @action(detail=True, methods=['post'])
     def auto_reconcile(self, request, pk=None):
         """Rapprochement automatique des lignes du relevé."""
         statement = self.get_object()

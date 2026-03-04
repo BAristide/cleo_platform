@@ -5,11 +5,11 @@ from django.db import models
 
 from ..models import (
     EmployeePayroll,
-    PayrollParameter,
     PaySlipLine,
     SalaryComponent,
     TaxBracket,
 )
+from .parameter_resolver import PayrollParameterResolver
 
 
 class SalaryCalculator:
@@ -21,6 +21,15 @@ class SalaryCalculator:
         if payslip.status != 'draft' and not recalculate:
             raise ValueError(
                 "Impossible de calculer un bulletin qui n'est pas en brouillon"
+            )
+
+        # Validation de complétude du pack de paie
+        pack_check = PayrollParameterResolver.validate_pack()
+        if not pack_check['valid']:
+            raise ValueError(
+                f'Pack de paie incomplet — {len(pack_check["missing"])} paramètre(s) manquant(s) : '
+                f'{pack_check["missing"]}. '
+                f"Lancez 'python manage.py init_payroll_data --locale <pack> --force'."
             )
 
         employee = payslip.employee
@@ -120,24 +129,24 @@ class SalaryCalculator:
 
         # Calculer les cotisations CNSS et AMO
         cnss_base = SalaryCalculator._get_cnss_base(payslip)
-        cnss_ceiling = PayrollParameter.objects.get(code='CNSS_CEILING').value
+        cnss_ceiling = PayrollParameterResolver.get_required('CNSS_CEILING')
         if cnss_base > cnss_ceiling:
             cnss_base = cnss_ceiling
 
         # Taux CNSS employé et employeur
         cnss_employee_rate = (
-            PayrollParameter.objects.get(code='CNSS_EMPLOYEE_RATE').value / 100
+            PayrollParameterResolver.get_required('CNSS_EMPLOYEE_RATE') / 100
         )
         cnss_employer_rate = (
-            PayrollParameter.objects.get(code='CNSS_EMPLOYER_RATE').value / 100
+            PayrollParameterResolver.get_required('CNSS_EMPLOYER_RATE') / 100
         )
 
         # Taux AMO employé et employeur
         amo_employee_rate = (
-            PayrollParameter.objects.get(code='AMO_EMPLOYEE_RATE').value / 100
+            PayrollParameterResolver.get_required('AMO_EMPLOYEE_RATE') / 100
         )
         amo_employer_rate = (
-            PayrollParameter.objects.get(code='AMO_EMPLOYER_RATE').value / 100
+            PayrollParameterResolver.get_required('AMO_EMPLOYER_RATE') / 100
         )
 
         # Calcul des cotisations
@@ -231,10 +240,7 @@ class SalaryCalculator:
         full_salary = payroll_info.base_salary
 
         # Jours ouvrés par mois depuis les paramètres de paie
-        try:
-            base_days = PayrollParameter.objects.get(code='WORKING_DAYS_MONTH').value
-        except PayrollParameter.DoesNotExist:
-            base_days = Decimal('26.0')  # Fallback Maroc
+        base_days = PayrollParameterResolver.get_required('WORKING_DAYS_MONTH')
 
         actual_days = base_days - payslip.absence_days - payslip.unpaid_leave_days
 
@@ -248,12 +254,7 @@ class SalaryCalculator:
         payroll_info = EmployeePayroll.objects.get(employee=employee)
 
         # Heures standard par mois depuis les paramètres de paie
-        try:
-            monthly_hours = PayrollParameter.objects.get(
-                code='WORKING_HOURS_MONTH'
-            ).value
-        except PayrollParameter.DoesNotExist:
-            monthly_hours = Decimal('191')  # Fallback Maroc
+        monthly_hours = PayrollParameterResolver.get_required('WORKING_HOURS_MONTH')
 
         hourly_rate = payroll_info.base_salary / monthly_hours
 
@@ -285,24 +286,17 @@ class SalaryCalculator:
         if (today.month, today.day) < (hire_date.month, hire_date.day):
             years -= 1
 
-        # Récupérer les taux d'ancienneté depuis les paramètres de paie
-        def _get_rate(code, fallback):
-            try:
-                return PayrollParameter.objects.get(code=code).value / Decimal('100')
-            except PayrollParameter.DoesNotExist:
-                return fallback
-
         rate = Decimal('0.0')
         if years >= 25:
-            rate = _get_rate('SENIORITY_25Y_RATE', Decimal('0.25'))
+            rate = PayrollParameterResolver.get_optional('SENIORITY_25Y_RATE') / 100
         elif years >= 20:
-            rate = _get_rate('SENIORITY_20Y_RATE', Decimal('0.20'))
+            rate = PayrollParameterResolver.get_optional('SENIORITY_20Y_RATE') / 100
         elif years >= 12:
-            rate = _get_rate('SENIORITY_12Y_RATE', Decimal('0.15'))
+            rate = PayrollParameterResolver.get_optional('SENIORITY_12Y_RATE') / 100
         elif years >= 5:
-            rate = _get_rate('SENIORITY_5Y_RATE', Decimal('0.10'))
+            rate = PayrollParameterResolver.get_optional('SENIORITY_5Y_RATE') / 100
         elif years >= 2:
-            rate = _get_rate('SENIORITY_2Y_RATE', Decimal('0.05'))
+            rate = PayrollParameterResolver.get_optional('SENIORITY_2Y_RATE') / 100
 
         # Calculer la prime d'ancienneté
         return base_salary * rate
@@ -342,26 +336,11 @@ class SalaryCalculator:
         # Déductions pour charges de famille (depuis paramètres de paie)
         family_deduction = Decimal('0')
 
-        try:
-            spouse_deduction = PayrollParameter.objects.get(
-                code='SPOUSE_DEDUCTION'
-            ).value
-        except PayrollParameter.DoesNotExist:
-            spouse_deduction = Decimal('360')
-
-        try:
-            child_deduction_unit = PayrollParameter.objects.get(
-                code='CHILD_DEDUCTION'
-            ).value
-        except PayrollParameter.DoesNotExist:
-            child_deduction_unit = Decimal('360')
-
-        try:
-            max_children = int(
-                PayrollParameter.objects.get(code='MAX_DEPENDENT_CHILDREN').value
-            )
-        except PayrollParameter.DoesNotExist:
-            max_children = 6
+        spouse_deduction = PayrollParameterResolver.get_optional('SPOUSE_DEDUCTION')
+        child_deduction_unit = PayrollParameterResolver.get_optional('CHILD_DEDUCTION')
+        max_children = int(
+            PayrollParameterResolver.get_optional('MAX_DEPENDENT_CHILDREN')
+        )
 
         # Si marié, déduction pour le conjoint
         if employee.marital_status == 'married':

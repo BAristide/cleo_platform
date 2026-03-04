@@ -35,6 +35,18 @@ class PayrollParameterAdmin(admin.ModelAdmin):
         ('Statut', {'fields': ('is_active',)}),
     )
 
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        from .services.parameter_resolver import PayrollParameterResolver
+
+        PayrollParameterResolver.clear_cache()
+
+    def delete_model(self, request, obj):
+        super().delete_model(request, obj)
+        from .services.parameter_resolver import PayrollParameterResolver
+
+        PayrollParameterResolver.clear_cache()
+
 
 admin.site.register(PayrollParameter, PayrollParameterAdmin)
 

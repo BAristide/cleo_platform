@@ -20,30 +20,29 @@ import {
   Row,
   Col,
   Progress,
+  Dropdown,
   message
 } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
   CheckOutlined,
-  CloseOutlined,
   ExclamationCircleOutlined,
   BankOutlined,
-  LinkOutlined,
   SearchOutlined,
   UploadOutlined,
   ThunderboltOutlined,
-  FilePdfOutlined
+  FilePdfOutlined,
+  DownOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
 import OFXImportModal from './OFXImportModal';
 import PDFImportModal from './PDFImportModal';
 import ReconciliationModal from './ReconciliationModal';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { confirm } = Modal;
 
 const BankStatementDetail = () => {
@@ -68,14 +67,10 @@ const BankStatementDetail = () => {
   const fetchStatementDetails = async () => {
     setLoading(true);
     setError(null);
-
     try {
       const response = await axios.get(`/api/accounting/bank-statements/${id}/`);
       const statementData = response.data;
-
       setStatement(statementData);
-
-      // Count reconciled lines
       if (statementData.lines) {
         const reconciled = statementData.lines.filter(line => line.is_reconciled).length;
         setReconciledCount(reconciled);
@@ -83,15 +78,6 @@ const BankStatementDetail = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des détails du relevé:', error);
       setError('Impossible de charger les détails du relevé. Veuillez réessayer plus tard.');
-
-      // If API fails, use demo data
-      if (demoStatements[id - 1]) {
-        const demoStatement = demoStatements[id - 1];
-        setStatement(demoStatement);
-
-        const reconciled = demoStatement.lines.filter(line => line.is_reconciled).length;
-        setReconciledCount(reconciled);
-      }
     } finally {
       setLoading(false);
     }
@@ -111,8 +97,7 @@ const BankStatementDetail = () => {
           message.success('Relevé supprimé avec succès.');
           navigate('/accounting/bank-statements');
         } catch (error) {
-          console.error('Erreur lors de la suppression du relevé:', error);
-          message.error('Erreur lors de la suppression du relevé. Veuillez réessayer.');
+          message.error('Erreur lors de la suppression du relevé.');
         }
       },
     });
@@ -125,15 +110,13 @@ const BankStatementDetail = () => {
       message.success('Relevé confirmé avec succès.');
       fetchStatementDetails();
     } catch (error) {
-      console.error('Erreur lors de la confirmation du relevé:', error);
-      message.error('Erreur lors de la confirmation du relevé. Veuillez réessayer.');
+      message.error('Erreur lors de la confirmation du relevé.');
     } finally {
       setConfirming(false);
     }
   };
 
   const openReconcileModal = (lineId) => {
-    // Find the line
     const line = statement.lines.find(l => l.id === lineId);
     if (line) {
       setSelectedLine(line);
@@ -141,7 +124,7 @@ const BankStatementDetail = () => {
     }
   };
 
-  const handleReconcileLine = (lineId, entryLineIds) => {
+  const handleReconcileLine = () => {
     message.success('Ligne rapprochée avec succès.');
     setShowReconcileModal(false);
     fetchStatementDetails();
@@ -150,9 +133,7 @@ const BankStatementDetail = () => {
   const handleAutoReconcile = async () => {
     setAutoReconciling(true);
     try {
-      const response = await axios.post(
-        `/api/accounting/bank-statements/\${id}/auto_reconcile/`
-      );
+      const response = await axios.post(`/api/accounting/bank-statements/${id}/auto_reconcile/`);
       if (response.data.success) {
         message.success(response.data.message);
         fetchStatementDetails();
@@ -169,91 +150,16 @@ const BankStatementDetail = () => {
   const handleUnreconcileLine = async (lineId) => {
     try {
       const response = await axios.post(
-        `/api/accounting/bank-statements/\${id}/lines/\${lineId}/unreconcile/`
+        `/api/accounting/bank-statements/${id}/lines/${lineId}/unreconcile/`
       );
       if (response.data.success) {
         message.success('Rapprochement annulé');
         fetchStatementDetails();
       }
     } catch (error) {
-      message.error('Erreur lors de l\'annulation du rapprochement');
+      message.error("Erreur lors de l'annulation du rapprochement");
     }
   };
-
-  // Demo data for bank statements
-  const demoStatements = [
-    {
-      id: 1,
-      journal_id: 3,
-      journal_code: 'BNK',
-      journal_name: 'Journal de banque',
-      name: 'Relevé Mai 2025',
-      date: '2025-05-31',
-      reference: 'REL-052025',
-      balance_start: 350000,
-      balance_end: 375400,
-      balance_end_real: 375400,
-      state: 'draft',
-      created_by: 1,
-      created_by_name: 'Admin',
-      created_at: '2025-05-31T15:30:00',
-      updated_at: '2025-05-31T15:30:00',
-      lines: [
-        {
-          id: 101,
-          statement_id: 1,
-          date: '2025-05-05',
-          name: 'Paiement client ABC',
-          ref: 'VIR-12345',
-          partner_id: 1,
-          partner_name: 'ABC SARL',
-          amount: 12500,
-          is_reconciled: true,
-          journal_entry_line_ids: [301],
-          note: 'Règlement facture FACT-2189'
-        },
-        {
-          id: 102,
-          statement_id: 1,
-          date: '2025-05-12',
-          name: 'Paiement client XYZ',
-          ref: 'VIR-12346',
-          partner_id: 2,
-          partner_name: 'XYZ Inc.',
-          amount: 9000,
-          is_reconciled: true,
-          journal_entry_line_ids: [302],
-          note: 'Règlement facture FACT-2190'
-        },
-        {
-          id: 103,
-          statement_id: 1,
-          date: '2025-05-15',
-          name: 'Prélèvement fournisseur',
-          ref: 'PRE-00123',
-          partner_id: 4,
-          partner_name: 'Fournitures Office SA',
-          amount: -3750,
-          is_reconciled: false,
-          journal_entry_line_ids: [],
-          note: 'Règlement facture fournisseur FRN-0045'
-        },
-        {
-          id: 104,
-          statement_id: 1,
-          date: '2025-05-22',
-          name: 'Virement interne',
-          ref: 'VIR-12347',
-          partner_id: null,
-          partner_name: null,
-          amount: 7650,
-          is_reconciled: false,
-          journal_entry_line_ids: [],
-          note: 'Virement compte secondaire'
-        }
-      ]
-    }
-  ];
 
   const getStateTag = (state) => {
     const stateMap = {
@@ -261,7 +167,6 @@ const BankStatementDetail = () => {
       'open': { text: 'En cours', color: 'blue', icon: <ExclamationCircleOutlined /> },
       'confirm': { text: 'Confirmé', color: 'green', icon: <CheckOutlined /> }
     };
-
     return (
       <Tag color={stateMap[state]?.color} icon={stateMap[state]?.icon}>
         {stateMap[state]?.text || state}
@@ -296,7 +201,7 @@ const BankStatementDetail = () => {
       title: 'Partenaire',
       dataIndex: 'partner_name',
       key: 'partner_name',
-      render: (text, record) => text || '-',
+      render: (text) => text || '-',
     },
     {
       title: 'Montant',
@@ -319,24 +224,14 @@ const BankStatementDetail = () => {
         reconciled ? (
           <Space>
             <Badge status="success" text="Rapproché" />
-            {displayedStatement.state !== 'confirm' && (
-              <Button
-                type="link"
-                size="small"
-                danger
-                onClick={() => handleUnreconcileLine(record.id)}
-              >
+            {displayedStatement && displayedStatement.state !== 'confirm' && (
+              <Button type="link" size="small" danger onClick={() => handleUnreconcileLine(record.id)}>
                 Annuler
               </Button>
             )}
           </Space>
         ) : (
-          <Button
-            type="link"
-            size="small"
-            icon={<SearchOutlined />}
-            onClick={() => openReconcileModal(record.id)}
-          >
+          <Button type="link" size="small" icon={<SearchOutlined />} onClick={() => openReconcileModal(record.id)}>
             Rapprocher
           </Button>
         )
@@ -373,17 +268,36 @@ const BankStatementDetail = () => {
     );
   }
 
-  const displayedStatement = statement || demoStatements[0];
+  const displayedStatement = statement;
+  if (!displayedStatement) return null;
+
   const totalLines = displayedStatement.lines ? displayedStatement.lines.length : 0;
   const reconcilePercentage = totalLines > 0 ? (reconciledCount / totalLines) * 100 : 0;
   const difference = displayedStatement.balance_end - displayedStatement.balance_end_real;
   const isBalanced = Math.abs(difference) < 0.01;
 
+  // Menu dropdown import
+  const importMenuItems = [
+    {
+      key: 'ofx',
+      label: 'Importer OFX',
+      icon: <UploadOutlined />,
+      onClick: () => setShowOFXModal(true),
+    },
+    {
+      key: 'pdf',
+      label: 'Importer PDF',
+      icon: <FilePdfOutlined />,
+      onClick: () => setShowPDFModal(true),
+    },
+  ];
+
   return (
     <div className="bank-statement-detail">
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 24 }}>
+      {/* En-tête */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24, flexWrap: 'wrap', gap: 12 }}>
         <div>
-          <Title level={2}>
+          <Title level={2} style={{ marginBottom: 8 }}>
             Relevé bancaire : {displayedStatement.name}
           </Title>
           <Space>
@@ -393,40 +307,44 @@ const BankStatementDetail = () => {
             </Tag>
           </Space>
         </div>
-        <Space>
+
+        {/* Barre d'actions — compacte */}
+        <Space wrap size={8}>
           {displayedStatement.state === 'draft' && (
             <>
-              <Button
-                icon={<UploadOutlined />}
-                onClick={() => setShowOFXModal(true)}
-              >
-                Importer OFX
-              </Button>
-              <Button
-                icon={<FilePdfOutlined />}
-                onClick={() => setShowPDFModal(true)}
-              >
-                Importer PDF
-              </Button>
+              {/* Import groupé dans un dropdown */}
+              <Dropdown menu={{ items: importMenuItems }} trigger={['click']}>
+                <Button icon={<UploadOutlined />}>
+                  Importer <DownOutlined />
+                </Button>
+              </Dropdown>
+
+              {/* Rapprochement auto */}
               <Button
                 icon={<ThunderboltOutlined />}
                 onClick={handleAutoReconcile}
                 loading={autoReconciling}
                 style={{ backgroundColor: '#722ed1', borderColor: '#722ed1', color: '#fff' }}
               >
-                Rapprochement auto
+                Rappr. auto
               </Button>
+
+              {/* Modifier */}
               <Link to={`/accounting/bank-statements/${id}/edit`}>
                 <Button icon={<EditOutlined />}>Modifier</Button>
               </Link>
+
+              {/* Supprimer */}
               <Popconfirm
-                title="Êtes-vous sûr de vouloir supprimer ce relevé?"
+                title="Supprimer ce relevé ?"
                 onConfirm={handleDeleteStatement}
                 okText="Oui"
                 cancelText="Non"
               >
                 <Button icon={<DeleteOutlined />} danger>Supprimer</Button>
               </Popconfirm>
+
+              {/* Confirmer */}
               <Button
                 type="primary"
                 icon={<CheckOutlined />}
@@ -438,21 +356,25 @@ const BankStatementDetail = () => {
               </Button>
             </>
           )}
+
+          {/* Télécharger PDF source — visible si disponible */}
           {displayedStatement.source_pdf_url && (
             <Button
               icon={<FilePdfOutlined style={{ color: '#ff4d4f' }} />}
               href={displayedStatement.source_pdf_url}
               target="_blank"
             >
-              Télécharger PDF
+              PDF
             </Button>
           )}
+
           <Button onClick={() => navigate('/accounting/bank-statements')}>
-            Retour à la liste
+            Retour
           </Button>
         </Space>
       </div>
 
+      {/* Statistiques */}
       <Row gutter={16} style={{ marginBottom: 24 }}>
         <Col span={8}>
           <Card>
@@ -462,7 +384,7 @@ const BankStatementDetail = () => {
               suffix={`/ ${totalLines} lignes`}
             />
             <Divider style={{ margin: '12px 0' }} />
-            <Progress percent={reconcilePercentage.toFixed(0)} />
+            <Progress percent={parseFloat(reconcilePercentage.toFixed(0))} />
           </Card>
         </Col>
         <Col span={16}>
@@ -506,6 +428,7 @@ const BankStatementDetail = () => {
         </Col>
       </Row>
 
+      {/* Informations */}
       <Card style={{ marginBottom: 24 }}>
         <Descriptions title="Informations du relevé" bordered>
           <Descriptions.Item label="Nom">{displayedStatement.name}</Descriptions.Item>
@@ -521,6 +444,7 @@ const BankStatementDetail = () => {
         </Descriptions>
       </Card>
 
+      {/* Lignes */}
       <Card title="Lignes du relevé">
         <Table
           columns={columns}
@@ -530,11 +454,7 @@ const BankStatementDetail = () => {
           size="middle"
           summary={pageData => {
             let totalAmount = 0;
-
-            pageData.forEach(({ amount }) => {
-              totalAmount += parseFloat(amount || 0);
-            });
-
+            pageData.forEach(({ amount }) => { totalAmount += parseFloat(amount || 0); });
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={4}><strong>Total</strong></Table.Summary.Cell>
@@ -543,43 +463,32 @@ const BankStatementDetail = () => {
                     {totalAmount.toFixed(2)} {currencyCode}
                   </strong>
                 </Table.Summary.Cell>
-                <Table.Summary.Cell index={5}></Table.Summary.Cell>
+                <Table.Summary.Cell index={5} />
               </Table.Summary.Row>
             );
           }}
         />
       </Card>
 
-      {/* Modal de rapprochement */}
+      {/* Modals */}
       <ReconciliationModal
         visible={showReconcileModal}
         statementId={id}
         line={selectedLine}
         onClose={() => setShowReconcileModal(false)}
-        onSuccess={() => {
-          setShowReconcileModal(false);
-          fetchStatementDetails();
-        }}
+        onSuccess={() => { setShowReconcileModal(false); fetchStatementDetails(); }}
       />
-      {/* Modal import OFX */}
       <OFXImportModal
         visible={showOFXModal}
         statementId={id}
         onClose={() => setShowOFXModal(false)}
-        onSuccess={() => {
-          setShowOFXModal(false);
-          fetchStatementDetails();
-        }}
+        onSuccess={() => { setShowOFXModal(false); fetchStatementDetails(); }}
       />
-      {/* Modal import PDF */}
       <PDFImportModal
         visible={showPDFModal}
         statementId={id}
         onClose={() => setShowPDFModal(false)}
-        onSuccess={() => {
-          setShowPDFModal(false);
-          fetchStatementDetails();
-        }}
+        onSuccess={() => { setShowPDFModal(false); fetchStatementDetails(); }}
       />
     </div>
   );

@@ -21,6 +21,8 @@ from .models import (
     JobSkillRequirement,
     JobTitle,
     Mission,
+    Reward,
+    RewardType,
     Skill,
     TrainingCourse,
     TrainingPlan,
@@ -39,6 +41,8 @@ from .serializers import (
     JobSkillRequirementSerializer,
     JobTitleSerializer,
     MissionSerializer,
+    RewardSerializer,
+    RewardTypeSerializer,
     SkillSerializer,
     TrainingCourseSerializer,
     TrainingPlanItemSerializer,
@@ -1391,6 +1395,45 @@ class ComplaintViewSet(viewsets.ModelViewSet):
         complaint.resolution_notes = resolution
         complaint.save(update_fields=['status', 'hr_notes', 'resolution_notes'])
         return Response({'success': True, 'status': new_status})
+
+
+class RewardTypeViewSet(viewsets.ModelViewSet):
+    """API pour les types de recompenses."""
+
+    queryset = RewardType.objects.filter(is_active=True)
+    serializer_class = RewardTypeSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
+
+
+class RewardViewSet(viewsets.ModelViewSet):
+    """API pour les recompenses."""
+
+    queryset = Reward.objects.all()
+    serializer_class = RewardSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
+
+    def get_queryset(self):
+        if self.action == 'board':
+            return Reward.objects.filter(is_public=True)
+        return Reward.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            emp = Employee.objects.get(user=self.request.user)
+            serializer.save(awarded_by=emp)
+        except Employee.DoesNotExist:
+            serializer.save()
+
+    @action(detail=False, methods=['get'])
+    def board(self, request):
+        """Reward board public."""
+        rewards = Reward.objects.filter(is_public=True).select_related(
+            'employee', 'reward_type', 'awarded_by'
+        )
+        serializer = self.get_serializer(rewards, many=True)
+        return Response(serializer.data)
 
 
 @api_view(['GET'])

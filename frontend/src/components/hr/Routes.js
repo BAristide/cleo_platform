@@ -37,6 +37,8 @@ import WorkCertificateList from './WorkCertificateList';
 import WorkCertificateForm from './WorkCertificateForm';
 import ComplaintForm from './ComplaintForm';
 import ComplaintManagement from './ComplaintManagement';
+import RewardBoard from './RewardBoard';
+import RewardForm from './forms/RewardForm';
 
 const HRRoutes = () => {
   return (
@@ -100,6 +102,10 @@ const HRRoutes = () => {
         {/* Doleances */}
         <Route path="/complaints" element={<ComplaintManagement />} />
         <Route path="/complaints/new" element={<ComplaintForm />} />
+
+        {/* Recompenses */}
+        <Route path="/rewards" element={<RewardBoard />} />
+        <Route path="/rewards/new" element={<RewardForm />} />
 
         {/* Redirection par défaut */}
         <Route path="*" element={<Navigate to="/hr" replace />} />

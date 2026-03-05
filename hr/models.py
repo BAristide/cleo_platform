@@ -866,3 +866,65 @@ class Complaint(models.Model):
     def __str__(self):
         name = 'Anonyme' if self.is_anonymous else self.employee.full_name
         return f'Doleance — {name} ({self.get_status_display()})'
+
+
+class RewardType(models.Model):
+    """Types de recompenses configurables."""
+
+    name = models.CharField(_('Nom'), max_length=100)
+    description = models.TextField(_('Description'), blank=True)
+    icon = models.CharField(
+        _('Icone'),
+        max_length=50,
+        blank=True,
+        help_text=_('Ex: TrophyOutlined, StarOutlined'),
+    )
+    is_active = models.BooleanField(_('Actif'), default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Type de recompense')
+        verbose_name_plural = _('Types de recompenses')
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class Reward(models.Model):
+    """Recompenses attribuees aux employes."""
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='rewards',
+        verbose_name=_('Employe'),
+    )
+    reward_type = models.ForeignKey(
+        RewardType,
+        on_delete=models.PROTECT,
+        related_name='rewards',
+        verbose_name=_('Type de recompense'),
+    )
+    awarded_date = models.DateField(_('Date d attribution'))
+    awarded_by = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rewards_given',
+        verbose_name=_('Attribue par'),
+    )
+    description = models.TextField(_('Commentaire'), blank=True)
+    is_public = models.BooleanField(_('Visible sur le reward board'), default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Recompense')
+        verbose_name_plural = _('Recompenses')
+        ordering = ['-awarded_date']
+
+    def __str__(self):
+        return (
+            f'{self.reward_type.name} → {self.employee.full_name} ({self.awarded_date})'
+        )

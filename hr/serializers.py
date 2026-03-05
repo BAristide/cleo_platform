@@ -11,6 +11,8 @@ from .models import (
     JobSkillRequirement,
     JobTitle,
     Mission,
+    Reward,
+    RewardType,
     Skill,
     TrainingCourse,
     TrainingPlan,
@@ -600,3 +602,46 @@ class ComplaintSerializer(serializers.ModelSerializer):
 
     def get_assigned_to_name(self, obj):
         return obj.assigned_to.full_name if obj.assigned_to else None
+
+
+class RewardTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RewardType
+        fields = ['id', 'name', 'description', 'icon', 'is_active', 'created_at']
+
+
+class RewardSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    reward_type_name = serializers.SerializerMethodField()
+    reward_type_icon = serializers.SerializerMethodField()
+    awarded_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Reward
+        fields = [
+            'id',
+            'employee',
+            'employee_name',
+            'reward_type',
+            'reward_type_name',
+            'reward_type_icon',
+            'awarded_date',
+            'awarded_by',
+            'awarded_by_name',
+            'description',
+            'is_public',
+            'created_at',
+        ]
+        extra_kwargs = {'awarded_by': {'required': False}}
+
+    def get_employee_name(self, obj):
+        return obj.employee.full_name
+
+    def get_reward_type_name(self, obj):
+        return obj.reward_type.name
+
+    def get_reward_type_icon(self, obj):
+        return obj.reward_type.icon
+
+    def get_awarded_by_name(self, obj):
+        return obj.awarded_by.full_name if obj.awarded_by else None

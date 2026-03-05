@@ -12,9 +12,9 @@ CONTRACT_TYPES = [
         'code': 'STAGE',
         'name': 'Contrat de stage',
         'description': 'Convention de stage en entreprise',
+        'requires_end_date': True,
     },
 ]
-
 # ── Paramètres de paie ───────────────────────────────────────────────
 PAYROLL_PARAMETERS = [
     {

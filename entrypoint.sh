@@ -90,6 +90,10 @@ echo "[ROLES] Vérification des rôles et permissions..."
 python manage.py create_default_roles 2>/dev/null || echo "  Rôles : commande non disponible"
 python manage.py create_custom_permissions 2>/dev/null || echo "  Permissions : commande non disponible"
 
+# ── Liaison employés-comptes utilisateurs (v3.17.0) ────────────
+echo "[HR] Liaison automatique employés-comptes utilisateurs..."
+python manage.py link_employees_users 2>/dev/null || echo "  link_employees_users : commande non disponible"
+
 # ── Démarrage ────────────────────────────────────────────────
 echo "[START] Démarrage de Cleo ERP..."
 exec "$@"

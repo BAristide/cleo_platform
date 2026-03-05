@@ -22,6 +22,11 @@ class UserProfile(models.Model):
         _('Date de modification du mot de passe'), null=True, blank=True
     )
 
+    # Forcer le changement de mot de passe à la première connexion
+    must_change_password = models.BooleanField(
+        _('Doit changer le mot de passe'), default=False
+    )
+
     # Status
     is_active = models.BooleanField(_('Actif'), default=True)
 

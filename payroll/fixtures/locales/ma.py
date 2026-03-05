@@ -11,10 +11,10 @@ CONTRACT_TYPES = [
     {
         'code': 'ANAPEC',
         'name': 'Contrat ANAPEC',
-        'description': "Contrat d'insertion professionnelle (exonéré CNSS 24 mois)",
+        'description': "Contrat d'insertion professionnelle (exonere CNSS 24 mois)",
+        'requires_end_date': True,
     },
 ]
-
 # ── Paramètres de paie ───────────────────────────────────────────────
 PAYROLL_PARAMETERS = [
     {

@@ -12,8 +12,10 @@ CONTRACT_TYPES = [
         'code': 'ALTERNANCE',
         'name': "Contrat d'alternance",
         'description': "Contrat d'apprentissage ou de professionnalisation",
+        'requires_end_date': True,
     },
 ]
+
 
 # ── Paramètres de paie ───────────────────────────────────────────────
 PAYROLL_PARAMETERS = [

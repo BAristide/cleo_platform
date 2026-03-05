@@ -522,6 +522,57 @@ class MissionViewSet(viewsets.ModelViewSet):
             )
 
 
+def _notify_availability(availability, action_type):
+    """Envoie une notification in-app lors d'une action sur une disponibilité."""
+    from django.utils import timezone
+
+    from notifications.tasks import _create_notification
+
+    employee = availability.employee
+    if not employee or not employee.user:
+        return
+
+    today = timezone.now().date()
+
+    if action_type == 'approve_manager':
+        title = 'Disponibilité approuvée par votre N+1'
+        message = (
+            f'Votre demande de {availability.get_type_display()} '
+            f'du {availability.start_date} au {availability.end_date} '
+            f'a été approuvée par votre manager.'
+        )
+        level = 'success'
+    elif action_type == 'approve_hr':
+        title = 'Disponibilité approuvée par les RH'
+        message = (
+            f'Votre demande de {availability.get_type_display()} '
+            f'du {availability.start_date} au {availability.end_date} '
+            f'a été approuvée par les RH.'
+        )
+        level = 'success'
+    elif action_type == 'reject':
+        title = 'Disponibilité rejetée'
+        message = (
+            f'Votre demande de {availability.get_type_display()} '
+            f'du {availability.start_date} au {availability.end_date} '
+            f'a été rejetée.'
+        )
+        level = 'warning'
+    else:
+        return
+
+    dedup_key = f'avail_{availability.pk}_{action_type}_{today.isoformat()}'
+    _create_notification(
+        user=employee.user,
+        level=level,
+        title=title,
+        message=message,
+        module='hr',
+        link=f'/hr/availabilities/{availability.pk}',
+        dedup_key=dedup_key,
+    )
+
+
 class AvailabilityViewSet(viewsets.ModelViewSet):
     """API pour les mises en disponibilité."""
 
@@ -562,7 +613,6 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def approve_manager(self, request, pk=None):
-        """Approuver une mise en disponibilité en tant que manager."""
         availability = self.get_object()
 
         if availability.status != 'requested':
@@ -576,10 +626,12 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
         availability.manager_notes = notes
         availability.save(update_fields=['approved_by_manager', 'manager_notes'])
 
-        # Vérifier si tous les approbateurs ont approuvé
         if availability.approved_by_manager and availability.approved_by_hr:
             availability.status = 'approved'
             availability.save(update_fields=['status'])
+
+        # Notification à l'employé
+        _notify_availability(availability, 'approve_manager')
 
         return Response(
             {
@@ -590,7 +642,6 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def approve_hr(self, request, pk=None):
-        """Approuver une mise en disponibilité en tant que RH."""
         availability = self.get_object()
 
         if availability.status != 'requested':
@@ -604,18 +655,22 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
         availability.hr_notes = notes
         availability.save(update_fields=['approved_by_hr', 'hr_notes'])
 
-        # Vérifier si tous les approbateurs ont approuvé
         if availability.approved_by_manager and availability.approved_by_hr:
             availability.status = 'approved'
             availability.save(update_fields=['status'])
 
+        # Notification à l'employé
+        _notify_availability(availability, 'approve_hr')
+
         return Response(
-            {'success': True, 'message': 'Mise en disponibilité approuvée par les RH.'}
+            {
+                'success': True,
+                'message': 'Mise en disponibilité approuvée par les RH.',
+            }
         )
 
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
-        """Rejeter une mise en disponibilité."""
         availability = self.get_object()
 
         if availability.status != 'requested':
@@ -635,7 +690,30 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
         availability.status = 'rejected'
         availability.save()
 
+        # Notification à l'employé
+        _notify_availability(availability, 'reject')
+
         return Response({'success': True, 'message': 'Mise en disponibilité rejetée.'})
+
+    @action(detail=False, methods=['get'])
+    def pending_approvals(self, request):
+        """Retourne les mises en disponibilité en attente d'approbation."""
+        qs = Availability.objects.filter(status='requested').order_by('-created_at')
+
+        # Filtrer selon le rôle : un manager ne voit que ses subordonnés
+        try:
+            employee = Employee.objects.get(user=request.user)
+            if employee.is_hr:
+                pass  # Voit tout
+            elif employee.is_manager:
+                qs = qs.filter(employee__manager=employee)
+            else:
+                qs = qs.filter(employee=employee)
+        except Employee.DoesNotExist:
+            pass
+
+        serializer = AvailabilitySerializer(qs, many=True)
+        return Response(serializer.data)
 
 
 class SkillViewSet(viewsets.ModelViewSet):

@@ -177,6 +177,17 @@ class Command(BaseCommand):
         except Exception:
             self.stdout.write(self.style.WARNING('  [WARN]  Rôles : non disponibles'))
 
+        # Liaison automatique employes-comptes (v3.17.0)
+        try:
+            call_command('link_employees_users')
+            self.stdout.write(
+                self.style.SUCCESS('  [OK] Employes lies aux comptes utilisateurs')
+            )
+        except Exception:
+            self.stdout.write(
+                self.style.WARNING('  [WARN] link_employees_users : non disponible')
+            )
+
         from accounting.models import Account, Journal, Tax
 
         self.stdout.write('')

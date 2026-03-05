@@ -103,6 +103,8 @@ class EmployeeListSerializer(serializers.ModelSerializer):
             'manager_name',
             'is_active',
             'roles',
+            'contract_type',
+            'contract_type_name',
         ]
 
     def get_department_name(self, obj):
@@ -189,6 +191,10 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             'is_finance',
             'skills',
             'subordinates',
+            'contract_type',
+            'contract_start_date',
+            'contract_end_date',
+            'probation_end_date',
         ]
 
     def get_subordinates(self, obj):

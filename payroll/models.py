@@ -55,6 +55,14 @@ class ContractType(models.Model):
     code = models.CharField(_('Code'), max_length=20, unique=True)
     name = models.CharField(_('Nom'), max_length=100)
     description = models.TextField(_('Description'), blank=True)
+    # Indique si ce type de contrat nécessite une date de fin (CDD, ANAPEC, etc.)
+    requires_end_date = models.BooleanField(
+        _('Date de fin obligatoire'),
+        default=False,
+        help_text=_(
+            'Si activé, la date de fin de contrat est requise pour les employés avec ce type.'
+        ),
+    )
     is_active = models.BooleanField(_('Actif'), default=True)
 
     # Métadonnées

@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/inventory/', include('inventory.urls')),
     path('api/purchasing/', include('purchasing.urls')),
     path('api/dashboard/', include('dashboard.urls')),
+    path('api/notifications/', include('notifications.urls')),
     # Documentation API (Swagger / ReDoc)
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
     path(

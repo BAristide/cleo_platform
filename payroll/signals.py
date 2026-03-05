@@ -1,4 +1,6 @@
 # payroll/signals.py
+import logging
+
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -11,27 +13,31 @@ from .models import (
     PaySlip,
 )
 
+logger = logging.getLogger(__name__)
+
 
 @receiver(post_save, sender=Employee)
 def create_employee_payroll(sender, instance, created, **kwargs):
     """Crée automatiquement les informations de paie pour un nouvel employé."""
-    if created:
-        # Vérifier si EmployeePayroll existe déjà
-        if not hasattr(instance, 'payroll_info'):
-            # Récupérer le type de contrat CDI par défaut
-            default_contract = ContractType.objects.filter(code='CDI').first()
-            if not default_contract:
-                default_contract = ContractType.objects.create(
-                    code='CDI', name='Contrat à Durée Indéterminée', is_active=True
-                )
+    if not created:
+        return
+    if hasattr(instance, 'payroll_info'):
+        return
 
-            # Créer les infos de paie par défaut
-            EmployeePayroll.objects.create(
-                employee=instance,
-                contract_type=default_contract,
-                base_salary=0,  # À remplir manuellement
-                payment_method='bank_transfer',
-            )
+    # Pack-indépendant : premier type de contrat actif, sans hardcoding
+    default_contract = ContractType.objects.filter(is_active=True).first()
+    if not default_contract:
+        logger.warning(
+            f'Aucun type de contrat actif — EmployeePayroll non créé pour {instance}'
+        )
+        return
+
+    EmployeePayroll.objects.create(
+        employee=instance,
+        contract_type=default_contract,
+        base_salary=0,
+        payment_method='bank_transfer',
+    )
 
 
 @receiver(pre_save, sender=PayrollRun)

@@ -7,16 +7,17 @@ Salaire de base, heures supplémentaires, primes non soumises, acompte.
 CONTRACT_TYPES = [
     {
         'code': 'CDI',
-        'name': 'Contrat à Durée Indéterminée',
-        'description': 'Contrat de travail sans limitation de durée',
+        'name': 'Contrat a Duree Indeterminee',
+        'description': 'Contrat de travail sans limitation de duree',
+        'requires_end_date': False,
     },
     {
         'code': 'CDD',
-        'name': 'Contrat à Durée Déterminée',
-        'description': 'Contrat de travail à durée limitée',
+        'name': 'Contrat a Duree Determinee',
+        'description': 'Contrat de travail a duree limitee',
+        'requires_end_date': True,
     },
 ]
-
 # ── Composants de salaire universels ─────────────────────────────────
 SALARY_COMPONENTS = [
     {

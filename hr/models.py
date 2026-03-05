@@ -132,6 +132,28 @@ class Employee(models.Model):
     # Statut
     is_active = models.BooleanField(_('Actif'), default=True)
 
+    # Informations contractuelles
+    contract_type = models.ForeignKey(
+        'payroll.ContractType',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='employees',
+        verbose_name=_('Type de contrat'),
+    )
+    contract_start_date = models.DateField(
+        _('Date de début de contrat'), null=True, blank=True
+    )
+    contract_end_date = models.DateField(
+        _('Date de fin de contrat'),
+        null=True,
+        blank=True,
+        help_text=_('Obligatoire pour les contrats à durée déterminée.'),
+    )
+    probation_end_date = models.DateField(
+        _("Fin de période d'essai"), null=True, blank=True
+    )
+
     # Rôles spécifiques
     is_hr = models.BooleanField(
         _('RH'), default=False, help_text=_("L'employé a un rôle RH")
@@ -151,6 +173,18 @@ class Employee(models.Model):
 
     def __str__(self):
         return f'{self.first_name} {self.last_name}'
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if (
+            self.contract_type
+            and self.contract_type.requires_end_date
+            and not self.contract_end_date
+        ):
+            raise ValidationError(
+                _('La date de fin de contrat est obligatoire pour ce type de contrat.')
+            )
 
     @property
     def full_name(self):

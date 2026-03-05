@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
@@ -140,24 +141,91 @@ def training_plan_post_save(sender, instance, created, **kwargs):
 @receiver(post_save, sender=Employee)
 def employee_post_save(sender, instance, created, **kwargs):
     """
-    Signal déclenché après la sauvegarde d'un employé.
-    Met à jour les relations hiérarchiques et crée un utilisateur si nécessaire.
+    Après création d'un employé :
+    - Crée automatiquement un compte Django User (username = email)
+    - Associe UserProfile.employee ↔ Employee.user
+    - Assigne le rôle "Employé"
+    - Force le changement de mot de passe à la première connexion
+    - Synchronise is_active si mise à jour
     """
     if created:
-        # Vérifiez si un utilisateur existe déjà avec cet email
-        from django.contrib.auth.models import User
+        if instance.email and not instance.user:
+            _create_or_link_user(instance)
+    else:
+        # Synchronisation statut actif
+        _sync_user_active_status(instance)
 
-        # Si l'employé n'a pas d'utilisateur associé et qu'il a un email
-        if not instance.user and instance.email:
-            # Vérifier si un utilisateur avec cet email existe déjà
-            try:
-                user = User.objects.get(email=instance.email)
-                # Associer l'utilisateur à l'employé
-                instance.user = user
-                instance.save(update_fields=['user'])
-            except User.DoesNotExist:
-                # On ne crée pas automatiquement un utilisateur pour éviter des problèmes de sécurité
-                pass
+
+def _create_or_link_user(employee):
+    """Crée ou rattache un User Django à un employé."""
+    from django.utils.crypto import get_random_string
+
+    from users.models import UserProfile
+
+    # Vérifier si un User existe déjà avec cet email
+    existing_user = User.objects.filter(email=employee.email).first()
+
+    if existing_user:
+        # Rattachement sans créer de doublon
+        Employee.objects.filter(pk=employee.pk).update(user=existing_user)
+        employee.user = existing_user
+        _ensure_employee_role(existing_user)
+        # Synchroniser UserProfile.employee
+        try:
+            existing_user.profile.employee = employee
+            existing_user.profile.save(update_fields=['employee'])
+        except Exception:
+            pass
+        return
+
+    # Création du compte
+    username = employee.email
+    # Garantir l'unicité du username
+    if User.objects.filter(username=username).exists():
+        username = f'{employee.email}_{employee.employee_id}'
+
+    password = get_random_string(16)
+    user = User.objects.create_user(
+        username=username,
+        email=employee.email,
+        password=password,
+        first_name=employee.first_name,
+        last_name=employee.last_name,
+        is_active=employee.is_active,
+    )
+
+    # UserProfile
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    profile.employee = employee
+    profile.must_change_password = True
+    profile.save(update_fields=['employee', 'must_change_password'])
+
+    # Rattachement Employee.user
+    Employee.objects.filter(pk=employee.pk).update(user=user)
+    employee.user = user
+
+    # Rôle Employé
+    _ensure_employee_role(user)
+
+
+def _ensure_employee_role(user):
+    """Assigne le rôle 'Employé' si l'utilisateur n'a aucun groupe."""
+    from users.models import UserRole
+
+    if user.groups.exists():
+        return
+    try:
+        role = UserRole.objects.get(name='Employé')
+        user.groups.add(role.group)
+    except UserRole.DoesNotExist:
+        pass  # Rôle non encore créé via fixture
+
+
+def _sync_user_active_status(employee):
+    """Synchronise User.is_active avec Employee.is_active."""
+    if employee.user:
+        User = employee.user.__class__
+        User.objects.filter(pk=employee.user.pk).update(is_active=employee.is_active)
 
 
 @receiver(post_save, sender=EmployeeSkill)

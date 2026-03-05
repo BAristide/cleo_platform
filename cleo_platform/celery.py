@@ -32,4 +32,9 @@ app.conf.beat_schedule = {
         'task': 'core.tasks.backup_database',
         'schedule': crontab(hour=2, minute=0),
     },
+    # Vérification expiration contrats RH (v3.17.0)
+    'check-contract-expirations-daily': {
+        'task': 'hr.tasks.check_contract_expirations',
+        'schedule': crontab(hour=6, minute=0),
+    },
 }

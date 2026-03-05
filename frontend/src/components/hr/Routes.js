@@ -46,7 +46,9 @@ const HRRoutes = () => {
 
         {/* Départements */}
         <Route path="/departments" element={<DepartmentList />} />
+        <Route path="/departments/new" element={<DepartmentDetail />} />
         <Route path="/departments/:id" element={<DepartmentDetail />} />
+
 
         {/* Postes */}
         <Route path="/job-titles" element={<JobTitleList />} />

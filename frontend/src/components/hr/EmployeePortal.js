@@ -273,7 +273,7 @@ const EmployeePortal = () => {
               </Descriptions.Item>
             )}
             {employee.probation_end_date && (
-              <Descriptions.Item label="Fin periode d'essai">
+              <Descriptions.Item label="Fin période d'essai">
                 {employee.probation_end_date}
               </Descriptions.Item>
             )}

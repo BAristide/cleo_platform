@@ -119,11 +119,11 @@ const ProductList = () => {
     setActionLoading(true);
     try {
       await axios.delete(`/api/catalog/products/${id}/`);
-      message.success('Produit supprime avec succes');
+      message.success('Produit supprimé avec succès');
       fetchProducts();
     } catch (error) {
       console.error('Erreur lors de la suppression du produit:', error);
-      message.error('Impossible de supprimer le produit. Ce produit est peut-etre utilise dans des documents.');
+      message.error('Impossible de supprimer le produit. Ce produit est peut-être utilisé dans des documents.');
     } finally {
       setActionLoading(false);
     }
@@ -133,7 +133,7 @@ const ProductList = () => {
     setActionLoading(true);
     try {
       await axios.patch(`/api/catalog/products/${id}/`, { is_active: !currentStatus });
-      message.success(currentStatus ? 'Produit desactive' : 'Produit active');
+      message.success(currentStatus ? 'Produit désactivé' : 'Produit activé');
       fetchProducts();
     } catch (error) {
       console.error('Erreur lors de la modification du statut:', error);
@@ -164,7 +164,7 @@ const ProductList = () => {
         message.success('Produit mis a jour avec succes');
       } else {
         await axios.post('/api/catalog/products/', values);
-        message.success('Produit cree avec succes');
+        message.success('Produit créé avec succès');
       }
       setEditModalVisible(false);
       fetchProducts();
@@ -271,8 +271,8 @@ const ProductList = () => {
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="category" label="Categorie">
-                <Select allowClear showSearch optionFilterProp="children" placeholder="Selectionner une categorie">
+              <Form.Item name="category" label="Catégorie">
+                <Select allowClear showSearch optionFilterProp="children" placeholder="Sélectionner une catégorie">
                   {categories.map(c => <Option key={c.id} value={c.id}>{c.code} - {c.name}</Option>)}
                 </Select>
               </Form.Item>

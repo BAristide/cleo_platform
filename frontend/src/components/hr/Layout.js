@@ -18,9 +18,9 @@ const menuItems = [
   { key: 'portal', icon: <HomeOutlined />, label: <Link to="/hr/portal">Mon espace</Link> },
   { key: 'announcements', icon: <NotificationOutlined />, label: <Link to="/hr/announcements">Annonces</Link> },
   { key: 'certificates', icon: <SafetyCertificateOutlined />, label: <Link to="/hr/certificates">Attestations</Link> },
-  { key: 'complaints', icon: <ExclamationCircleOutlined />, label: <Link to="/hr/complaints">Doleances</Link> },
-  { key: 'rewards', icon: <TrophyOutlined />, label: <Link to="/hr/rewards">Recompenses</Link> },
-  { key: 'employees', icon: <IdcardOutlined />, label: <Link to="/hr/employees">Employes</Link> },
+  { key: 'complaints', icon: <ExclamationCircleOutlined />, label: <Link to="/hr/complaints">Doléances</Link> },
+  { key: 'rewards', icon: <TrophyOutlined />, label: <Link to="/hr/rewards">Récompenses</Link> },
+  { key: 'employees', icon: <IdcardOutlined />, label: <Link to="/hr/employees">Employés</Link> },
   { key: 'departments', icon: <BranchesOutlined />, label: <Link to="/hr/departments">Departements</Link> },
   { key: 'job-titles', icon: <UsergroupAddOutlined />, label: <Link to="/hr/job-titles">Postes</Link> },
   { key: 'missions', icon: <CarOutlined />, label: <Link to="/hr/missions">Missions</Link> },
@@ -32,7 +32,7 @@ const menuItems = [
 
 const breadcrumbMap = {
   portal: 'Mon espace',
-  employees: 'Employes',
+  employees: 'Employés',
   departments: 'Departements',
   'job-titles': 'Postes',
   missions: 'Missions',

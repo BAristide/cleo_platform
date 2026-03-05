@@ -97,7 +97,7 @@ const ProductDetail = () => {
     setActionLoading(true);
     try {
       await axios.delete(`/api/catalog/products/${id}/`);
-      message.success('Produit supprime');
+      message.success('Produit supprimé');
       navigate('/catalog/products');
     } catch (error) {
       console.error('Erreur suppression:', error);
@@ -112,7 +112,7 @@ const ProductDetail = () => {
     setActionLoading(true);
     try {
       await axios.patch(`/api/catalog/products/${id}/`, { is_active: !product.is_active });
-      message.success(product.is_active ? 'Produit desactive' : 'Produit active');
+      message.success(product.is_active ? 'Produit désactivé' : 'Produit activé');
       fetchProductDetails();
     } catch (error) {
       console.error('Erreur statut:', error);

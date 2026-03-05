@@ -11,7 +11,7 @@ const { Title } = Typography;
 
 const PREFS_CONFIG = [
   { key: 'in_app_enabled', label: 'Notifications in-app', description: 'Recevoir les notifications dans l\'application' },
-  { key: 'email_overdue_invoices', label: 'Email : factures echues', description: 'Alerte par email quand une facture client depasse la date d\'echeance' },
+  { key: 'email_overdue_invoices', label: 'Email : factures échues', description: 'Alerte par email quand une facture client dépasse la date d\'échéance' },
   { key: 'email_stock_alerts', label: 'Email : alertes stock', description: 'Alerte par email quand un produit passe sous le seuil de stock' },
   { key: 'email_overdue_purchases', label: 'Email : achats en retard', description: 'Alerte par email quand une facture fournisseur ou un BC est en retard' },
 ];

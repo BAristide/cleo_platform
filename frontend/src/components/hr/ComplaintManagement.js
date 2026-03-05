@@ -21,7 +21,7 @@ const STATUS_TAG = {
 };
 
 const CATEGORY_LABEL = {
-  harassment:     'Harcelement',
+  harassment:     'Harcèlement',
   discrimination: 'Discrimination',
   workload:       'Charge de travail',
   management:     'Comportement managerial',
@@ -76,18 +76,18 @@ const ComplaintManagement = () => {
 
   const columns = [
     {
-      title: 'Employe',
+      title: 'Employé',
       dataIndex: 'employee_name',
       key: 'employee_name',
       render: (v, r) => (
         <Space>
-          {r.is_anonymous && <Tooltip title="Doleance anonyme"><LockOutlined style={{ color: '#aaa' }} /></Tooltip>}
+          {r.is_anonymous && <Tooltip title="Doléance anonyme"><LockOutlined style={{ color: '#aaa' }} /></Tooltip>}
           <Text>{v}</Text>
         </Space>
       ),
     },
     {
-      title: 'Categorie',
+      title: 'Catégorie',
       dataIndex: 'category',
       key: 'category',
       render: (v) => CATEGORY_LABEL[v] || v,
@@ -133,7 +133,7 @@ const ComplaintManagement = () => {
   return (
     <div>
       <Row justify="space-between" align="middle" style={{ marginBottom: 24 }}>
-        <Col><Title level={2} style={{ margin: 0 }}>Doleances</Title></Col>
+        <Col><Title level={2} style={{ margin: 0 }}>Doléances</Title></Col>
         <Col>
           <Link to="/hr/complaints/new">
             <Button type="primary" icon={<PlusOutlined />}>Nouvelle doleance</Button>

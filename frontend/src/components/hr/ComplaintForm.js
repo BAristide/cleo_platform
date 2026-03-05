@@ -35,15 +35,15 @@ const ComplaintForm = () => {
           type="info"
           showIcon
           style={{ marginBottom: 24 }}
-          message="Confidentialite"
-          description="Votre doleance sera traitee en toute confidentialite par le service RH. Vous pouvez choisir de rester anonyme."
+          message="Confidentialité"
+          description="Votre doleance sera traitée en toute confidentialité par le service RH. Vous pouvez choisir de rester anonyme.."
         />
         <Form form={form} layout="vertical" onFinish={handleSubmit}
           initialValues={{ is_anonymous: false, category: 'other' }}>
-          <Form.Item name="category" label="Categorie"
-            rules={[{ required: true, message: 'Veuillez selectionner une categorie.' }]}>
+          <Form.Item name="category" label="Catégorie"
+            rules={[{ required: true, message: 'Veuillez sélectionner une catégorie.' }]}>
             <Select>
-              <Option value="harassment">Harcelement</Option>
+              <Option value="harassment">Harcèlement</Option>
               <Option value="discrimination">Discrimination</Option>
               <Option value="workload">Charge de travail</Option>
               <Option value="management">Comportement managerial</Option>
@@ -57,7 +57,7 @@ const ComplaintForm = () => {
               placeholder="Decrivez la situation en detail..." />
           </Form.Item>
 
-          <Form.Item name="is_anonymous" label="Soumettre de maniere anonyme"
+          <Form.Item name="is_anonymous" label="Soumettre de manière anonyme"
             valuePropName="checked">
             <Switch onChange={setIsAnonymous} />
           </Form.Item>

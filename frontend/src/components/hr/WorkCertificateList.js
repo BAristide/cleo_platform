@@ -60,7 +60,7 @@ const WorkCertificateList = () => {
   const handleApprove = async () => {
     try {
       await axios.post(`/api/hr/certificates/${approveModal.id}/approve/`, { hr_notes: hrNotes });
-      message.success('Attestation approuvee et PDF genere.');
+      message.success('Attestation approuvée et PDF généré.');
       setApproveModal({ open: false, id: null });
       setHrNotes('');
       fetchCertificates();
@@ -89,7 +89,7 @@ const WorkCertificateList = () => {
 
   const columns = [
     {
-      title: 'Employe',
+      title: 'Employé',
       dataIndex: 'employee_name',
       key: 'employee_name',
     },
@@ -184,7 +184,7 @@ const WorkCertificateList = () => {
         open={approveModal.open}
         onOk={handleApprove}
         onCancel={() => setApproveModal({ open: false, id: null })}
-        okText="Approuver et generer PDF"
+        okText="Approuver et générer PDF"
         okButtonProps={{ type: 'primary' }}
       >
         <Text>Notes RH (optionnel) :</Text>

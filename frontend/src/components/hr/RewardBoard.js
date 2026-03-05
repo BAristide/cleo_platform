@@ -35,18 +35,18 @@ const RewardBoard = () => {
         <Col>
           <Space align="center">
             <TrophyOutlined style={{ fontSize: 28, color: '#faad14' }} />
-            <Title level={2} style={{ margin: 0 }}>Tableau des recompenses</Title>
+            <Title level={2} style={{ margin: 0 }}>Tableau des récompenses</Title>
           </Space>
         </Col>
         <Col>
           <Link to="/hr/rewards/new">
-            <Button type="primary" icon={<PlusOutlined />}>Attribuer une recompense</Button>
+            <Button type="primary" icon={<PlusOutlined />}>Attribuer une récompense</Button>
           </Link>
         </Col>
       </Row>
 
       {rewards.length === 0 ? (
-        <Empty description="Aucune recompense pour le moment" />
+        <Empty description="Aucune récompense pour le moment" />
       ) : (
         <Row gutter={[16, 16]}>
           {rewards.map(r => (

@@ -34,7 +34,7 @@ const RewardForm = () => {
         ...values,
         awarded_date: values.awarded_date.format('YYYY-MM-DD'),
       });
-      message.success('Recompense attribuee avec succes.');
+      message.success('Récompense attribuée avec succès.');
       navigate('/hr/rewards');
     } catch {
       message.error("Erreur lors de l'attribution.");
@@ -45,13 +45,13 @@ const RewardForm = () => {
 
   return (
     <div>
-      <Title level={2}>Attribuer une recompense</Title>
+      <Title level={2}>Attribuer une récompense</Title>
       <Card style={{ maxWidth: 560 }}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}
           initialValues={{ is_public: true, awarded_date: moment() }}>
-          <Form.Item name="employee" label="Employe"
-            rules={[{ required: true, message: 'Selectionnez un employe.' }]}>
-            <Select showSearch placeholder="Choisir un employe"
+          <Form.Item name="employee" label="Employé"
+            rules={[{ required: true, message: 'Sélectionnez un employé.' }]}>
+            <Select showSearch placeholder="Choisir un employé"
               filterOption={(input, option) => option.children.toLowerCase().includes(input.toLowerCase())}>
               {employees.map(e => (
                 <Option key={e.id} value={e.id}>{e.first_name} {e.last_name}</Option>
@@ -59,8 +59,8 @@ const RewardForm = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="reward_type" label="Type de recompense"
-            rules={[{ required: true, message: 'Selectionnez un type.' }]}>
+          <Form.Item name="reward_type" label="Type de récompense"
+            rules={[{ required: true, message: 'Sélectionnez un type.' }]}>
             <Select placeholder="Choisir un type">
               {rewardTypes.map(t => (
                 <Option key={t.id} value={t.id}>{t.name}</Option>
@@ -68,7 +68,7 @@ const RewardForm = () => {
             </Select>
           </Form.Item>
 
-          <Form.Item name="awarded_date" label="Date d attribution"
+          <Form.Item name="awarded_date" label="Date d'attribution"
             rules={[{ required: true }]}>
             <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
           </Form.Item>

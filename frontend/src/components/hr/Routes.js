@@ -31,6 +31,8 @@ import TrainingPlanList from './TrainingPlanList';
 import TrainingPlanDetail from './TrainingPlanDetail';
 import TrainingPlanForm from './forms/TrainingPlanForm';
 import EmployeePortal from './EmployeePortal';
+import AnnouncementFeed from './AnnouncementFeed';
+import AnnouncementForm from './AnnouncementForm';
 
 const HRRoutes = () => {
   return (
@@ -82,6 +84,10 @@ const HRRoutes = () => {
 
         {/* Portail employe */}
         <Route path="/portal" element={<EmployeePortal />} />
+
+        {/* Annonces */}
+        <Route path="/announcements" element={<AnnouncementFeed />} />
+        <Route path="/announcements/new" element={<AnnouncementForm />} />
 
         {/* Redirection par défaut */}
         <Route path="*" element={<Navigate to="/hr" replace />} />

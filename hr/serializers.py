@@ -15,6 +15,7 @@ from .models import (
     TrainingPlan,
     TrainingPlanItem,
     TrainingSkill,
+    WorkCertificateRequest,
 )
 
 
@@ -509,3 +510,39 @@ class AnnouncementSerializer(serializers.ModelSerializer):
 
     def get_target_audience_display(self, obj):
         return obj.get_target_audience_display()
+
+
+class WorkCertificateRequestSerializer(serializers.ModelSerializer):
+    """Serializer pour les demandes d attestation de travail."""
+
+    employee_name = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+    purpose_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WorkCertificateRequest
+        fields = [
+            'id',
+            'employee',
+            'employee_name',
+            'purpose',
+            'purpose_display',
+            'purpose_detail',
+            'status',
+            'status_display',
+            'hr_notes',
+            'pdf_file',
+            'created_at',
+        ]
+        extra_kwargs = {
+            'employee': {'required': False, 'read_only': False},
+        }
+
+    def get_employee_name(self, obj):
+        return obj.employee.full_name
+
+    def get_status_display(self, obj):
+        return obj.get_status_display()
+
+    def get_purpose_display(self, obj):
+        return obj.get_purpose_display()

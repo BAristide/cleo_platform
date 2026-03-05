@@ -66,3 +66,33 @@ class PDFGenerator:
 
         # Retourner le chemin relatif pour stockage dans la BDD
         return os.path.join('hr', 'pdf', filename)
+
+    @staticmethod
+    def generate_work_certificate_pdf(certificate_request):
+        """Genere un PDF pour une attestation de travail."""
+        pdf_dir = os.path.join(settings.MEDIA_ROOT, 'hr', 'pdf')
+        os.makedirs(pdf_dir, exist_ok=True)
+
+        filename = f'attestation_{certificate_request.id}_{timezone.now().strftime("%Y%m%d%H%M%S")}.pdf'
+        pdf_path = os.path.join(pdf_dir, filename)
+
+        context = {
+            'request': certificate_request,
+            'employee': certificate_request.employee,
+            'company': get_company_context(),
+            'generated_date': timezone.now().date(),
+        }
+
+        html_string = render_to_string('hr/pdf/work_certificate.html', context)
+        font_config = FontConfiguration()
+        html = HTML(string=html_string)
+        css = CSS(string='@page { size: A4; margin: 2cm; }')
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            html.write_pdf(tmp.name, stylesheets=[css], font_config=font_config)
+            with open(pdf_path, 'wb') as f:
+                tmp.seek(0)
+                f.write(tmp.read())
+
+        os.unlink(tmp.name)
+        return os.path.join('hr', 'pdf', filename)

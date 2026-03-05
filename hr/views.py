@@ -25,6 +25,7 @@ from .models import (
     TrainingPlan,
     TrainingPlanItem,
     TrainingSkill,
+    WorkCertificateRequest,
 )
 from .serializers import (
     AnnouncementSerializer,
@@ -41,6 +42,7 @@ from .serializers import (
     TrainingPlanItemSerializer,
     TrainingPlanSerializer,
     TrainingSkillSerializer,
+    WorkCertificateRequestSerializer,
 )
 
 
@@ -1211,6 +1213,128 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
             serializer.save(author=employee)
         except Employee.DoesNotExist:
             serializer.save()
+
+
+class WorkCertificateRequestViewSet(viewsets.ModelViewSet):
+    """API pour les demandes d attestation de travail."""
+
+    queryset = WorkCertificateRequest.objects.all()
+    serializer_class = WorkCertificateRequestSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['employee', 'status', 'purpose']
+    ordering = ['-created_at']
+
+    def get_permissions(self):
+        """
+        create/list/retrieve : tout employe authentifie.
+        approve/reject/destroy/update : niveau HR requis.
+        """
+        from users.permissions import CanSubmitOwnCertificate
+
+        if self.action in ('create', 'list', 'retrieve'):
+            return [permissions.IsAuthenticated(), CanSubmitOwnCertificate()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
+
+    def get_queryset(self):
+        try:
+            employee = Employee.objects.get(user=self.request.user)
+            if employee.is_hr:
+                return WorkCertificateRequest.objects.all()
+            return WorkCertificateRequest.objects.filter(employee=employee)
+        except Employee.DoesNotExist:
+            return WorkCertificateRequest.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            employee = Employee.objects.get(user=self.request.user)
+            serializer.save(employee=employee)
+        except Employee.DoesNotExist:
+            serializer.save()
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approuve la demande et genere le PDF."""
+        cert = self.get_object()
+        if cert.status != 'pending':
+            return Response(
+                {'error': 'Cette demande ne peut plus etre approuvee.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        notes = request.data.get('hr_notes', '')
+        cert.status = 'approved'
+        cert.hr_notes = notes
+        cert.save(update_fields=['status', 'hr_notes'])
+
+        try:
+            from .services.pdf_generator import PDFGenerator
+
+            pdf_path = PDFGenerator.generate_work_certificate_pdf(cert)
+            cert.pdf_file = pdf_path
+            cert.save(update_fields=['pdf_file'])
+        except Exception as e:
+            return Response(
+                {'error': f'Approbation enregistree mais erreur PDF : {e}'},
+                status=status.HTTP_200_OK,
+            )
+
+        # Notification a l employe
+        if cert.employee.user:
+            from notifications.tasks import _create_notification
+
+            _create_notification(
+                user=cert.employee.user,
+                level='success',
+                title='Attestation de travail disponible',
+                message='Votre attestation de travail a ete approuvee et est disponible au telechargement.',
+                module='hr',
+                link=f'/hr/certificates/{cert.pk}',
+                dedup_key=f'cert_approved_{cert.pk}',
+            )
+
+        return Response(
+            {'success': True, 'message': 'Attestation approuvee et PDF genere.'}
+        )
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Rejette la demande."""
+        cert = self.get_object()
+        if cert.status != 'pending':
+            return Response(
+                {'error': 'Cette demande ne peut plus etre rejetee.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        notes = request.data.get('hr_notes', '')
+        cert.status = 'rejected'
+        cert.hr_notes = notes
+        cert.save(update_fields=['status', 'hr_notes'])
+        return Response({'success': True, 'message': 'Demande rejetee.'})
+
+    @action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        """Telecharge le PDF de l attestation."""
+        from django.conf import settings
+        from django.http import FileResponse
+
+        cert = self.get_object()
+        if not cert.pdf_file:
+            return Response(
+                {'error': 'Aucun PDF disponible pour cette demande.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        pdf_path = os.path.join(settings.MEDIA_ROOT, cert.pdf_file)
+        if not os.path.exists(pdf_path):
+            return Response(
+                {'error': 'Fichier PDF introuvable.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        response = FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
+        response['Content-Disposition'] = (
+            f'attachment; filename="Attestation_{cert.employee.employee_id}_{cert.id}.pdf"'
+        )
+        return response
 
 
 @api_view(['GET'])

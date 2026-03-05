@@ -770,3 +770,47 @@ class Announcement(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class WorkCertificateRequest(models.Model):
+    """Demandes d'attestation de travail."""
+
+    STATUS_CHOICES = [
+        ('pending', _('En attente')),
+        ('approved', _('Approuvee')),
+        ('rejected', _('Rejetee')),
+    ]
+
+    PURPOSE_CHOICES = [
+        ('bank', _('Dossier bancaire')),
+        ('visa', _('Demande de visa')),
+        ('rental', _('Dossier de location')),
+        ('other', _('Autre')),
+    ]
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='certificate_requests',
+        verbose_name=_('Employe'),
+    )
+    purpose = models.CharField(
+        _('Objet'), max_length=20, choices=PURPOSE_CHOICES, default='other'
+    )
+    purpose_detail = models.TextField(_('Precisions'), blank=True)
+    status = models.CharField(
+        _('Statut'), max_length=20, choices=STATUS_CHOICES, default='pending'
+    )
+    hr_notes = models.TextField(_('Notes RH'), blank=True)
+    pdf_file = models.CharField(_('Fichier PDF'), max_length=255, blank=True, null=True)
+
+    created_at = models.DateTimeField(_('Demandee le'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Modifiee le'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Demande d attestation de travail')
+        verbose_name_plural = _('Demandes d attestations de travail')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.employee.full_name} — {self.get_purpose_display()} ({self.get_status_display()})'

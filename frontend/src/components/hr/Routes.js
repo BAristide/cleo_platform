@@ -33,6 +33,8 @@ import TrainingPlanForm from './forms/TrainingPlanForm';
 import EmployeePortal from './EmployeePortal';
 import AnnouncementFeed from './AnnouncementFeed';
 import AnnouncementForm from './AnnouncementForm';
+import WorkCertificateList from './WorkCertificateList';
+import WorkCertificateForm from './WorkCertificateForm';
 
 const HRRoutes = () => {
   return (
@@ -88,6 +90,10 @@ const HRRoutes = () => {
         {/* Annonces */}
         <Route path="/announcements" element={<AnnouncementFeed />} />
         <Route path="/announcements/new" element={<AnnouncementForm />} />
+
+        {/* Attestations */}
+        <Route path="/certificates" element={<WorkCertificateList />} />
+        <Route path="/certificates/new" element={<WorkCertificateForm />} />
 
         {/* Redirection par défaut */}
         <Route path="*" element={<Navigate to="/hr" replace />} />

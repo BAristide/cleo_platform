@@ -6,6 +6,7 @@ import {
   CarOutlined, ScheduleOutlined, ToolOutlined, BookOutlined, BankOutlined,
   HomeOutlined,
   NotificationOutlined,
+  SafetyCertificateOutlined,
 } from '@ant-design/icons';
 import ModuleLayout from '../common/ModuleLayout';
 import './Layout.css';
@@ -14,6 +15,7 @@ const menuItems = [
   { key: 'dashboard', icon: <DashboardOutlined />, label: <Link to="/hr">Tableau de bord</Link> },
   { key: 'portal', icon: <HomeOutlined />, label: <Link to="/hr/portal">Mon espace</Link> },
   { key: 'announcements', icon: <NotificationOutlined />, label: <Link to="/hr/announcements">Annonces</Link> },
+  { key: 'certificates', icon: <SafetyCertificateOutlined />, label: <Link to="/hr/certificates">Attestations</Link> },
   { key: 'employees', icon: <IdcardOutlined />, label: <Link to="/hr/employees">Employes</Link> },
   { key: 'departments', icon: <BranchesOutlined />, label: <Link to="/hr/departments">Departements</Link> },
   { key: 'job-titles', icon: <UsergroupAddOutlined />, label: <Link to="/hr/job-titles">Postes</Link> },

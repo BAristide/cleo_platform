@@ -199,3 +199,16 @@ def module_permission_required(module, level=None):
         return _wrapped
 
     return decorator
+
+
+class CanSubmitOwnCertificate(permissions.BasePermission):
+    """Permet a tout employe authentifie de creer sa propre demande d attestation."""
+
+    def has_permission(self, request, view):
+        if not request.user or not request.user.is_authenticated:
+            return False
+        # Lecture et creation autorisees pour tout employe authentifie
+        if request.method in ('GET', 'HEAD', 'OPTIONS', 'POST'):
+            return True
+        # Modification/suppression : déléguer a HasModulePermission
+        return False

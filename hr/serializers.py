@@ -85,6 +85,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     department_name = serializers.SerializerMethodField()
     job_title_name = serializers.SerializerMethodField()
     manager_name = serializers.SerializerMethodField()
+    contract_type_name = serializers.SerializerMethodField()
     roles = serializers.SerializerMethodField()
 
     class Meta:
@@ -115,6 +116,9 @@ class EmployeeListSerializer(serializers.ModelSerializer):
 
     def get_manager_name(self, obj):
         return obj.manager.full_name if obj.manager else None
+
+    def get_contract_type_name(self, obj):
+        return obj.contract_type.name if obj.contract_type else None
 
     def get_roles(self, obj):
         roles = []

@@ -30,6 +30,7 @@ import TrainingCourseDetail from './TrainingCourseDetail';
 import TrainingPlanList from './TrainingPlanList';
 import TrainingPlanDetail from './TrainingPlanDetail';
 import TrainingPlanForm from './forms/TrainingPlanForm';
+import EmployeePortal from './EmployeePortal';
 
 const HRRoutes = () => {
   return (
@@ -78,6 +79,9 @@ const HRRoutes = () => {
         <Route path="/training-plans/new" element={<TrainingPlanForm />} />
         <Route path="/training-plans/:id" element={<TrainingPlanDetail />} />
         <Route path="/training-plans/:id/edit" element={<TrainingPlanForm />} />
+
+        {/* Portail employe */}
+        <Route path="/portal" element={<EmployeePortal />} />
 
         {/* Redirection par défaut */}
         <Route path="*" element={<Navigate to="/hr" replace />} />

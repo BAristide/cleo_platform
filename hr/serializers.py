@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from .models import (
+    Announcement,
     Availability,
     Department,
     Employee,
@@ -477,3 +478,34 @@ class TrainingPlanSerializer(serializers.ModelSerializer):
             'hr': obj.approved_by_hr,
             'finance': obj.approved_by_finance,
         }
+
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    """Serializer pour les annonces internes."""
+
+    author_name = serializers.SerializerMethodField()
+    target_audience_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Announcement
+        fields = [
+            'id',
+            'title',
+            'content',
+            'author',
+            'author_name',
+            'target_audience',
+            'target_audience_display',
+            'target_departments',
+            'target_employees',
+            'is_pinned',
+            'is_auto_generated',
+            'expires_at',
+            'created_at',
+        ]
+
+    def get_author_name(self, obj):
+        return obj.author.full_name if obj.author else None
+
+    def get_target_audience_display(self, obj):
+        return obj.get_target_audience_display()

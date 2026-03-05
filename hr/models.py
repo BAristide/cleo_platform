@@ -717,3 +717,56 @@ class TrainingPlanItem(models.Model):
 
     def __str__(self):
         return f'{self.training_plan.employee.full_name} - {self.training_course.title} (Q{self.planned_quarter}/{self.training_plan.year})'
+
+
+class Announcement(models.Model):
+    """Annonces internes de l'entreprise."""
+
+    TARGET_CHOICES = [
+        ('all', _('Tous les employes')),
+        ('department', _('Par departement')),
+        ('individual', _('Individuel')),
+    ]
+
+    title = models.CharField(_('Titre'), max_length=200)
+    content = models.TextField(_('Contenu'))
+    author = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='announcements',
+        verbose_name=_('Auteur'),
+    )
+    target_audience = models.CharField(
+        _('Audience cible'),
+        max_length=20,
+        choices=TARGET_CHOICES,
+        default='all',
+    )
+    target_departments = models.ManyToManyField(
+        Department,
+        blank=True,
+        related_name='announcements',
+        verbose_name=_('Departements cibles'),
+    )
+    target_employees = models.ManyToManyField(
+        Employee,
+        blank=True,
+        related_name='targeted_announcements',
+        verbose_name=_('Employes cibles'),
+    )
+    is_pinned = models.BooleanField(_('Epingle'), default=False)
+    is_auto_generated = models.BooleanField(_('Genere automatiquement'), default=False)
+    expires_at = models.DateTimeField(_('Expire le'), null=True, blank=True)
+
+    created_at = models.DateTimeField(_('Cree le'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Modifie le'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Annonce')
+        verbose_name_plural = _('Annonces')
+        ordering = ['-is_pinned', '-created_at']
+
+    def __str__(self):
+        return self.title

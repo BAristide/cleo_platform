@@ -7,6 +7,8 @@ import logging
 from datetime import date, timedelta
 from decimal import Decimal
 
+from hr.models import Announcement, Department, Employee, JobTitle
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +26,6 @@ def load_demo_data():
     from catalog.models import Product
     from core.models import Currency
     from crm.models import Company, Contact
-    from hr.models import Department, Employee, JobTitle
     from sales.models import BankAccount, Quote, QuoteItem
 
     User = get_user_model()
@@ -265,7 +266,7 @@ def load_demo_data():
         {
             'employee_id': 'EMP-002',
             'first_name': 'Aminata',
-            'last_name': 'Touré',
+            'last_name': 'Toure',
             'email': 'a.toure@agrotech-abj.ci',
             'hire_date': date(2023, 4, 1),
             'job_title': jt_comm,
@@ -274,16 +275,30 @@ def load_demo_data():
         {
             'employee_id': 'EMP-003',
             'first_name': 'Ibrahim',
-            'last_name': 'Konaté',
+            'last_name': 'Konate',
             'email': 'i.konate@agrotech-abj.ci',
             'hire_date': date(2022, 7, 1),
             'job_title': jt_log,
             'department': dept_log,
         },
     ]:
-        Employee.objects.get_or_create(
+        emp, created = Employee.objects.get_or_create(
             employee_id=emp_data['employee_id'], defaults=emp_data
         )
+        if created and emp.department:
+            job_label = emp.job_title.name if emp.job_title else ''
+            Announcement.objects.get_or_create(
+                title=f'Bienvenue a {emp.full_name}',
+                is_auto_generated=True,
+                defaults={
+                    'content': (
+                        f'{emp.full_name} rejoint le departement {emp.department.name}'
+                        + (f' en tant que {job_label}' if job_label else '')
+                        + '.'
+                    ),
+                    'target_audience': 'all',
+                },
+            )
 
     journal_ventes = Journal.objects.filter(code='VEN').first()
     if journal_ventes:

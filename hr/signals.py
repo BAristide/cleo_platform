@@ -1,9 +1,12 @@
+import logging
+
 from django.contrib.auth.models import User
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from django.utils import timezone
 
 from .models import (
+    Announcement,
     Availability,
     Employee,
     EmployeeSkill,
@@ -13,6 +16,8 @@ from .models import (
     TrainingSkill,
 )
 from .services.email_service import EmailService
+
+logger = logging.getLogger(__name__)
 
 
 @receiver(pre_save, sender=Mission)
@@ -226,6 +231,35 @@ def _sync_user_active_status(employee):
     if employee.user:
         User = employee.user.__class__
         User.objects.filter(pk=employee.user.pk).update(is_active=employee.is_active)
+
+
+@receiver(post_save, sender=Employee)
+def announce_new_hire(sender, instance, created, **kwargs):
+    """Cree une annonce automatique pour chaque nouvelle recrue."""
+    if not created:
+        return
+    if not instance.department:
+        return
+
+    title = f'Bienvenue a {instance.full_name}'
+    job_label = instance.job_title.name if instance.job_title else ''
+    content = (
+        f'{instance.full_name} rejoint le departement {instance.department.name}'
+        + (f' en tant que {job_label}' if job_label else '')
+        + '.'
+    )
+
+    try:
+        Announcement.objects.create(
+            title=title,
+            content=content,
+            target_audience='all',
+            is_auto_generated=True,
+        )
+    except Exception:
+        logger.warning(
+            f'Impossible de creer l annonce de bienvenue pour {instance.full_name}'
+        )
 
 
 @receiver(post_save, sender=EmployeeSkill)

@@ -1,6 +1,6 @@
 import os
 
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Q
 from django.http import FileResponse
 from django.utils import timezone
 from django_filters import rest_framework as django_filters
@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from users.permissions import HasModulePermission, module_permission_required
 
 from .models import (
+    Announcement,
     Availability,
     Department,
     Employee,
@@ -26,6 +27,7 @@ from .models import (
     TrainingSkill,
 )
 from .serializers import (
+    AnnouncementSerializer,
     AvailabilitySerializer,
     DepartmentSerializer,
     EmployeeDetailSerializer,
@@ -1167,6 +1169,48 @@ class TrainingPlanItemViewSet(viewsets.ModelViewSet):
         return Response(
             {'success': True, 'message': 'Évaluation du manager ajoutée avec succès.'}
         )
+
+
+class AnnouncementViewSet(viewsets.ModelViewSet):
+    """API pour les annonces internes."""
+
+    queryset = Announcement.objects.all()
+    serializer_class = AnnouncementSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title', 'content']
+    ordering = ['-is_pinned', '-created_at']
+
+    def get_queryset(self):
+        """Filtre les annonces selon l'audience et l'expiration."""
+        from django.utils import timezone
+
+        qs = Announcement.objects.filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gte=timezone.now())
+        )
+
+        try:
+            employee = Employee.objects.get(user=self.request.user)
+            qs = qs.filter(
+                Q(target_audience='all')
+                | Q(
+                    target_audience='department', target_departments=employee.department
+                )
+                | Q(target_audience='individual', target_employees=employee)
+            ).distinct()
+        except Employee.DoesNotExist:
+            # Admin sans dossier employe voit tout
+            pass
+
+        return qs
+
+    def perform_create(self, serializer):
+        try:
+            employee = Employee.objects.get(user=self.request.user)
+            serializer.save(author=employee)
+        except Employee.DoesNotExist:
+            serializer.save()
 
 
 @api_view(['GET'])

@@ -1,6 +1,6 @@
 import os
 
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Q
 from django.http import FileResponse
 from django.utils import timezone
 from django_filters import rest_framework as django_filters
@@ -12,21 +12,28 @@ from rest_framework.response import Response
 from users.permissions import HasModulePermission, module_permission_required
 
 from .models import (
+    Announcement,
     Availability,
+    Complaint,
     Department,
     Employee,
     EmployeeSkill,
     JobSkillRequirement,
     JobTitle,
     Mission,
+    Reward,
+    RewardType,
     Skill,
     TrainingCourse,
     TrainingPlan,
     TrainingPlanItem,
     TrainingSkill,
+    WorkCertificateRequest,
 )
 from .serializers import (
+    AnnouncementSerializer,
     AvailabilitySerializer,
+    ComplaintSerializer,
     DepartmentSerializer,
     EmployeeDetailSerializer,
     EmployeeListSerializer,
@@ -34,11 +41,14 @@ from .serializers import (
     JobSkillRequirementSerializer,
     JobTitleSerializer,
     MissionSerializer,
+    RewardSerializer,
+    RewardTypeSerializer,
     SkillSerializer,
     TrainingCourseSerializer,
     TrainingPlanItemSerializer,
     TrainingPlanSerializer,
     TrainingSkillSerializer,
+    WorkCertificateRequestSerializer,
 )
 
 
@@ -1167,6 +1177,263 @@ class TrainingPlanItemViewSet(viewsets.ModelViewSet):
         return Response(
             {'success': True, 'message': 'Évaluation du manager ajoutée avec succès.'}
         )
+
+
+class AnnouncementViewSet(viewsets.ModelViewSet):
+    """API pour les annonces internes."""
+
+    queryset = Announcement.objects.all()
+    serializer_class = AnnouncementSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['title', 'content']
+    ordering = ['-is_pinned', '-created_at']
+
+    def get_queryset(self):
+        """Filtre les annonces selon l'audience et l'expiration."""
+        from django.utils import timezone
+
+        qs = Announcement.objects.filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gte=timezone.now())
+        )
+
+        try:
+            employee = Employee.objects.get(user=self.request.user)
+            qs = qs.filter(
+                Q(target_audience='all')
+                | Q(
+                    target_audience='department', target_departments=employee.department
+                )
+                | Q(target_audience='individual', target_employees=employee)
+            ).distinct()
+        except Employee.DoesNotExist:
+            # Admin sans dossier employe voit tout
+            pass
+
+        return qs
+
+    def perform_create(self, serializer):
+        try:
+            employee = Employee.objects.get(user=self.request.user)
+            serializer.save(author=employee)
+        except Employee.DoesNotExist:
+            serializer.save()
+
+
+class WorkCertificateRequestViewSet(viewsets.ModelViewSet):
+    """API pour les demandes d attestation de travail."""
+
+    queryset = WorkCertificateRequest.objects.all()
+    serializer_class = WorkCertificateRequestSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['employee', 'status', 'purpose']
+    ordering = ['-created_at']
+
+    def get_permissions(self):
+        """
+        create/list/retrieve : tout employe authentifie.
+        approve/reject/destroy/update : niveau HR requis.
+        """
+        from users.permissions import CanSubmitOwnCertificate
+
+        if self.action in ('create', 'list', 'retrieve'):
+            return [permissions.IsAuthenticated(), CanSubmitOwnCertificate()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
+
+    def get_queryset(self):
+        try:
+            employee = Employee.objects.get(user=self.request.user)
+            if employee.is_hr:
+                return WorkCertificateRequest.objects.all()
+            return WorkCertificateRequest.objects.filter(employee=employee)
+        except Employee.DoesNotExist:
+            return WorkCertificateRequest.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            employee = Employee.objects.get(user=self.request.user)
+            serializer.save(employee=employee)
+        except Employee.DoesNotExist:
+            serializer.save()
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """Approuve la demande et genere le PDF."""
+        cert = self.get_object()
+        if cert.status != 'pending':
+            return Response(
+                {'error': 'Cette demande ne peut plus etre approuvee.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        notes = request.data.get('hr_notes', '')
+        cert.status = 'approved'
+        cert.hr_notes = notes
+        cert.save(update_fields=['status', 'hr_notes'])
+
+        try:
+            from .services.pdf_generator import PDFGenerator
+
+            pdf_path = PDFGenerator.generate_work_certificate_pdf(cert)
+            cert.pdf_file = pdf_path
+            cert.save(update_fields=['pdf_file'])
+        except Exception as e:
+            return Response(
+                {'error': f'Approbation enregistree mais erreur PDF : {e}'},
+                status=status.HTTP_200_OK,
+            )
+
+        # Notification a l employe
+        if cert.employee.user:
+            from notifications.tasks import _create_notification
+
+            _create_notification(
+                user=cert.employee.user,
+                level='success',
+                title='Attestation de travail disponible',
+                message='Votre attestation de travail a ete approuvee et est disponible au telechargement.',
+                module='hr',
+                link=f'/hr/certificates/{cert.pk}',
+                dedup_key=f'cert_approved_{cert.pk}',
+            )
+
+        return Response(
+            {'success': True, 'message': 'Attestation approuvee et PDF genere.'}
+        )
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Rejette la demande."""
+        cert = self.get_object()
+        if cert.status != 'pending':
+            return Response(
+                {'error': 'Cette demande ne peut plus etre rejetee.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        notes = request.data.get('hr_notes', '')
+        cert.status = 'rejected'
+        cert.hr_notes = notes
+        cert.save(update_fields=['status', 'hr_notes'])
+        return Response({'success': True, 'message': 'Demande rejetee.'})
+
+    @action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        """Telecharge le PDF de l attestation."""
+        from django.conf import settings
+        from django.http import FileResponse
+
+        cert = self.get_object()
+        if not cert.pdf_file:
+            return Response(
+                {'error': 'Aucun PDF disponible pour cette demande.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        pdf_path = os.path.join(settings.MEDIA_ROOT, cert.pdf_file)
+        if not os.path.exists(pdf_path):
+            return Response(
+                {'error': 'Fichier PDF introuvable.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        response = FileResponse(open(pdf_path, 'rb'), content_type='application/pdf')
+        response['Content-Disposition'] = (
+            f'attachment; filename="Attestation_{cert.employee.employee_id}_{cert.id}.pdf"'
+        )
+        return response
+
+
+class ComplaintViewSet(viewsets.ModelViewSet):
+    """API pour les doleances."""
+
+    queryset = Complaint.objects.all()
+    serializer_class = ComplaintSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status', 'category']
+    ordering = ['-created_at']
+
+    def get_permissions(self):
+        from users.permissions import CanSubmitOwnCertificate
+
+        if self.action in ('create', 'list', 'retrieve'):
+            return [permissions.IsAuthenticated(), CanSubmitOwnCertificate()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Complaint.objects.all()
+        try:
+            emp = Employee.objects.get(user=user)
+            if emp.is_hr:
+                return Complaint.objects.all()
+            return Complaint.objects.filter(employee=emp)
+        except Employee.DoesNotExist:
+            return Complaint.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            emp = Employee.objects.get(user=self.request.user)
+            serializer.save(employee=emp)
+        except Employee.DoesNotExist:
+            serializer.save()
+
+    @action(detail=True, methods=['post'])
+    def update_status(self, request, pk=None):
+        complaint = self.get_object()
+        new_status = request.data.get('status')
+        valid = [s[0] for s in Complaint.STATUS_CHOICES]
+        if new_status not in valid:
+            return Response(
+                {'error': f'Statut invalide. Valeurs : {valid}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        notes = request.data.get('hr_notes', complaint.hr_notes)
+        resolution = request.data.get('resolution_notes', complaint.resolution_notes)
+        complaint.status = new_status
+        complaint.hr_notes = notes
+        complaint.resolution_notes = resolution
+        complaint.save(update_fields=['status', 'hr_notes', 'resolution_notes'])
+        return Response({'success': True, 'status': new_status})
+
+
+class RewardTypeViewSet(viewsets.ModelViewSet):
+    """API pour les types de recompenses."""
+
+    queryset = RewardType.objects.filter(is_active=True)
+    serializer_class = RewardTypeSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
+
+
+class RewardViewSet(viewsets.ModelViewSet):
+    """API pour les recompenses."""
+
+    queryset = Reward.objects.all()
+    serializer_class = RewardSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
+
+    def get_queryset(self):
+        if self.action == 'board':
+            return Reward.objects.filter(is_public=True)
+        return Reward.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            emp = Employee.objects.get(user=self.request.user)
+            serializer.save(awarded_by=emp)
+        except Employee.DoesNotExist:
+            serializer.save()
+
+    @action(detail=False, methods=['get'])
+    def board(self, request):
+        """Reward board public."""
+        rewards = Reward.objects.filter(is_public=True).select_related(
+            'employee', 'reward_type', 'awarded_by'
+        )
+        serializer = self.get_serializer(rewards, many=True)
+        return Response(serializer.data)
 
 
 @api_view(['GET'])

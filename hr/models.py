@@ -717,3 +717,214 @@ class TrainingPlanItem(models.Model):
 
     def __str__(self):
         return f'{self.training_plan.employee.full_name} - {self.training_course.title} (Q{self.planned_quarter}/{self.training_plan.year})'
+
+
+class Announcement(models.Model):
+    """Annonces internes de l'entreprise."""
+
+    TARGET_CHOICES = [
+        ('all', _('Tous les employes')),
+        ('department', _('Par departement')),
+        ('individual', _('Individuel')),
+    ]
+
+    title = models.CharField(_('Titre'), max_length=200)
+    content = models.TextField(_('Contenu'))
+    author = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='announcements',
+        verbose_name=_('Auteur'),
+    )
+    target_audience = models.CharField(
+        _('Audience cible'),
+        max_length=20,
+        choices=TARGET_CHOICES,
+        default='all',
+    )
+    target_departments = models.ManyToManyField(
+        Department,
+        blank=True,
+        related_name='announcements',
+        verbose_name=_('Departements cibles'),
+    )
+    target_employees = models.ManyToManyField(
+        Employee,
+        blank=True,
+        related_name='targeted_announcements',
+        verbose_name=_('Employes cibles'),
+    )
+    is_pinned = models.BooleanField(_('Epingle'), default=False)
+    is_auto_generated = models.BooleanField(_('Genere automatiquement'), default=False)
+    expires_at = models.DateTimeField(_('Expire le'), null=True, blank=True)
+
+    created_at = models.DateTimeField(_('Cree le'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Modifie le'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Annonce')
+        verbose_name_plural = _('Annonces')
+        ordering = ['-is_pinned', '-created_at']
+
+    def __str__(self):
+        return self.title
+
+
+class WorkCertificateRequest(models.Model):
+    """Demandes d'attestation de travail."""
+
+    STATUS_CHOICES = [
+        ('pending', _('En attente')),
+        ('approved', _('Approuvee')),
+        ('rejected', _('Rejetee')),
+    ]
+
+    PURPOSE_CHOICES = [
+        ('bank', _('Dossier bancaire')),
+        ('visa', _('Demande de visa')),
+        ('rental', _('Dossier de location')),
+        ('other', _('Autre')),
+    ]
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='certificate_requests',
+        verbose_name=_('Employe'),
+    )
+    purpose = models.CharField(
+        _('Objet'), max_length=20, choices=PURPOSE_CHOICES, default='other'
+    )
+    purpose_detail = models.TextField(_('Precisions'), blank=True)
+    status = models.CharField(
+        _('Statut'), max_length=20, choices=STATUS_CHOICES, default='pending'
+    )
+    hr_notes = models.TextField(_('Notes RH'), blank=True)
+    pdf_file = models.CharField(_('Fichier PDF'), max_length=255, blank=True, null=True)
+
+    created_at = models.DateTimeField(_('Demandee le'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Modifiee le'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Demande d attestation de travail')
+        verbose_name_plural = _('Demandes d attestations de travail')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.employee.full_name} — {self.get_purpose_display()} ({self.get_status_display()})'
+
+
+class Complaint(models.Model):
+    """Doleances et conflits internes."""
+
+    CATEGORY_CHOICES = [
+        ('harassment', _('Harcelement')),
+        ('discrimination', _('Discrimination')),
+        ('workload', _('Charge de travail')),
+        ('management', _('Comportement managerial')),
+        ('other', _('Autre')),
+    ]
+    STATUS_CHOICES = [
+        ('open', _('Ouverte')),
+        ('investigating', _('En cours d investigation')),
+        ('resolved', _('Resolue')),
+        ('closed', _('Fermee')),
+    ]
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='complaints',
+        verbose_name=_('Employe'),
+    )
+    category = models.CharField(_('Categorie'), max_length=20, choices=CATEGORY_CHOICES)
+    description = models.TextField(_('Description'))
+    is_anonymous = models.BooleanField(_('Anonyme'), default=False)
+    status = models.CharField(
+        _('Statut'), max_length=20, choices=STATUS_CHOICES, default='open'
+    )
+    assigned_to = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_complaints',
+        verbose_name=_('Assigne a (RH)'),
+    )
+    hr_notes = models.TextField(_('Notes RH (prive)'), blank=True)
+    resolution_notes = models.TextField(_('Notes de resolution'), blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _('Doleance')
+        verbose_name_plural = _('Doleances')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        name = 'Anonyme' if self.is_anonymous else self.employee.full_name
+        return f'Doleance — {name} ({self.get_status_display()})'
+
+
+class RewardType(models.Model):
+    """Types de recompenses configurables."""
+
+    name = models.CharField(_('Nom'), max_length=100)
+    description = models.TextField(_('Description'), blank=True)
+    icon = models.CharField(
+        _('Icone'),
+        max_length=50,
+        blank=True,
+        help_text=_('Ex: TrophyOutlined, StarOutlined'),
+    )
+    is_active = models.BooleanField(_('Actif'), default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Type de recompense')
+        verbose_name_plural = _('Types de recompenses')
+        ordering = ['name']
+
+    def __str__(self):
+        return self.name
+
+
+class Reward(models.Model):
+    """Recompenses attribuees aux employes."""
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='rewards',
+        verbose_name=_('Employe'),
+    )
+    reward_type = models.ForeignKey(
+        RewardType,
+        on_delete=models.PROTECT,
+        related_name='rewards',
+        verbose_name=_('Type de recompense'),
+    )
+    awarded_date = models.DateField(_('Date d attribution'))
+    awarded_by = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='rewards_given',
+        verbose_name=_('Attribue par'),
+    )
+    description = models.TextField(_('Commentaire'), blank=True)
+    is_public = models.BooleanField(_('Visible sur le reward board'), default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Recompense')
+        verbose_name_plural = _('Recompenses')
+        ordering = ['-awarded_date']
+
+    def __str__(self):
+        return (
+            f'{self.reward_type.name} → {self.employee.full_name} ({self.awarded_date})'
+        )

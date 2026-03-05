@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #1a1a2e; margin: 0; padding: 0; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; }
+    .company-name { font-size: 22px; font-weight: bold; color: #0F172A; }
+    .company-info { font-size: 11px; color: #555; margin-top: 6px; line-height: 1.6; }
+    .doc-meta { text-align: right; font-size: 11px; }
+    .doc-meta table { margin-left: auto; }
+    .doc-meta td { padding: 2px 6px; }
+    .doc-meta td:first-child { font-weight: bold; color: #0F172A; }
+    hr { border: none; border-top: 2px solid #0F172A; margin: 16px 0; }
+    .doc-title { text-align: center; font-size: 18px; font-weight: bold; text-transform: uppercase;
+                 letter-spacing: 2px; margin: 32px 0; color: #0F172A; }
+    .body-text { font-size: 12px; line-height: 2; color: #1a1a2e; margin: 0 24px; }
+    .employee-block { background: #f8fafc; border-left: 4px solid #0F172A;
+                      padding: 16px 20px; margin: 24px 0; }
+    .employee-block table td { padding: 4px 12px 4px 0; }
+    .employee-block table td:first-child { font-weight: bold; color: #0F172A; width: 160px; }
+    .signature-block { margin-top: 64px; display: flex; justify-content: flex-end; }
+    .signature-box { text-align: center; width: 220px; }
+    .signature-box .label { font-size: 11px; color: #555; }
+    .signature-box .name { font-weight: bold; margin-top: 48px; border-top: 1px solid #0F172A;
+                           padding-top: 8px; font-size: 12px; }
+    .footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: center;
+              font-size: 10px; color: #aaa; border-top: 1px solid #eee; padding: 8px 0; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <div class="company-name">{{ company.name }}</div>
+      <div class="company-info">
+        {% if company.address %}{{ company.address }}<br>{% endif %}
+        {% if company.email %}Email : {{ company.email }}{% endif %}
+        {% if company.phone %} &nbsp;|&nbsp; Tel : {{ company.phone }}{% endif %}
+      </div>
+    </div>
+    <div class="doc-meta">
+      <table>
+        <tr><td>Reference :</td><td>ATT-{{ request.id|stringformat:"04d" }}</td></tr>
+        <tr><td>Date :</td><td>{{ generated_date|date:"d/m/Y" }}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <hr>
+  <div class="doc-title">Attestation de Travail</div>
+
+  <div class="body-text">
+    <p>
+      Nous soussignes, <strong>{{ company.name }}</strong>, attestons par la presente que :
+    </p>
+  </div>
+
+  <div class="employee-block">
+    <table>
+      <tr>
+        <td>Nom et prenom :</td>
+        <td><strong>{{ employee.full_name }}</strong></td>
+      </tr>
+      <tr>
+        <td>Matricule :</td>
+        <td>{{ employee.employee_id }}</td>
+      </tr>
+      <tr>
+        <td>Poste :</td>
+        <td>{{ employee.job_title.name }}</td>
+      </tr>
+      <tr>
+        <td>Departement :</td>
+        <td>{{ employee.department.name }}</td>
+      </tr>
+      <tr>
+        <td>Date d embauche :</td>
+        <td>{{ employee.hire_date|date:"d/m/Y" }}</td>
+      </tr>
+      {% if employee.contract_type %}
+      <tr>
+        <td>Type de contrat :</td>
+        <td>{{ employee.contract_type.name }}</td>
+      </tr>
+      {% endif %}
+    </table>
+  </div>
+
+  <div class="body-text">
+    <p>
+      est bien employe(e) au sein de notre entreprise depuis le
+      <strong>{{ employee.hire_date|date:"d/m/Y" }}</strong>
+      {% if employee.contract_type %}
+      dans le cadre d un <strong>{{ employee.contract_type.name }}</strong>
+      {% endif %}
+      a la date de delivrance du present document.
+    </p>
+    <p>
+      La presente attestation est delivree a la demande de l interesse(e)
+      {% if request.purpose != 'other' %}
+      pour servir et valoir ce que de droit, notamment pour :
+      <strong>{{ request.get_purpose_display }}</strong>{% if request.purpose_detail %} — {{ request.purpose_detail }}{% endif %}.
+      {% else %}
+      pour servir et valoir ce que de droit.
+      {% endif %}
+    </p>
+  </div>
+
+  <div class="signature-block">
+    <div class="signature-box">
+      <div class="label">{{ generated_date|date:"d/m/Y" }}</div>
+      <div class="name">{{ company.name }}<br><span style="font-weight:normal;font-size:11px;">Direction des Ressources Humaines</span></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    {{ company.name }} — Document genere automatiquement par Cleo ERP
+  </div>
+
+</body>
+</html>

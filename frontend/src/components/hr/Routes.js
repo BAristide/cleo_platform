@@ -30,6 +30,15 @@ import TrainingCourseDetail from './TrainingCourseDetail';
 import TrainingPlanList from './TrainingPlanList';
 import TrainingPlanDetail from './TrainingPlanDetail';
 import TrainingPlanForm from './forms/TrainingPlanForm';
+import EmployeePortal from './EmployeePortal';
+import AnnouncementFeed from './AnnouncementFeed';
+import AnnouncementForm from './AnnouncementForm';
+import WorkCertificateList from './WorkCertificateList';
+import WorkCertificateForm from './WorkCertificateForm';
+import ComplaintForm from './ComplaintForm';
+import ComplaintManagement from './ComplaintManagement';
+import RewardBoard from './RewardBoard';
+import RewardForm from './forms/RewardForm';
 
 const HRRoutes = () => {
   return (
@@ -78,6 +87,25 @@ const HRRoutes = () => {
         <Route path="/training-plans/new" element={<TrainingPlanForm />} />
         <Route path="/training-plans/:id" element={<TrainingPlanDetail />} />
         <Route path="/training-plans/:id/edit" element={<TrainingPlanForm />} />
+
+        {/* Portail employe */}
+        <Route path="/portal" element={<EmployeePortal />} />
+
+        {/* Annonces */}
+        <Route path="/announcements" element={<AnnouncementFeed />} />
+        <Route path="/announcements/new" element={<AnnouncementForm />} />
+
+        {/* Attestations */}
+        <Route path="/certificates" element={<WorkCertificateList />} />
+        <Route path="/certificates/new" element={<WorkCertificateForm />} />
+
+        {/* Doleances */}
+        <Route path="/complaints" element={<ComplaintManagement />} />
+        <Route path="/complaints/new" element={<ComplaintForm />} />
+
+        {/* Recompenses */}
+        <Route path="/rewards" element={<RewardBoard />} />
+        <Route path="/rewards/new" element={<RewardForm />} />
 
         {/* Redirection par défaut */}
         <Route path="*" element={<Navigate to="/hr" replace />} />

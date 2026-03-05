@@ -2,18 +2,23 @@ from django.contrib.auth.models import User
 from rest_framework import serializers
 
 from .models import (
+    Announcement,
     Availability,
+    Complaint,
     Department,
     Employee,
     EmployeeSkill,
     JobSkillRequirement,
     JobTitle,
     Mission,
+    Reward,
+    RewardType,
     Skill,
     TrainingCourse,
     TrainingPlan,
     TrainingPlanItem,
     TrainingSkill,
+    WorkCertificateRequest,
 )
 
 
@@ -85,6 +90,7 @@ class EmployeeListSerializer(serializers.ModelSerializer):
     department_name = serializers.SerializerMethodField()
     job_title_name = serializers.SerializerMethodField()
     manager_name = serializers.SerializerMethodField()
+    contract_type_name = serializers.SerializerMethodField()
     roles = serializers.SerializerMethodField()
 
     class Meta:
@@ -115,6 +121,9 @@ class EmployeeListSerializer(serializers.ModelSerializer):
 
     def get_manager_name(self, obj):
         return obj.manager.full_name if obj.manager else None
+
+    def get_contract_type_name(self, obj):
+        return obj.contract_type.name if obj.contract_type else None
 
     def get_roles(self, obj):
         roles = []
@@ -473,3 +482,166 @@ class TrainingPlanSerializer(serializers.ModelSerializer):
             'hr': obj.approved_by_hr,
             'finance': obj.approved_by_finance,
         }
+
+
+class AnnouncementSerializer(serializers.ModelSerializer):
+    """Serializer pour les annonces internes."""
+
+    author_name = serializers.SerializerMethodField()
+    target_audience_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Announcement
+        fields = [
+            'id',
+            'title',
+            'content',
+            'author',
+            'author_name',
+            'target_audience',
+            'target_audience_display',
+            'target_departments',
+            'target_employees',
+            'is_pinned',
+            'is_auto_generated',
+            'expires_at',
+            'created_at',
+        ]
+
+    def get_author_name(self, obj):
+        return obj.author.full_name if obj.author else None
+
+    def get_target_audience_display(self, obj):
+        return obj.get_target_audience_display()
+
+
+class WorkCertificateRequestSerializer(serializers.ModelSerializer):
+    """Serializer pour les demandes d attestation de travail."""
+
+    employee_name = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+    purpose_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WorkCertificateRequest
+        fields = [
+            'id',
+            'employee',
+            'employee_name',
+            'purpose',
+            'purpose_display',
+            'purpose_detail',
+            'status',
+            'status_display',
+            'hr_notes',
+            'pdf_file',
+            'created_at',
+        ]
+        extra_kwargs = {
+            'employee': {'required': False, 'read_only': False},
+        }
+
+    def get_employee_name(self, obj):
+        return obj.employee.full_name
+
+    def get_status_display(self, obj):
+        return obj.get_status_display()
+
+    def get_purpose_display(self, obj):
+        return obj.get_purpose_display()
+
+
+class ComplaintSerializer(serializers.ModelSerializer):
+    """Serializer pour les doleances."""
+
+    employee_name = serializers.SerializerMethodField()
+    category_display = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+    assigned_to_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Complaint
+        fields = [
+            'id',
+            'employee',
+            'employee_name',
+            'category',
+            'category_display',
+            'description',
+            'is_anonymous',
+            'status',
+            'status_display',
+            'assigned_to',
+            'assigned_to_name',
+            'hr_notes',
+            'resolution_notes',
+            'created_at',
+        ]
+        extra_kwargs = {
+            'employee': {'required': False},
+            'hr_notes': {'write_only': False},
+        }
+
+    def get_employee_name(self, obj):
+        if obj.is_anonymous:
+            request = self.context.get('request')
+            if request and (
+                request.user.is_superuser
+                or hasattr(request.user, 'employee')
+                and getattr(request.user.employee, 'is_hr', False)
+            ):
+                return f'{obj.employee.full_name} (anonyme)'
+            return 'Anonyme'
+        return obj.employee.full_name
+
+    def get_category_display(self, obj):
+        return obj.get_category_display()
+
+    def get_status_display(self, obj):
+        return obj.get_status_display()
+
+    def get_assigned_to_name(self, obj):
+        return obj.assigned_to.full_name if obj.assigned_to else None
+
+
+class RewardTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RewardType
+        fields = ['id', 'name', 'description', 'icon', 'is_active', 'created_at']
+
+
+class RewardSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    reward_type_name = serializers.SerializerMethodField()
+    reward_type_icon = serializers.SerializerMethodField()
+    awarded_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Reward
+        fields = [
+            'id',
+            'employee',
+            'employee_name',
+            'reward_type',
+            'reward_type_name',
+            'reward_type_icon',
+            'awarded_date',
+            'awarded_by',
+            'awarded_by_name',
+            'description',
+            'is_public',
+            'created_at',
+        ]
+        extra_kwargs = {'awarded_by': {'required': False}}
+
+    def get_employee_name(self, obj):
+        return obj.employee.full_name
+
+    def get_reward_type_name(self, obj):
+        return obj.reward_type.name
+
+    def get_reward_type_icon(self, obj):
+        return obj.reward_type.icon
+
+    def get_awarded_by_name(self, obj):
+        return obj.awarded_by.full_name if obj.awarded_by else None

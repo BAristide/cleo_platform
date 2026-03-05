@@ -7,6 +7,8 @@ import logging
 from datetime import date, timedelta
 from decimal import Decimal
 
+from hr.models import Announcement, Department, Employee, JobTitle
+
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +26,6 @@ def load_demo_data():
     from catalog.models import Product
     from core.models import Currency
     from crm.models import Company, Contact
-    from hr.models import Department, Employee, JobTitle
     from sales.models import BankAccount, Quote, QuoteItem
 
     User = get_user_model()
@@ -287,9 +288,23 @@ def load_demo_data():
             'department': dept_admin,
         },
     ]:
-        Employee.objects.get_or_create(
+        emp, created = Employee.objects.get_or_create(
             employee_id=emp_data['employee_id'], defaults=emp_data
         )
+        if created and emp.department:
+            job_label = emp.job_title.name if emp.job_title else ''
+            Announcement.objects.get_or_create(
+                title=f'Bienvenue a {emp.full_name}',
+                is_auto_generated=True,
+                defaults={
+                    'content': (
+                        f'{emp.full_name} rejoint le departement {emp.department.name}'
+                        + (f' en tant que {job_label}' if job_label else '')
+                        + '.'
+                    ),
+                    'target_audience': 'all',
+                },
+            )
 
     journal_ventes = Journal.objects.filter(code='VEN').first()
     if journal_ventes:

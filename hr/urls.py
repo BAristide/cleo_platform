@@ -16,6 +16,7 @@ router.register(r'training-plans', views.TrainingPlanViewSet)
 router.register(r'training-plan-items', views.TrainingPlanItemViewSet)
 router.register(r'announcements', views.AnnouncementViewSet)
 router.register(r'certificates', views.WorkCertificateRequestViewSet)
+router.register(r'complaints', views.ComplaintViewSet)
 
 app_name = 'hr'
 

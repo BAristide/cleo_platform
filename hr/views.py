@@ -14,6 +14,7 @@ from users.permissions import HasModulePermission, module_permission_required
 from .models import (
     Announcement,
     Availability,
+    Complaint,
     Department,
     Employee,
     EmployeeSkill,
@@ -30,6 +31,7 @@ from .models import (
 from .serializers import (
     AnnouncementSerializer,
     AvailabilitySerializer,
+    ComplaintSerializer,
     DepartmentSerializer,
     EmployeeDetailSerializer,
     EmployeeListSerializer,
@@ -1335,6 +1337,60 @@ class WorkCertificateRequestViewSet(viewsets.ModelViewSet):
             f'attachment; filename="Attestation_{cert.employee.employee_id}_{cert.id}.pdf"'
         )
         return response
+
+
+class ComplaintViewSet(viewsets.ModelViewSet):
+    """API pour les doleances."""
+
+    queryset = Complaint.objects.all()
+    serializer_class = ComplaintSerializer
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status', 'category']
+    ordering = ['-created_at']
+
+    def get_permissions(self):
+        from users.permissions import CanSubmitOwnCertificate
+
+        if self.action in ('create', 'list', 'retrieve'):
+            return [permissions.IsAuthenticated(), CanSubmitOwnCertificate()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_superuser:
+            return Complaint.objects.all()
+        try:
+            emp = Employee.objects.get(user=user)
+            if emp.is_hr:
+                return Complaint.objects.all()
+            return Complaint.objects.filter(employee=emp)
+        except Employee.DoesNotExist:
+            return Complaint.objects.all()
+
+    def perform_create(self, serializer):
+        try:
+            emp = Employee.objects.get(user=self.request.user)
+            serializer.save(employee=emp)
+        except Employee.DoesNotExist:
+            serializer.save()
+
+    @action(detail=True, methods=['post'])
+    def update_status(self, request, pk=None):
+        complaint = self.get_object()
+        new_status = request.data.get('status')
+        valid = [s[0] for s in Complaint.STATUS_CHOICES]
+        if new_status not in valid:
+            return Response(
+                {'error': f'Statut invalide. Valeurs : {valid}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        notes = request.data.get('hr_notes', complaint.hr_notes)
+        resolution = request.data.get('resolution_notes', complaint.resolution_notes)
+        complaint.status = new_status
+        complaint.hr_notes = notes
+        complaint.resolution_notes = resolution
+        complaint.save(update_fields=['status', 'hr_notes', 'resolution_notes'])
+        return Response({'success': True, 'status': new_status})
 
 
 @api_view(['GET'])

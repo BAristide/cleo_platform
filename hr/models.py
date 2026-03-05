@@ -814,3 +814,55 @@ class WorkCertificateRequest(models.Model):
 
     def __str__(self):
         return f'{self.employee.full_name} — {self.get_purpose_display()} ({self.get_status_display()})'
+
+
+class Complaint(models.Model):
+    """Doleances et conflits internes."""
+
+    CATEGORY_CHOICES = [
+        ('harassment', _('Harcelement')),
+        ('discrimination', _('Discrimination')),
+        ('workload', _('Charge de travail')),
+        ('management', _('Comportement managerial')),
+        ('other', _('Autre')),
+    ]
+    STATUS_CHOICES = [
+        ('open', _('Ouverte')),
+        ('investigating', _('En cours d investigation')),
+        ('resolved', _('Resolue')),
+        ('closed', _('Fermee')),
+    ]
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='complaints',
+        verbose_name=_('Employe'),
+    )
+    category = models.CharField(_('Categorie'), max_length=20, choices=CATEGORY_CHOICES)
+    description = models.TextField(_('Description'))
+    is_anonymous = models.BooleanField(_('Anonyme'), default=False)
+    status = models.CharField(
+        _('Statut'), max_length=20, choices=STATUS_CHOICES, default='open'
+    )
+    assigned_to = models.ForeignKey(
+        Employee,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_complaints',
+        verbose_name=_('Assigne a (RH)'),
+    )
+    hr_notes = models.TextField(_('Notes RH (prive)'), blank=True)
+    resolution_notes = models.TextField(_('Notes de resolution'), blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _('Doleance')
+        verbose_name_plural = _('Doleances')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        name = 'Anonyme' if self.is_anonymous else self.employee.full_name
+        return f'Doleance — {name} ({self.get_status_display()})'

@@ -4,6 +4,7 @@ from rest_framework import serializers
 from .models import (
     Announcement,
     Availability,
+    Complaint,
     Department,
     Employee,
     EmployeeSkill,
@@ -546,3 +547,56 @@ class WorkCertificateRequestSerializer(serializers.ModelSerializer):
 
     def get_purpose_display(self, obj):
         return obj.get_purpose_display()
+
+
+class ComplaintSerializer(serializers.ModelSerializer):
+    """Serializer pour les doleances."""
+
+    employee_name = serializers.SerializerMethodField()
+    category_display = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+    assigned_to_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Complaint
+        fields = [
+            'id',
+            'employee',
+            'employee_name',
+            'category',
+            'category_display',
+            'description',
+            'is_anonymous',
+            'status',
+            'status_display',
+            'assigned_to',
+            'assigned_to_name',
+            'hr_notes',
+            'resolution_notes',
+            'created_at',
+        ]
+        extra_kwargs = {
+            'employee': {'required': False},
+            'hr_notes': {'write_only': False},
+        }
+
+    def get_employee_name(self, obj):
+        if obj.is_anonymous:
+            request = self.context.get('request')
+            if request and (
+                request.user.is_superuser
+                or hasattr(request.user, 'employee')
+                and getattr(request.user.employee, 'is_hr', False)
+            ):
+                return f'{obj.employee.full_name} (anonyme)'
+            return 'Anonyme'
+        return obj.employee.full_name
+
+    def get_category_display(self, obj):
+        return obj.get_category_display()
+
+    def get_status_display(self, obj):
+        return obj.get_status_display()
+
+    def get_assigned_to_name(self, obj):
+        return obj.assigned_to.full_name if obj.assigned_to else None

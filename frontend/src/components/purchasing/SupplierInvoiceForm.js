@@ -101,7 +101,7 @@ export default function SupplierInvoiceForm() {
     try {
       const payload = { ...form };
       if (!payload.currency) {
-        alert('Veuillez selectionner une devise.');
+        alert('Veuillez sélectionner une devise.');
         return;
       }
       const validItems = items.filter(it => it.product || it.description);

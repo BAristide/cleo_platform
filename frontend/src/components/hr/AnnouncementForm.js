@@ -95,7 +95,7 @@ const AnnouncementForm = () => {
             {targetAudience === 'department' && (
               <Col xs={24} md={16}>
                 <Form.Item name="target_departments" label="Departements cibles">
-                  <Select mode="multiple" placeholder="Selectionner les departements">
+                  <Select mode="multiple" placeholder="Sélectionner les départements">
                     {departments.map((d) => (
                       <Option key={d.id} value={d.id}>{d.name}</Option>
                     ))}
@@ -106,8 +106,8 @@ const AnnouncementForm = () => {
 
             {targetAudience === 'individual' && (
               <Col xs={24} md={16}>
-                <Form.Item name="target_employees" label="Employes cibles">
-                  <Select mode="multiple" placeholder="Selectionner les employes">
+                <Form.Item name="target_employees" label="Employés ciblés">
+                  <Select mode="multiple" placeholder="Sélectionner les employés">
                     {employees.map((e) => (
                       <Option key={e.id} value={e.id}>
                         {e.first_name} {e.last_name}

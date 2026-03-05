@@ -16,8 +16,15 @@ class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
     """
 
     serializer_class = NotificationSerializer
-    permission_classes = [HasModulePermission]
+    permission_classes = [permissions.IsAuthenticated]
     module_name = 'notifications'
+
+    def get_permissions(self):
+        # mark_read et mark_all_read : tout utilisateur authentifie peut agir sur ses propres notifs
+        if self.action in ('mark_read', 'mark_all_read', 'unread_count'):
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
+
     filterset_fields = ['level', 'module', 'is_read']
     ordering_fields = ['created_at', 'level']
 

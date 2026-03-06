@@ -112,7 +112,6 @@ class PayrollPDFGenerator:
     @staticmethod
     def generate_payroll_run_summary(payroll_run):
         """Génère un récapitulatif PDF du lancement de paie."""
-        payslips = payroll_run.payslips.all()
 
         # Devise active
         from core.models import Currency
@@ -123,28 +122,48 @@ class PayrollPDFGenerator:
         except Exception:
             currency_code = 'XOF'
 
+        from collections import Counter
+
+        payslips_list = list(
+            payroll_run.payslips.all().order_by(
+                'employee__last_name', 'employee__first_name'
+            )
+        )
+
+        for p in payslips_list:
+            p.employee_contributions = (p.cnss_employee or Decimal('0')) + (
+                p.amo_employee or Decimal('0')
+            )
+
+        total_gross = sum(p.gross_salary or Decimal('0') for p in payslips_list)
+        total_net = sum(p.net_salary or Decimal('0') for p in payslips_list)
+        total_employee_contributions = sum(
+            p.employee_contributions for p in payslips_list
+        )
+        total_employer_contributions = sum(
+            (p.cnss_employer or Decimal('0')) + (p.amo_employer or Decimal('0'))
+            for p in payslips_list
+        )
+        total_income_tax = sum(p.income_tax or Decimal('0') for p in payslips_list)
+
         context = {
             'payroll_run': payroll_run,
             'period': payroll_run.period,
-            'payslips': payslips.order_by(
-                'employee__last_name', 'employee__first_name'
-            ),
+            'payslips': payslips_list,
             'summary': {
-                'total_gross': sum(p.gross_salary or Decimal('0') for p in payslips),
-                'total_net': sum(p.net_salary or Decimal('0') for p in payslips),
-                'total_cnss_employee': sum(
-                    p.cnss_employee or Decimal('0') for p in payslips
+                'total_gross': total_gross,
+                'total_net': total_net,
+                'total_employee_contributions': total_employee_contributions,
+                'total_employer_contributions': total_employer_contributions,
+                'total_income_tax': total_income_tax,
+                'total_social_employee': total_employee_contributions
+                + total_income_tax,
+                'total_social_all': (
+                    total_employee_contributions
+                    + total_employer_contributions
+                    + total_income_tax
                 ),
-                'total_cnss_employer': sum(
-                    p.cnss_employer or Decimal('0') for p in payslips
-                ),
-                'total_amo_employee': sum(
-                    p.amo_employee or Decimal('0') for p in payslips
-                ),
-                'total_amo_employer': sum(
-                    p.amo_employer or Decimal('0') for p in payslips
-                ),
-                'total_income_tax': sum(p.income_tax or Decimal('0') for p in payslips),
+                'status_counts': dict(Counter(p.status for p in payslips_list)),
             },
             'company': get_company_context(),
             'generation_date': timezone.now(),

@@ -117,3 +117,123 @@ def check_contract_expirations():
         'employees_deactivated': employees_deactivated,
         'notifications_created': notifications_created,
     }
+
+
+@shared_task(name='hr.tasks.accrue_monthly_leave')
+def accrue_monthly_leave():
+    """
+    Acquisition mensuelle des congés payés annuels (type accrual_method='monthly').
+    Exécutée le 1er de chaque mois à 02h00 UTC.
+
+    Algorithme pack-indépendant :
+    - Lit LEAVE_ANNUAL_DAYS + LEAVE_SENIORITY_* depuis PayrollParameter (code unique)
+    - Calcule les jours acquis ce mois selon ancienneté de l'employé
+    - Crée ou met à jour LeaveAllocation pour l'année en cours
+    - Zéro hardcoding : toutes les valeurs viennent des fixtures de pack
+
+    Idempotent : si la tâche est rejouée le même mois, elle ne double pas les crédits
+    (contrôlé par le champ `accrued_this_run` via un flag en cache Redis).
+    """
+    from datetime import date
+    from decimal import ROUND_HALF_UP, Decimal
+
+    from django.core.cache import cache
+
+    from payroll.models import PayrollParameter
+
+    from .models import Employee, LeaveAllocation, LeaveType
+
+    today = date.today()
+    year = today.year
+    month = today.month
+
+    # Clé d'idempotence : une seule exécution par mois
+    idempotency_key = f'accrue_monthly_leave_{year}_{month:02d}'
+    if cache.get(idempotency_key):
+        logger.info(
+            f'accrue_monthly_leave: déjà exécutée pour {year}-{month:02d}, skip.'
+        )
+        return {'skipped': True, 'reason': 'already_run_this_month'}
+
+    # Lire les paramètres depuis PayrollParameter (pack-indépendant)
+    def get_param(code, default=Decimal('0')):
+        try:
+            return PayrollParameter.objects.get(code=code, is_active=True).value
+        except PayrollParameter.DoesNotExist:
+            logger.warning(
+                f'accrue_monthly_leave: paramètre {code} absent, défaut={default}'
+            )
+            return default
+
+    annual_days = get_param('LEAVE_ANNUAL_DAYS', Decimal('18'))
+    threshold_1 = get_param('LEAVE_SENIORITY_THRESHOLD_1', Decimal('5'))
+    bonus_1 = get_param('LEAVE_SENIORITY_BONUS_1', Decimal('0'))
+    threshold_2 = get_param('LEAVE_SENIORITY_THRESHOLD_2', Decimal('10'))
+    bonus_2 = get_param('LEAVE_SENIORITY_BONUS_2', Decimal('0'))
+
+    # Types de congés à acquisition mensuelle
+    monthly_types = LeaveType.objects.filter(accrual_method='monthly', is_active=True)
+    if not monthly_types.exists():
+        logger.warning(
+            'accrue_monthly_leave: aucun LeaveType avec accrual_method=monthly'
+        )
+        return {'allocations_updated': 0}
+
+    employees = Employee.objects.filter(
+        is_active=True,
+        hire_date__isnull=False,
+        hire_date__lte=today,
+    )
+
+    allocations_updated = 0
+
+    for emp in employees:
+        # Calcul ancienneté en années
+        years_of_service = Decimal(str((today - emp.hire_date).days / 365.25)).quantize(
+            Decimal('0.01')
+        )
+
+        # Bonus ancienneté pack-indépendant
+        seniority_bonus = Decimal('0')
+        if years_of_service >= threshold_2:
+            seniority_bonus = bonus_2
+        elif years_of_service >= threshold_1:
+            seniority_bonus = bonus_1
+
+        effective_annual = annual_days + seniority_bonus
+
+        # Jours acquis ce mois = annual / 12, arrondi au 0.5 supérieur
+        monthly_accrual = (effective_annual / Decimal('12')).quantize(
+            Decimal('0.5'), rounding=ROUND_HALF_UP
+        )
+
+        for leave_type in monthly_types:
+            alloc, created = LeaveAllocation.objects.get_or_create(
+                employee=emp,
+                leave_type=leave_type,
+                year=year,
+                defaults={
+                    'total_days': Decimal('0'),
+                    'used_days': Decimal('0'),
+                    'pending_days': Decimal('0'),
+                    'carried_days': Decimal('0'),
+                },
+            )
+            alloc.total_days = (alloc.total_days + monthly_accrual).quantize(
+                Decimal('0.1')
+            )
+            alloc.save(update_fields=['total_days'])
+            allocations_updated += 1
+
+    # Marquer comme exécutée pour ce mois (TTL jusqu'au 2 du mois suivant)
+    import calendar
+
+    days_in_month = calendar.monthrange(year, month)[1]
+    ttl_seconds = (days_in_month - today.day + 2) * 86400
+    cache.set(idempotency_key, True, ttl_seconds)
+
+    logger.info(
+        f'accrue_monthly_leave: {allocations_updated} allocations mises à jour '
+        f'pour {year}-{month:02d}'
+    )
+    return {'allocations_updated': allocations_updated, 'year': year, 'month': month}

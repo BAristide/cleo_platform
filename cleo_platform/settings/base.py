@@ -7,7 +7,7 @@ from decouple import Csv, config
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 # ── Version de la plateforme ────────────────────────────────────
-VERSION = '3.18.1'
+VERSION = '3.19.0'
 
 SITE_URL = config('SITE_URL', default='http://localhost:8000')
 

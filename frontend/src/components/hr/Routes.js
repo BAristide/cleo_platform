@@ -46,6 +46,10 @@ import RewardForm from './forms/RewardForm';
 import LeaveList from './LeaveList';
 import LeaveRequestForm from './forms/LeaveRequestForm';
 
+// Notes de frais — EVO-10
+import ExpenseList from './ExpenseList';
+import ExpenseReportForm from './forms/ExpenseReportForm';
+
 const HRRoutes = () => {
   return (
     <Layout>
@@ -115,6 +119,11 @@ const HRRoutes = () => {
         {/* Congés — EVO-09 */}
         <Route path="/leaves" element={<LeaveList />} />
         <Route path="/leaves/new" element={<LeaveRequestForm />} />
+
+        {/* Notes de frais — EVO-10 */}
+        <Route path="/expenses" element={<ExpenseList />} />
+        <Route path="/expenses/new" element={<ExpenseReportForm />} />
+        <Route path="/expenses/:id/edit" element={<ExpenseReportForm />} />
 
         {/* Redirection par défaut */}
         <Route path="*" element={<Navigate to="/hr" replace />} />

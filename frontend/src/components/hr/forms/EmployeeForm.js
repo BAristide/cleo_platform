@@ -7,7 +7,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../../utils/apiUtils';
-import moment from 'moment';
+import dayjs from 'dayjs';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -85,8 +85,8 @@ const EmployeeForm = () => {
             email:             emp.email,
             phone:             emp.phone || '',
             address:           emp.address || '',
-            birth_date:        emp.birth_date ? moment(emp.birth_date) : null,
-            hire_date:         emp.hire_date ? moment(emp.hire_date) : null,
+            birth_date:        emp.birth_date ? dayjs(emp.birth_date) : null,
+            hire_date:         emp.hire_date ? dayjs(emp.hire_date) : null,
             employee_id:       emp.employee_id,
             department_id:     deptId,
             job_title_id:      emp.job_title ? emp.job_title.id : null,

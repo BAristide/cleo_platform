@@ -1993,11 +1993,14 @@ class ExpenseReportViewSet(viewsets.ModelViewSet):
             emp = Employee.objects.get(user=request.user)
         except Employee.DoesNotExist:
             return Response([])
+        qs = ExpenseReport.objects.none()
+        if emp.is_manager:
+            qs = qs | ExpenseReport.objects.filter(
+                status='submitted', employee__manager=emp
+            )
         if emp.is_finance or request.user.is_superuser:
-            qs = ExpenseReport.objects.filter(status='approved_manager')
-        elif emp.is_manager:
-            qs = ExpenseReport.objects.filter(status='submitted', employee__manager=emp)
-        else:
+            qs = qs | ExpenseReport.objects.filter(status='approved_manager')
+        if not qs.exists() and not emp.is_manager and not emp.is_finance:
             return Response([])
         serializer = ExpenseReportSerializer(qs.order_by('-created_at'), many=True)
         return Response(serializer.data)

@@ -182,6 +182,20 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
     job_title = JobTitleSerializer(read_only=True)
     manager = EmployeeListSerializer(read_only=True)
     second_manager = EmployeeListSerializer(read_only=True)
+    manager_id = serializers.PrimaryKeyRelatedField(
+        queryset=Employee.objects.all(),
+        source='manager',
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+    second_manager_id = serializers.PrimaryKeyRelatedField(
+        queryset=Employee.objects.all(),
+        source='second_manager',
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
     skills = EmployeeSkillSerializer(many=True, read_only=True)
     subordinates = serializers.SerializerMethodField()
 
@@ -211,6 +225,8 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             'contract_start_date',
             'contract_end_date',
             'probation_end_date',
+            'manager_id',
+            'second_manager_id',
         ]
 
     def get_subordinates(self, obj):

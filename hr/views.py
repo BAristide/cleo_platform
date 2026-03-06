@@ -1833,6 +1833,10 @@ class ExpenseReportViewSet(viewsets.ModelViewSet):
             'submit',
             'cancel',
             'pending_approvals',
+            'approve_manager',
+            'approve_finance',
+            'reimburse',
+            'reject',
         ):
             return [permissions.IsAuthenticated()]
         return [permissions.IsAuthenticated(), HasModulePermission()]
@@ -1844,13 +1848,14 @@ class ExpenseReportViewSet(viewsets.ModelViewSet):
             emp = Employee.objects.get(user=user)
             if user.is_superuser or emp.is_hr:
                 return qs
-            if emp.is_finance:
-                return qs.filter(Q(employee=emp) | Q(status='approved_manager'))
+
+            visible = Q(employee=emp)
             if emp.is_manager:
-                return qs.filter(
-                    Q(employee=emp) | Q(status='submitted', employee__manager=emp)
-                )
-            return qs.filter(employee=emp)
+                visible |= Q(status='submitted', employee__manager=emp)
+                visible |= Q(status='approved_manager', employee__manager=emp)
+            if emp.is_finance:
+                visible |= Q(status='approved_manager')
+            return qs.filter(visible).distinct()
         except Employee.DoesNotExist:
             return qs
 

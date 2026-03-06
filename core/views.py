@@ -596,6 +596,115 @@ class SetupCreateView(APIView):
             except (ImportError, ModuleNotFoundError):
                 logger.info(f'Pas de données de démo pour le pack {locale_pack}')
 
+        # ── Paramètres congés + types de congés ─────────────────────────────
+        try:
+            from decimal import Decimal as _D
+
+            from hr.models import LeaveType
+            from payroll.models import PayrollParameter
+
+            LEAVE_PARAMS_BY_PACK = {
+                'OHADA': [
+                    ('LEAVE_ANNUAL_DAYS', _D('24')),
+                    ('LEAVE_ACCRUAL_DAY', _D('1')),
+                    ('LEAVE_SICK_DAYS_ANNUAL', _D('30')),
+                    ('LEAVE_MATERNITY_DAYS', _D('98')),
+                    ('LEAVE_PATERNITY_DAYS', _D('10')),
+                    ('LEAVE_SENIORITY_THRESHOLD_1', _D('5')),
+                    ('LEAVE_SENIORITY_BONUS_1', _D('2')),
+                    ('LEAVE_SENIORITY_THRESHOLD_2', _D('10')),
+                    ('LEAVE_SENIORITY_BONUS_2', _D('4')),
+                    ('LEAVE_MAX_CARRY_DAYS', _D('0')),
+                ],
+                'MA': [
+                    ('LEAVE_ANNUAL_DAYS', _D('18')),
+                    ('LEAVE_ACCRUAL_DAY', _D('1')),
+                    ('LEAVE_SICK_DAYS_ANNUAL', _D('30')),
+                    ('LEAVE_MATERNITY_DAYS', _D('98')),
+                    ('LEAVE_PATERNITY_DAYS', _D('3')),
+                    ('LEAVE_SENIORITY_THRESHOLD_1', _D('5')),
+                    ('LEAVE_SENIORITY_BONUS_1', _D('1')),
+                    ('LEAVE_SENIORITY_THRESHOLD_2', _D('10')),
+                    ('LEAVE_SENIORITY_BONUS_2', _D('2')),
+                    ('LEAVE_MAX_CARRY_DAYS', _D('15')),
+                ],
+                'FR': [
+                    ('LEAVE_ANNUAL_DAYS', _D('25')),
+                    ('LEAVE_ACCRUAL_DAY', _D('1')),
+                    ('LEAVE_SICK_DAYS_ANNUAL', _D('0')),
+                    ('LEAVE_MATERNITY_DAYS', _D('112')),
+                    ('LEAVE_PATERNITY_DAYS', _D('28')),
+                    ('LEAVE_SENIORITY_THRESHOLD_1', _D('5')),
+                    ('LEAVE_SENIORITY_BONUS_1', _D('2')),
+                    ('LEAVE_SENIORITY_THRESHOLD_2', _D('10')),
+                    ('LEAVE_SENIORITY_BONUS_2', _D('4')),
+                    ('LEAVE_MAX_CARRY_DAYS', _D('0')),
+                ],
+            }
+            for key, val in LEAVE_PARAMS_BY_PACK.get(locale_pack, []):
+                PayrollParameter.objects.get_or_create(
+                    pack=locale_pack, key=key, defaults={'value_decimal': val}
+                )
+
+            LEAVE_TYPES = [
+                {
+                    'code': 'ANNUAL',
+                    'name': 'Congés payés annuels',
+                    'is_paid': True,
+                    'accrual_method': 'monthly',
+                    'requires_document': False,
+                    'color': '#1890ff',
+                },
+                {
+                    'code': 'SICK',
+                    'name': 'Congé maladie',
+                    'is_paid': True,
+                    'accrual_method': 'none',
+                    'requires_document': True,
+                    'color': '#fa8c16',
+                },
+                {
+                    'code': 'MATERNITY',
+                    'name': 'Congé maternité',
+                    'is_paid': True,
+                    'accrual_method': 'none',
+                    'requires_document': True,
+                    'color': '#eb2f96',
+                },
+                {
+                    'code': 'PATERNITY',
+                    'name': 'Congé paternité',
+                    'is_paid': True,
+                    'accrual_method': 'none',
+                    'requires_document': True,
+                    'color': '#722ed1',
+                },
+                {
+                    'code': 'UNPAID',
+                    'name': 'Congé sans solde',
+                    'is_paid': False,
+                    'accrual_method': 'none',
+                    'requires_document': False,
+                    'color': '#8c8c8c',
+                },
+                {
+                    'code': 'BEREAVEMENT',
+                    'name': 'Congé deuil',
+                    'is_paid': True,
+                    'accrual_method': 'none',
+                    'requires_document': True,
+                    'color': '#595959',
+                },
+            ]
+            for lt in LEAVE_TYPES:
+                LeaveType.objects.get_or_create(code=lt['code'], defaults=lt)
+
+            logger.info(
+                f'[SETUP] Paramètres congés et types chargés pour le pack {locale_pack}'
+            )
+        except Exception as e:
+            logger.warning(f'Paramètres congés non initialisés pour {locale_pack}: {e}')
+
         from accounting.models import Account, Journal, Tax
 
         return {

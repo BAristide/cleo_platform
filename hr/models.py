@@ -928,3 +928,197 @@ class Reward(models.Model):
         return (
             f'{self.reward_type.name} → {self.employee.full_name} ({self.awarded_date})'
         )
+
+
+# ── Congés ────────────────────────────────────────────────────────────────────
+
+
+class LeaveType(models.Model):
+    """
+    Types de congés configurables — chargés via fixtures de pack dans _load_locale_pack().
+    Identifiés par leur champ `code` (stable entre resets).
+    Zéro hardcoding de durée légale ou de règle nationale dans ce modèle.
+    Les durées légales vivent dans PayrollParameter.
+    """
+
+    name = models.CharField(_('Nom'), max_length=100)
+    code = models.CharField(
+        _('Code'),
+        max_length=20,
+        unique=True,
+        help_text=_(
+            'Identifiant stable : ANNUAL, SICK, MATERNITY, PATERNITY, UNPAID, BEREAVEMENT.'
+        ),
+    )
+    description = models.TextField(_('Description'), blank=True)
+
+    is_paid = models.BooleanField(
+        _('Congé payé'),
+        default=True,
+        help_text=_(
+            'Si False, les jours sont déduits du brut dans SalaryCalculator via MONTHLY_HOURS du pack.'
+        ),
+    )
+
+    ACCRUAL_CHOICES = [
+        ('monthly', _('Acquisition mensuelle automatique')),
+        ('annual', _('Crédit annuel unique au 1er janvier')),
+        ('none', _('Sans acquisition — contingent fixe par paramètre')),
+    ]
+    accrual_method = models.CharField(
+        _("Mode d'acquisition"),
+        max_length=20,
+        choices=ACCRUAL_CHOICES,
+        default='monthly',
+    )
+
+    max_days_carry = models.PositiveSmallIntegerField(
+        _('Report maximum (jours)'),
+        default=0,
+        help_text=_(
+            'Surchargé par LEAVE_MAX_CARRY_DAYS du pack lors du report annuel.'
+        ),
+    )
+    requires_document = models.BooleanField(
+        _('Justificatif obligatoire'), default=False
+    )
+    is_active = models.BooleanField(_('Actif'), default=True)
+
+    color = models.CharField(
+        _('Couleur (hex)'),
+        max_length=7,
+        default='#1890ff',
+        help_text=_('Affichée dans le calendrier équipe.'),
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Type de congé')
+        verbose_name_plural = _('Types de congés')
+        ordering = ['name']
+
+    def __str__(self):
+        return f'{self.name} ({self.code})'
+
+
+class LeaveAllocation(models.Model):
+    """Solde de congés par employé, type et année."""
+
+    employee = models.ForeignKey(
+        Employee, on_delete=models.CASCADE, related_name='leave_allocations'
+    )
+    leave_type = models.ForeignKey(
+        LeaveType, on_delete=models.PROTECT, related_name='allocations'
+    )
+    year = models.PositiveSmallIntegerField(_('Année'))
+
+    total_days = models.DecimalField(
+        _('Jours alloués'), max_digits=6, decimal_places=1, default=0
+    )
+    used_days = models.DecimalField(
+        _('Jours utilisés'), max_digits=6, decimal_places=1, default=0
+    )
+    pending_days = models.DecimalField(
+        _('Jours en attente'), max_digits=6, decimal_places=1, default=0
+    )
+    carried_days = models.DecimalField(
+        _('Jours reportés N-1'), max_digits=6, decimal_places=1, default=0
+    )
+
+    class Meta:
+        verbose_name = _('Solde de congés')
+        verbose_name_plural = _('Soldes de congés')
+        unique_together = [['employee', 'leave_type', 'year']]
+        ordering = ['-year', 'employee__last_name']
+
+    def __str__(self):
+        return f'{self.employee.full_name} — {self.leave_type.name} {self.year}'
+
+    @property
+    def remaining_days(self):
+        return self.total_days + self.carried_days - self.used_days - self.pending_days
+
+
+class LeaveRequest(models.Model):
+    """Demande de congé avec workflow manager → RH."""
+
+    STATUS_CHOICES = [
+        ('draft', _('Brouillon')),
+        ('submitted', _('Soumise')),
+        ('approved_manager', _('Approuvée par N+1')),
+        ('approved_hr', _('Approuvée par RH')),
+        ('rejected', _('Rejetée')),
+        ('cancelled', _('Annulée')),
+    ]
+
+    employee = models.ForeignKey(
+        Employee, on_delete=models.CASCADE, related_name='leave_requests'
+    )
+    leave_type = models.ForeignKey(
+        LeaveType, on_delete=models.PROTECT, related_name='requests'
+    )
+    allocation = models.ForeignKey(
+        LeaveAllocation,
+        on_delete=models.PROTECT,
+        related_name='requests',
+        null=True,
+        blank=True,
+        help_text=_('Alimenté automatiquement à la soumission.'),
+    )
+
+    start_date = models.DateField(_('Date de début'))
+    end_date = models.DateField(_('Date de fin'))
+    nb_days = models.DecimalField(
+        _('Nombre de jours ouvrés'),
+        max_digits=4,
+        decimal_places=1,
+        help_text=_(
+            'Calculé automatiquement (hors weekends). Modifiable pour les demi-journées.'
+        ),
+    )
+
+    reason = models.TextField(_('Motif'), blank=True)
+    document = models.FileField(
+        _('Justificatif'),
+        upload_to='hr/leave_documents/',
+        blank=True,
+        null=True,
+    )
+
+    status = models.CharField(
+        _('Statut'), max_length=20, choices=STATUS_CHOICES, default='draft'
+    )
+
+    approved_by_manager = models.BooleanField(_('Approuvé par N+1'), default=False)
+    approved_by_hr = models.BooleanField(_('Approuvé par RH'), default=False)
+
+    manager_notes = models.TextField(_('Notes du manager'), blank=True)
+    hr_notes = models.TextField(_('Notes RH'), blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _('Demande de congé')
+        verbose_name_plural = _('Demandes de congés')
+        ordering = ['-start_date']
+
+    def __str__(self):
+        return f'{self.employee.full_name} — {self.leave_type.name} ({self.start_date} → {self.end_date})'
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.start_date and self.end_date and self.start_date > self.end_date:
+            raise ValidationError(
+                _('La date de fin doit être postérieure à la date de début.')
+            )
+        if (
+            self.leave_type_id
+            and self.leave_type.requires_document
+            and not self.document
+        ):
+            raise ValidationError(
+                _('Un justificatif est obligatoire pour ce type de congé.')
+            )

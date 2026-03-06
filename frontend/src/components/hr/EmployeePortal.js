@@ -11,6 +11,7 @@ import {
   IdcardOutlined, BankOutlined, PhoneOutlined, MailOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
+import LeaveBalanceDashboard from './LeaveBalanceDashboard';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
 import { useCurrency } from '../../context/CurrencyContext';
 
@@ -282,7 +283,14 @@ const EmployeePortal = () => {
       )}
 
       {/* Onglets */}
-      <Tabs defaultActiveKey="missions">
+      <Tabs defaultActiveKey="leaves">
+        <TabPane
+          tab={<span><CalendarOutlined /> Congés</span>}
+          key="leaves"
+        >
+          <LeaveBalanceDashboard />
+        </TabPane>
+
         <TabPane
           tab={<span><CarOutlined /> Missions ({missions.length})</span>}
           key="missions"

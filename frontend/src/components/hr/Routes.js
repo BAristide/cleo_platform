@@ -30,6 +30,8 @@ import TrainingCourseDetail from './TrainingCourseDetail';
 import TrainingPlanList from './TrainingPlanList';
 import TrainingPlanDetail from './TrainingPlanDetail';
 import TrainingPlanForm from './forms/TrainingPlanForm';
+
+// Portail et communication
 import EmployeePortal from './EmployeePortal';
 import AnnouncementFeed from './AnnouncementFeed';
 import AnnouncementForm from './AnnouncementForm';
@@ -39,6 +41,10 @@ import ComplaintForm from './ComplaintForm';
 import ComplaintManagement from './ComplaintManagement';
 import RewardBoard from './RewardBoard';
 import RewardForm from './forms/RewardForm';
+
+// Congés — EVO-09
+import LeaveList from './LeaveList';
+import LeaveRequestForm from './forms/LeaveRequestForm';
 
 const HRRoutes = () => {
   return (
@@ -57,7 +63,6 @@ const HRRoutes = () => {
         <Route path="/departments" element={<DepartmentList />} />
         <Route path="/departments/new" element={<DepartmentDetail />} />
         <Route path="/departments/:id" element={<DepartmentDetail />} />
-
 
         {/* Postes */}
         <Route path="/job-titles" element={<JobTitleList />} />
@@ -88,7 +93,7 @@ const HRRoutes = () => {
         <Route path="/training-plans/:id" element={<TrainingPlanDetail />} />
         <Route path="/training-plans/:id/edit" element={<TrainingPlanForm />} />
 
-        {/* Portail employe */}
+        {/* Portail employé */}
         <Route path="/portal" element={<EmployeePortal />} />
 
         {/* Annonces */}
@@ -99,13 +104,17 @@ const HRRoutes = () => {
         <Route path="/certificates" element={<WorkCertificateList />} />
         <Route path="/certificates/new" element={<WorkCertificateForm />} />
 
-        {/* Doleances */}
+        {/* Doléances */}
         <Route path="/complaints" element={<ComplaintManagement />} />
         <Route path="/complaints/new" element={<ComplaintForm />} />
 
-        {/* Recompenses */}
+        {/* Récompenses */}
         <Route path="/rewards" element={<RewardBoard />} />
         <Route path="/rewards/new" element={<RewardForm />} />
+
+        {/* Congés — EVO-09 */}
+        <Route path="/leaves" element={<LeaveList />} />
+        <Route path="/leaves/new" element={<LeaveRequestForm />} />
 
         {/* Redirection par défaut */}
         <Route path="*" element={<Navigate to="/hr" replace />} />

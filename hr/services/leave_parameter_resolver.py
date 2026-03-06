@@ -6,8 +6,8 @@ class LeaveParameterResolver:
     """
     Résolution centralisée des paramètres congés.
     Toutes les valeurs proviennent de PayrollParameter (fixtures de pack).
-    Cache 1h — même mécanisme que PayrollParameterResolver.
-    Lève ValueError explicite si un paramètre est absent du pack actif.
+    Identifiés par leur champ `code` (unique par installation).
+    Cache 1h. Lève ValueError si le paramètre est absent.
     Pack-indépendant : zéro constante nationale dans ce service.
     """
 
@@ -20,25 +20,25 @@ class LeaveParameterResolver:
     ]
 
     @classmethod
-    def get(cls, key: str) -> Decimal:
+    def get(cls, code: str) -> Decimal:
         from django.core.cache import cache
 
         from payroll.models import PayrollParameter
 
-        cache_key = f'leave_param_{key}'
+        cache_key = f'leave_param_{code}'
         cached = cache.get(cache_key)
         if cached is not None:
             return cached
 
         try:
-            param = PayrollParameter.objects.get(key=key)
+            param = PayrollParameter.objects.get(code=code, is_active=True)
         except PayrollParameter.DoesNotExist:
             raise ValueError(
-                f"Paramètre congé '{key}' absent. "
+                f"Paramètre congé '{code}' absent. "
                 f'Vérifiez les fixtures du pack actif dans _load_locale_pack().'
             )
 
-        value = param.value_decimal or Decimal('0')
+        value = param.value or Decimal('0')
         cache.set(cache_key, value, 3600)
         return value
 

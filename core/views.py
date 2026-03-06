@@ -641,9 +641,16 @@ class SetupCreateView(APIView):
                     ('LEAVE_MAX_CARRY_DAYS', _D('0')),
                 ],
             }
+            from datetime import date as _date
+
             for key, val in LEAVE_PARAMS_BY_PACK.get(locale_pack, []):
                 PayrollParameter.objects.get_or_create(
-                    pack=locale_pack, key=key, defaults={'value_decimal': val}
+                    code=key,
+                    defaults={
+                        'name': key.replace('_', ' ').title(),
+                        'value': val,
+                        'effective_date': _date.today(),
+                    },
                 )
 
             LEAVE_TYPES = [

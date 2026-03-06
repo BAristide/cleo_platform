@@ -3,7 +3,6 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 
-# Créer un routeur pour les vues REST
 router = DefaultRouter()
 router.register(r'departments', views.DepartmentViewSet)
 router.register(r'job-titles', views.JobTitleViewSet)
@@ -19,12 +18,14 @@ router.register(r'certificates', views.WorkCertificateRequestViewSet)
 router.register(r'complaints', views.ComplaintViewSet)
 router.register(r'reward-types', views.RewardTypeViewSet)
 router.register(r'rewards', views.RewardViewSet)
+# Congés — EVO-09
+router.register(r'leave-types', views.LeaveTypeViewSet)
+router.register(r'leave-allocations', views.LeaveAllocationViewSet)
+router.register(r'leave-requests', views.LeaveRequestViewSet)
 
 app_name = 'hr'
 
 urlpatterns = [
-    # Routes API automatiques
     path('', include(router.urls)),
-    # Route du tableau de bord
     path('dashboard/', views.dashboard_view, name='dashboard'),
 ]

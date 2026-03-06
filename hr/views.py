@@ -20,6 +20,9 @@ from .models import (
     EmployeeSkill,
     JobSkillRequirement,
     JobTitle,
+    LeaveAllocation,
+    LeaveRequest,
+    LeaveType,
     Mission,
     Reward,
     RewardType,
@@ -40,6 +43,9 @@ from .serializers import (
     EmployeeSkillSerializer,
     JobSkillRequirementSerializer,
     JobTitleSerializer,
+    LeaveAllocationSerializer,
+    LeaveRequestSerializer,
+    LeaveTypeSerializer,
     MissionSerializer,
     RewardSerializer,
     RewardTypeSerializer,
@@ -1555,3 +1561,283 @@ def dashboard_view(request):
             },
         }
     )
+
+
+# ── Congés ────────────────────────────────────────────────────────────────────
+
+
+class LeaveTypeViewSet(viewsets.ModelViewSet):
+    """API pour les types de congés."""
+
+    queryset = LeaveType.objects.filter(is_active=True)
+    serializer_class = LeaveTypeSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name', 'code']
+
+
+class LeaveAllocationViewSet(viewsets.ReadOnlyModelViewSet):
+    """API pour les soldes de congés (lecture seule — alimenté par Celery)."""
+
+    queryset = LeaveAllocation.objects.select_related('employee', 'leave_type')
+    serializer_class = LeaveAllocationSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    module_name = 'hr'
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['employee', 'leave_type', 'year']
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = LeaveAllocation.objects.select_related('employee', 'leave_type')
+        try:
+            emp = Employee.objects.get(user=user)
+            if emp.is_hr or user.is_superuser:
+                return qs
+            return qs.filter(employee=emp)
+        except Employee.DoesNotExist:
+            return qs
+
+    @action(detail=False, methods=['get'], url_path='my_balance')
+    def my_balance(self, request):
+        """Soldes de l'employé connecté pour l'année en cours."""
+        from datetime import date
+
+        year = int(request.query_params.get('year', date.today().year))
+        try:
+            emp = Employee.objects.get(user=request.user)
+        except Employee.DoesNotExist:
+            return Response(
+                {'error': 'Aucun dossier employé associé à ce compte.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        allocations = LeaveAllocation.objects.filter(
+            employee=emp, year=year
+        ).select_related('leave_type')
+        serializer = LeaveAllocationSerializer(allocations, many=True)
+        return Response(serializer.data)
+
+
+class LeaveRequestViewSet(viewsets.ModelViewSet):
+    """API pour les demandes de congé avec workflow manager → RH."""
+
+    queryset = LeaveRequest.objects.select_related(
+        'employee', 'leave_type', 'allocation'
+    )
+    serializer_class = LeaveRequestSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
+
+    def get_permissions(self):
+        # Tout employé authentifié peut créer/lire ses propres demandes.
+        # Approbations et suppressions : niveau module HR requis.
+        if self.action in (
+            'create',
+            'list',
+            'retrieve',
+            'submit',
+            'cancel',
+            'pending_approvals',
+            'team_calendar',
+        ):
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
+
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['employee', 'leave_type', 'status']
+    ordering = ['-start_date']
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = LeaveRequest.objects.select_related('employee', 'leave_type', 'allocation')
+        try:
+            emp = Employee.objects.get(user=user)
+            if emp.is_hr or user.is_superuser:
+                return qs
+            if emp.is_manager:
+                return qs.filter(Q(employee=emp) | Q(employee__manager=emp))
+            return qs.filter(employee=emp)
+        except Employee.DoesNotExist:
+            return qs
+
+    def perform_create(self, serializer):
+        from hr.services.leave_service import calculate_working_days
+
+        start = serializer.validated_data['start_date']
+        end = serializer.validated_data['end_date']
+        nb_days = calculate_working_days(start, end)
+        try:
+            emp = Employee.objects.get(user=self.request.user)
+            serializer.save(employee=emp, nb_days=nb_days)
+        except Employee.DoesNotExist:
+            serializer.save(nb_days=nb_days)
+
+    def _get_or_create_allocation(self, leave_request):
+        alloc, _ = LeaveAllocation.objects.get_or_create(
+            employee=leave_request.employee,
+            leave_type=leave_request.leave_type,
+            year=leave_request.start_date.year,
+            defaults={'total_days': 0},
+        )
+        return alloc
+
+    @action(detail=True, methods=['post'])
+    def submit(self, request, pk=None):
+        """Soumettre une demande en brouillon."""
+        req = self.get_object()
+        if req.status != 'draft':
+            return Response(
+                {'error': "La demande n'est pas en brouillon."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        req.status = 'submitted'
+        req.save(update_fields=['status'])
+        return Response(
+            {'success': True, 'message': 'Demande soumise pour approbation.'}
+        )
+
+    @action(detail=True, methods=['post'])
+    def approve_manager(self, request, pk=None):
+        """Approbation N+1 — crédite les jours en attente."""
+        from decimal import Decimal
+
+        req = self.get_object()
+        if req.status != 'submitted':
+            return Response(
+                {'error': "La demande n'est pas soumise."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        alloc = self._get_or_create_allocation(req)
+        alloc.pending_days = (alloc.pending_days + req.nb_days).quantize(Decimal('0.1'))
+        alloc.save(update_fields=['pending_days'])
+        req.approved_by_manager = True
+        req.manager_notes = request.data.get('notes', '')
+        req.status = 'approved_manager'
+        req.allocation = alloc
+        req.save(
+            update_fields=[
+                'approved_by_manager',
+                'manager_notes',
+                'status',
+                'allocation',
+            ]
+        )
+        return Response(
+            {'success': True, 'message': 'Demande approuvée par le manager.'}
+        )
+
+    @action(detail=True, methods=['post'])
+    def approve_hr(self, request, pk=None):
+        """Validation RH — transfert pending → used et notifie l'employé."""
+        from decimal import Decimal
+
+        req = self.get_object()
+        if req.status != 'approved_manager':
+            return Response(
+                {'error': "La demande n'est pas approuvée par le manager."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        alloc = req.allocation or self._get_or_create_allocation(req)
+        alloc.pending_days = max(Decimal('0'), alloc.pending_days - req.nb_days)
+        alloc.used_days = (alloc.used_days + req.nb_days).quantize(Decimal('0.1'))
+        alloc.save(update_fields=['pending_days', 'used_days'])
+        req.approved_by_hr = True
+        req.hr_notes = request.data.get('notes', '')
+        req.status = 'approved_hr'
+        req.save(update_fields=['approved_by_hr', 'hr_notes', 'status'])
+        if req.employee.user:
+            try:
+                from notifications.tasks import _create_notification
+
+                _create_notification(
+                    user=req.employee.user,
+                    level='success',
+                    title='Congé approuvé',
+                    message=(
+                        f'Votre demande de {req.leave_type.name} '
+                        f'du {req.start_date} au {req.end_date} a été approuvée.'
+                    ),
+                    module='hr',
+                    link='/hr/leaves',
+                    dedup_key=f'leave_approved_{req.pk}',
+                )
+            except Exception:
+                pass
+        return Response({'success': True, 'message': 'Demande validée par les RH.'})
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Rejet à n'importe quelle étape — libère les jours en attente."""
+        from decimal import Decimal
+
+        req = self.get_object()
+        if req.status in ['draft', 'rejected', 'cancelled', 'approved_hr']:
+            return Response(
+                {'error': 'Impossible de rejeter dans cet état.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if req.allocation and req.status == 'approved_manager':
+            req.allocation.pending_days = max(
+                Decimal('0'), req.allocation.pending_days - req.nb_days
+            )
+            req.allocation.save(update_fields=['pending_days'])
+        notes = request.data.get('notes', '')
+        rejected_by = request.data.get('rejected_by', '')
+        if rejected_by == 'manager':
+            req.manager_notes = notes
+        else:
+            req.hr_notes = notes
+        req.status = 'rejected'
+        req.save()
+        return Response({'success': True, 'message': 'Demande rejetée.'})
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Annulation par l'employé — libère les jours en attente."""
+        from decimal import Decimal
+
+        req = self.get_object()
+        if req.status in ['approved_hr', 'rejected', 'cancelled']:
+            return Response(
+                {'error': "Impossible d'annuler dans cet état."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if req.allocation and req.status == 'approved_manager':
+            req.allocation.pending_days = max(
+                Decimal('0'), req.allocation.pending_days - req.nb_days
+            )
+            req.allocation.save(update_fields=['pending_days'])
+        req.status = 'cancelled'
+        req.save(update_fields=['status'])
+        return Response({'success': True, 'message': 'Demande annulée.'})
+
+    @action(detail=False, methods=['get'])
+    def pending_approvals(self, request):
+        """Demandes en attente selon le rôle de l'utilisateur connecté."""
+        try:
+            emp = Employee.objects.get(user=request.user)
+        except Employee.DoesNotExist:
+            return Response([])
+        if emp.is_hr or request.user.is_superuser:
+            qs = LeaveRequest.objects.filter(status='approved_manager')
+        elif emp.is_manager:
+            qs = LeaveRequest.objects.filter(status='submitted', employee__manager=emp)
+        else:
+            return Response([])
+        serializer = LeaveRequestSerializer(qs.order_by('-created_at'), many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def team_calendar(self, request):
+        """Congés approuvés de l'équipe — données pour le calendrier."""
+        from datetime import date
+
+        year = int(request.query_params.get('year', date.today().year))
+        month = request.query_params.get('month')
+        qs = LeaveRequest.objects.filter(
+            status='approved_hr', start_date__year=year
+        ).select_related('employee', 'leave_type')
+        if month:
+            qs = qs.filter(start_date__month=int(month))
+        serializer = LeaveRequestSerializer(qs, many=True)
+        return Response(serializer.data)

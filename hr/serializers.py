@@ -10,6 +10,9 @@ from .models import (
     EmployeeSkill,
     JobSkillRequirement,
     JobTitle,
+    LeaveAllocation,
+    LeaveRequest,
+    LeaveType,
     Mission,
     Reward,
     RewardType,
@@ -645,3 +648,114 @@ class RewardSerializer(serializers.ModelSerializer):
 
     def get_awarded_by_name(self, obj):
         return obj.awarded_by.full_name if obj.awarded_by else None
+
+
+# ── Congés ────────────────────────────────────────────────────────────────────
+
+
+class LeaveTypeSerializer(serializers.ModelSerializer):
+    accrual_method_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaveType
+        fields = [
+            'id',
+            'name',
+            'code',
+            'description',
+            'is_paid',
+            'accrual_method',
+            'accrual_method_display',
+            'max_days_carry',
+            'requires_document',
+            'is_active',
+            'color',
+        ]
+
+    def get_accrual_method_display(self, obj):
+        return obj.get_accrual_method_display()
+
+
+class LeaveAllocationSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    leave_type_name = serializers.SerializerMethodField()
+    leave_type_color = serializers.SerializerMethodField()
+    remaining_days = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaveAllocation
+        fields = [
+            'id',
+            'employee',
+            'employee_name',
+            'leave_type',
+            'leave_type_name',
+            'leave_type_color',
+            'year',
+            'total_days',
+            'used_days',
+            'pending_days',
+            'carried_days',
+            'remaining_days',
+        ]
+
+    def get_employee_name(self, obj):
+        return obj.employee.full_name
+
+    def get_leave_type_name(self, obj):
+        return obj.leave_type.name
+
+    def get_leave_type_color(self, obj):
+        return obj.leave_type.color
+
+    def get_remaining_days(self, obj):
+        return obj.remaining_days
+
+
+class LeaveRequestSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    leave_type_name = serializers.SerializerMethodField()
+    leave_type_color = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LeaveRequest
+        fields = [
+            'id',
+            'employee',
+            'employee_name',
+            'leave_type',
+            'leave_type_name',
+            'leave_type_color',
+            'allocation',
+            'start_date',
+            'end_date',
+            'nb_days',
+            'reason',
+            'document',
+            'status',
+            'status_display',
+            'approved_by_manager',
+            'approved_by_hr',
+            'manager_notes',
+            'hr_notes',
+            'created_at',
+            'updated_at',
+        ]
+        extra_kwargs = {
+            'nb_days': {'required': False},
+            'allocation': {'required': False, 'read_only': True},
+            'employee': {'required': False},
+        }
+
+    def get_employee_name(self, obj):
+        return obj.employee.full_name
+
+    def get_leave_type_name(self, obj):
+        return obj.leave_type.name
+
+    def get_leave_type_color(self, obj):
+        return obj.leave_type.color
+
+    def get_status_display(self, obj):
+        return obj.get_status_display()

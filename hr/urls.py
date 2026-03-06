@@ -1,3 +1,4 @@
+# hr/urls.py
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
@@ -22,6 +23,10 @@ router.register(r'rewards', views.RewardViewSet)
 router.register(r'leave-types', views.LeaveTypeViewSet)
 router.register(r'leave-allocations', views.LeaveAllocationViewSet)
 router.register(r'leave-requests', views.LeaveRequestViewSet)
+# Notes de frais — EVO-10
+router.register(r'expense-categories', views.ExpenseCategoryViewSet)
+router.register(r'expense-reports', views.ExpenseReportViewSet)
+router.register(r'expense-items', views.ExpenseItemViewSet)
 
 app_name = 'hr'
 

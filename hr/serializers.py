@@ -1,3 +1,4 @@
+# hr/serializers.py
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
@@ -8,6 +9,9 @@ from .models import (
     Department,
     Employee,
     EmployeeSkill,
+    ExpenseCategory,
+    ExpenseItem,
+    ExpenseReport,
     JobSkillRequirement,
     JobTitle,
     LeaveAllocation,
@@ -759,3 +763,78 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
 
     def get_status_display(self, obj):
         return obj.get_status_display()
+
+
+# ── Notes de frais ────────────────────────────────────────────────────────────
+
+
+class ExpenseCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExpenseCategory
+        fields = ['id', 'code', 'name', 'description']
+
+
+class ExpenseItemSerializer(serializers.ModelSerializer):
+    category_name = serializers.SerializerMethodField()
+    currency_symbol = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ExpenseItem
+        fields = [
+            'id',
+            'expense_report',
+            'category',
+            'category_name',
+            'date',
+            'description',
+            'amount',
+            'currency',
+            'currency_symbol',
+            'receipt',
+        ]
+
+    def get_category_name(self, obj):
+        return obj.category.name if obj.category else None
+
+    def get_currency_symbol(self, obj):
+        return obj.currency.symbol if obj.currency else None
+
+
+class ExpenseReportSerializer(serializers.ModelSerializer):
+    employee_name = serializers.SerializerMethodField()
+    status_display = serializers.SerializerMethodField()
+    total_amount = serializers.SerializerMethodField()
+    items = ExpenseItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ExpenseReport
+        fields = [
+            'id',
+            'employee',
+            'employee_name',
+            'title',
+            'period_month',
+            'description',
+            'status',
+            'status_display',
+            'total_amount',
+            'items',
+            'approved_by_manager',
+            'approved_by_finance',
+            'manager_notes',
+            'finance_notes',
+            'created_at',
+            'updated_at',
+        ]
+        extra_kwargs = {
+            'employee': {'required': False},
+        }
+
+    def get_employee_name(self, obj):
+        return obj.employee.full_name if obj.employee else None
+
+    def get_status_display(self, obj):
+        return obj.get_status_display()
+
+    def get_total_amount(self, obj):
+        return obj.total_amount

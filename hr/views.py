@@ -1,3 +1,4 @@
+# hr/views.py
 import os
 
 from django.db.models import Avg, Count, Q
@@ -18,6 +19,9 @@ from .models import (
     Department,
     Employee,
     EmployeeSkill,
+    ExpenseCategory,
+    ExpenseItem,
+    ExpenseReport,
     JobSkillRequirement,
     JobTitle,
     LeaveAllocation,
@@ -41,6 +45,9 @@ from .serializers import (
     EmployeeDetailSerializer,
     EmployeeListSerializer,
     EmployeeSkillSerializer,
+    ExpenseCategorySerializer,
+    ExpenseItemSerializer,
+    ExpenseReportSerializer,
     JobSkillRequirementSerializer,
     JobTitleSerializer,
     LeaveAllocationSerializer,
@@ -251,20 +258,14 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         employee = self.get_object()
         job_title = employee.job_title
 
-        # Obtenir les compétences requises pour le poste
         required_skills = JobSkillRequirement.objects.filter(job_title=job_title)
-
-        # Obtenir les compétences de l'employé
         employee_skills = EmployeeSkill.objects.filter(employee=employee)
 
-        # Calculer les écarts
         gaps = []
         for req in required_skills:
-            # Chercher si l'employé a déjà cette compétence
             emp_skill = employee_skills.filter(skill=req.skill).first()
 
             if not emp_skill:
-                # Compétence manquante
                 gap = {
                     'skill': SkillSerializer(req.skill).data,
                     'required_level': req.required_level,
@@ -278,7 +279,6 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 }
                 gaps.append(gap)
             elif emp_skill.level < req.required_level:
-                # Niveau insuffisant
                 gap = {
                     'skill': SkillSerializer(req.skill).data,
                     'required_level': req.required_level,
@@ -340,15 +340,12 @@ class MissionViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Personnalisation de la création d'une mission."""
-        # Si l'employé connecté crée sa propre mission
         user = self.request.user
         try:
             employee = Employee.objects.get(user=user)
 
-            # Si c'est pour lui-même, il est aussi le demandeur
             if serializer.validated_data.get('employee') == employee:
                 serializer.save(requested_by=employee, status='submitted')
-            # S'il est manager de l'employé pour qui il crée la mission
             elif (
                 serializer.validated_data.get('employee')
                 and serializer.validated_data.get('employee').manager == employee
@@ -507,7 +504,6 @@ class MissionViewSet(viewsets.ModelViewSet):
         mission = self.get_object()
 
         if not mission.order_pdf:
-            # Générer le PDF s'il n'existe pas
             try:
                 from .services.pdf_generator import PDFGenerator
 
@@ -608,15 +604,12 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Personnalisation de la création d'une mise en disponibilité."""
-        # Si l'employé connecté crée sa propre mise en disponibilité
         user = self.request.user
         try:
             employee = Employee.objects.get(user=user)
 
-            # Si c'est pour lui-même, il est aussi le demandeur
             if serializer.validated_data.get('employee') == employee:
                 serializer.save(requested_by=employee, status='requested')
-            # S'il est manager de l'employé pour qui il crée la mise en disponibilité
             elif (
                 serializer.validated_data.get('employee')
                 and serializer.validated_data.get('employee').manager == employee
@@ -646,7 +639,6 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
             availability.status = 'approved'
             availability.save(update_fields=['status'])
 
-        # Notification à l'employé
         _notify_availability(availability, 'approve_manager')
 
         return Response(
@@ -675,7 +667,6 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
             availability.status = 'approved'
             availability.save(update_fields=['status'])
 
-        # Notification à l'employé
         _notify_availability(availability, 'approve_hr')
 
         return Response(
@@ -706,7 +697,6 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
         availability.status = 'rejected'
         availability.save()
 
-        # Notification à l'employé
         _notify_availability(availability, 'reject')
 
         return Response({'success': True, 'message': 'Mise en disponibilité rejetée.'})
@@ -716,11 +706,10 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
         """Retourne les mises en disponibilité en attente d'approbation."""
         qs = Availability.objects.filter(status='requested').order_by('-created_at')
 
-        # Filtrer selon le rôle : un manager ne voit que ses subordonnés
         try:
             employee = Employee.objects.get(user=request.user)
             if employee.is_hr:
-                pass  # Voit tout
+                pass
             elif employee.is_manager:
                 qs = qs.filter(employee__manager=employee)
             else:
@@ -755,7 +744,6 @@ class SkillViewSet(viewsets.ModelViewSet):
         skill = self.get_object()
         employee_skills = EmployeeSkill.objects.filter(skill=skill)
 
-        # Filtrer par niveau minimum si spécifié
         min_level = request.query_params.get('min_level')
         if min_level and min_level.isdigit():
             employee_skills = employee_skills.filter(level__gte=int(min_level))
@@ -777,7 +765,6 @@ class SkillViewSet(viewsets.ModelViewSet):
         skill = self.get_object()
         training_skills = TrainingSkill.objects.filter(skill=skill)
 
-        # Filtrer par niveau minimum fourni si spécifié
         min_level = request.query_params.get('min_level')
         if min_level and min_level.isdigit():
             training_skills = training_skills.filter(level_provided__gte=int(min_level))
@@ -817,12 +804,10 @@ class TrainingCourseViewSet(viewsets.ModelViewSet):
         course = self.get_object()
         plan_items = TrainingPlanItem.objects.filter(training_course=course)
 
-        # Filtrer par année si spécifiée
         year = request.query_params.get('year')
         if year and year.isdigit():
             plan_items = plan_items.filter(training_plan__year=int(year))
 
-        # Grouper par plan de formation
         plans = {}
         for item in plan_items:
             plan_id = item.training_plan.id
@@ -830,7 +815,6 @@ class TrainingCourseViewSet(viewsets.ModelViewSet):
                 plans[plan_id] = {'plan': item.training_plan, 'items': []}
             plans[plan_id]['items'].append(item)
 
-        # Sérialiser les résultats
         result = []
         for plan_data in plans.values():
             plan_serializer = TrainingPlanSerializer(plan_data['plan'])
@@ -886,7 +870,6 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Vérifier que le plan contient au moins un élément
         if not plan.training_items.exists():
             return Response(
                 {'error': 'Le plan ne contient aucune formation.'},
@@ -994,32 +977,24 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
         """Analyser les écarts de compétences pour les employés."""
         department_id = request.query_params.get('department')
 
-        # Filtrer les employés
         employees = Employee.objects.filter(is_active=True)
         if department_id:
             employees = employees.filter(department_id=department_id)
 
-        # Analyser les écarts pour chaque employé
         results = []
         for employee in employees:
             job_title = employee.job_title
             if not job_title:
                 continue
 
-            # Obtenir les compétences requises pour le poste
             required_skills = JobSkillRequirement.objects.filter(job_title=job_title)
-
-            # Obtenir les compétences de l'employé
             employee_skills = EmployeeSkill.objects.filter(employee=employee)
 
-            # Calculer les écarts
             gaps = []
             for req in required_skills:
-                # Chercher si l'employé a déjà cette compétence
                 emp_skill = employee_skills.filter(skill=req.skill).first()
 
                 if not emp_skill:
-                    # Compétence manquante
                     gaps.append(
                         {
                             'skill': req.skill.name,
@@ -1030,7 +1005,6 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
                         }
                     )
                 elif emp_skill.level < req.required_level:
-                    # Niveau insuffisant
                     gaps.append(
                         {
                             'skill': req.skill.name,
@@ -1214,7 +1188,6 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
                 | Q(target_audience='individual', target_employees=employee)
             ).distinct()
         except Employee.DoesNotExist:
-            # Admin sans dossier employe voit tout
             pass
 
         return qs
@@ -1291,7 +1264,6 @@ class WorkCertificateRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_200_OK,
             )
 
-        # Notification a l employe
         if cert.employee.user:
             from notifications.tasks import _create_notification
 
@@ -1447,7 +1419,6 @@ class RewardViewSet(viewsets.ModelViewSet):
 @module_permission_required('hr')
 def dashboard_view(request):
     """Vue du tableau de bord RH avec statistiques et informations importantes."""
-    # Statistiques de base
     total_employees = Employee.objects.filter(is_active=True).count()
     employees_by_department = (
         Employee.objects.filter(is_active=True)
@@ -1462,7 +1433,6 @@ def dashboard_view(request):
         .order_by('-count')
     )
 
-    # Missions en cours et à venir
     missions_by_status = (
         Mission.objects.values('status').annotate(count=Count('id')).order_by('status')
     )
@@ -1471,7 +1441,6 @@ def dashboard_view(request):
     ).order_by('start_date')[:5]
     upcoming_missions_data = MissionSerializer(upcoming_missions, many=True).data
 
-    # Formations
     training_plans_by_status = (
         TrainingPlan.objects.filter(year=timezone.now().year)
         .values('status')
@@ -1485,7 +1454,6 @@ def dashboard_view(request):
         .order_by('status')
     )
 
-    # Compétences
     skills_count = Skill.objects.count()
     avg_skills_per_employee = (
         EmployeeSkill.objects.values('employee')
@@ -1494,7 +1462,6 @@ def dashboard_view(request):
         or 0
     )
 
-    # Calcul du taux de couverture des compétences requises
     coverage_data = []
     for dept in Department.objects.all():
         employees = Employee.objects.filter(department=dept, is_active=True)
@@ -1505,23 +1472,19 @@ def dashboard_view(request):
         }
 
         if dept_data['employee_count'] > 0:
-            # Calculer le taux de couverture pour chaque employé du département
             coverage_sum = 0
             for employee in employees:
                 if not employee.job_title:
                     continue
 
-                # Trouver les compétences requises pour le poste
                 required_skills = JobSkillRequirement.objects.filter(
                     job_title=employee.job_title
                 )
                 if not required_skills.exists():
                     continue
 
-                # Trouver les compétences de l'employé
                 employee_skills = EmployeeSkill.objects.filter(employee=employee)
 
-                # Compter les compétences couvertes
                 covered = 0
                 total = required_skills.count()
 
@@ -1530,11 +1493,9 @@ def dashboard_view(request):
                     if emp_skill and emp_skill.level >= req.required_level:
                         covered += 1
 
-                # Ajouter le taux de couverture de cet employé
                 if total > 0:
                     coverage_sum += (covered / total) * 100
 
-            # Calculer la moyenne pour le département
             dept_data['skill_coverage'] = coverage_sum / dept_data['employee_count']
 
         coverage_data.append(dept_data)
@@ -1629,8 +1590,6 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
     module_name = 'hr'
 
     def get_permissions(self):
-        # Tout employé authentifié peut créer/lire ses propres demandes.
-        # Approbations et suppressions : niveau module HR requis.
         if self.action in (
             'create',
             'list',
@@ -1841,3 +1800,254 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             qs = qs.filter(start_date__month=int(month))
         serializer = LeaveRequestSerializer(qs, many=True)
         return Response(serializer.data)
+
+
+# ── Notes de frais ────────────────────────────────────────────────────────────
+
+
+class ExpenseCategoryViewSet(viewsets.ReadOnlyModelViewSet):
+    """Catégories de frais — lecture seule, chargées via _load_locale_pack()."""
+
+    queryset = ExpenseCategory.objects.filter(is_active=True)
+    serializer_class = ExpenseCategorySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+
+class ExpenseReportViewSet(viewsets.ModelViewSet):
+    """Notes de frais avec workflow Manager → Finance."""
+
+    queryset = ExpenseReport.objects.select_related('employee')
+    serializer_class = ExpenseReportSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
+    filterset_fields = ['status', 'employee']
+    ordering = ['-created_at']
+
+    def get_permissions(self):
+        if self.action in (
+            'create',
+            'list',
+            'retrieve',
+            'update',
+            'partial_update',
+            'submit',
+            'cancel',
+            'pending_approvals',
+        ):
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = ExpenseReport.objects.select_related('employee')
+        try:
+            emp = Employee.objects.get(user=user)
+            if user.is_superuser or emp.is_hr:
+                return qs
+            if emp.is_finance:
+                return qs.filter(Q(employee=emp) | Q(status='approved_manager'))
+            if emp.is_manager:
+                return qs.filter(
+                    Q(employee=emp) | Q(status='submitted', employee__manager=emp)
+                )
+            return qs.filter(employee=emp)
+        except Employee.DoesNotExist:
+            return qs
+
+    def perform_create(self, serializer):
+        try:
+            emp = Employee.objects.get(user=self.request.user)
+            serializer.save(employee=emp)
+        except Employee.DoesNotExist:
+            serializer.save()
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'draft':
+            return Response(
+                {'error': 'Seules les notes en brouillon peuvent être modifiées.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if instance.status != 'draft':
+            return Response(
+                {'error': 'Seules les notes en brouillon peuvent être supprimées.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().destroy(request, *args, **kwargs)
+
+    @action(detail=True, methods=['post'])
+    def submit(self, request, pk=None):
+        """Soumettre une note en brouillon."""
+        report = self.get_object()
+        if report.status != 'draft':
+            return Response(
+                {'error': "La note n'est pas en brouillon."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not report.items.exists():
+            return Response(
+                {'error': 'La note ne contient aucune ligne de frais.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        report.status = 'submitted'
+        report.save(update_fields=['status'])
+        return Response({'success': True, 'message': 'Note soumise pour approbation.'})
+
+    @action(detail=True, methods=['post'])
+    def approve_manager(self, request, pk=None):
+        """Approbation N+1."""
+        report = self.get_object()
+        if report.status != 'submitted':
+            return Response(
+                {'error': "La note n'est pas soumise."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        report.approved_by_manager = True
+        report.manager_notes = request.data.get('notes', '')
+        report.status = 'approved_manager'
+        report.save(update_fields=['approved_by_manager', 'manager_notes', 'status'])
+        return Response({'success': True, 'message': 'Note approuvée par le manager.'})
+
+    @action(detail=True, methods=['post'])
+    def approve_finance(self, request, pk=None):
+        """Approbation Finance."""
+        report = self.get_object()
+        if report.status != 'approved_manager':
+            return Response(
+                {'error': "La note n'est pas approuvée par le manager."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        report.approved_by_finance = True
+        report.finance_notes = request.data.get('notes', '')
+        report.status = 'approved_finance'
+        report.save(update_fields=['approved_by_finance', 'finance_notes', 'status'])
+        return Response({'success': True, 'message': 'Note approuvée par la Finance.'})
+
+    @action(detail=True, methods=['post'])
+    def reimburse(self, request, pk=None):
+        """Marquer comme remboursée."""
+        report = self.get_object()
+        if report.status != 'approved_finance':
+            return Response(
+                {'error': "La note n'est pas approuvée par la Finance."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        report.status = 'reimbursed'
+        report.save(update_fields=['status'])
+        return Response({'success': True, 'message': 'Note marquée comme remboursée.'})
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """Rejeter à n'importe quelle étape."""
+        report = self.get_object()
+        if report.status in ['draft', 'reimbursed', 'rejected', 'cancelled']:
+            return Response(
+                {'error': 'Impossible de rejeter dans cet état.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        notes = request.data.get('notes', '')
+        if not notes:
+            return Response(
+                {'error': 'Les notes de rejet sont obligatoires.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        rejected_by = request.data.get('rejected_by', '')
+        if rejected_by == 'manager':
+            report.manager_notes = notes
+        else:
+            report.finance_notes = notes
+        report.status = 'rejected'
+        report.save()
+        return Response({'success': True, 'message': 'Note rejetée.'})
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Annuler par l'employé propriétaire (draft ou submitted uniquement)."""
+        report = self.get_object()
+        if report.status not in ['draft', 'submitted']:
+            return Response(
+                {'error': "Impossible d'annuler dans cet état."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        try:
+            emp = Employee.objects.get(user=self.request.user)
+            if report.employee != emp and not self.request.user.is_superuser:
+                return Response(
+                    {'error': 'Vous ne pouvez annuler que vos propres notes.'},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+        except Employee.DoesNotExist:
+            pass
+        report.status = 'cancelled'
+        report.save(update_fields=['status'])
+        return Response({'success': True, 'message': 'Note annulée.'})
+
+    @action(detail=False, methods=['get'])
+    def pending_approvals(self, request):
+        """Notes en attente selon le rôle de l'utilisateur connecté."""
+        try:
+            emp = Employee.objects.get(user=request.user)
+        except Employee.DoesNotExist:
+            return Response([])
+        if emp.is_finance or request.user.is_superuser:
+            qs = ExpenseReport.objects.filter(status='approved_manager')
+        elif emp.is_manager:
+            qs = ExpenseReport.objects.filter(status='submitted', employee__manager=emp)
+        else:
+            return Response([])
+        serializer = ExpenseReportSerializer(qs.order_by('-created_at'), many=True)
+        return Response(serializer.data)
+
+
+class ExpenseItemViewSet(viewsets.ModelViewSet):
+    """Lignes de frais — CRUD bloqué si la note n'est pas en brouillon."""
+
+    queryset = ExpenseItem.objects.select_related(
+        'expense_report', 'category', 'currency'
+    )
+    serializer_class = ExpenseItemSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['expense_report']
+
+    def _check_draft(self, report):
+        if report.status != 'draft':
+            return Response(
+                {
+                    'error': "Modifications impossibles : la note n'est plus en brouillon."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return None
+
+    def create(self, request, *args, **kwargs):
+        report_id = request.data.get('expense_report')
+        try:
+            report = ExpenseReport.objects.get(pk=report_id)
+        except ExpenseReport.DoesNotExist:
+            return Response(
+                {'error': 'Note de frais introuvable.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        err = self._check_draft(report)
+        if err:
+            return err
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        instance = self.get_object()
+        err = self._check_draft(instance.expense_report)
+        if err:
+            return err
+        return super().update(request, *args, **kwargs)
+
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+        err = self._check_draft(instance.expense_report)
+        if err:
+            return err
+        return super().destroy(request, *args, **kwargs)

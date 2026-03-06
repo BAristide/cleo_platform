@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.auth.models import User
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -1122,3 +1124,126 @@ class LeaveRequest(models.Model):
             raise ValidationError(
                 _('Un justificatif est obligatoire pour ce type de congé.')
             )
+
+
+# ── Notes de frais ────────────────────────────────────────────────────────────
+
+
+class ExpenseCategory(models.Model):
+    """
+    Catégories de frais professionnels.
+    Chargées via _load_locale_pack() — 5 catégories universelles identiques
+    pour tous les packs. Identifiées par leur champ `code` stable.
+    """
+
+    code = models.CharField(_('Code'), max_length=20, unique=True)
+    name = models.CharField(_('Nom'), max_length=100)
+    description = models.TextField(_('Description'), blank=True)
+    is_active = models.BooleanField(_('Active'), default=True)
+    created_at = models.DateTimeField(_('Créée le'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Catégorie de frais')
+        verbose_name_plural = _('Catégories de frais')
+        ordering = ['name']
+
+    def __str__(self):
+        return f'{self.name} ({self.code})'
+
+
+class ExpenseReport(models.Model):
+    """Note de frais — entête avec workflow de validation à deux niveaux."""
+
+    STATUS_CHOICES = [
+        ('draft', _('Brouillon')),
+        ('submitted', _('Soumise')),
+        ('approved_manager', _('Approuvée par N+1')),
+        ('approved_finance', _('Approuvée par Finance')),
+        ('reimbursed', _('Remboursée')),
+        ('rejected', _('Rejetée')),
+        ('cancelled', _('Annulée')),
+    ]
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='expense_reports',
+        verbose_name=_('Employé'),
+    )
+    title = models.CharField(_('Titre'), max_length=200)
+    period_month = models.CharField(
+        _('Période (YYYY-MM)'),
+        max_length=7,
+        help_text=_('Format : YYYY-MM'),
+    )
+    description = models.TextField(_('Description'), blank=True)
+
+    status = models.CharField(
+        _('Statut'), max_length=20, choices=STATUS_CHOICES, default='draft'
+    )
+
+    approved_by_manager = models.BooleanField(_('Approuvé par N+1'), default=False)
+    approved_by_finance = models.BooleanField(_('Approuvé par Finance'), default=False)
+    manager_notes = models.TextField(_('Notes du manager'), blank=True)
+    finance_notes = models.TextField(_('Notes Finance'), blank=True)
+
+    created_at = models.DateTimeField(_('Créée le'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Modifiée le'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Note de frais')
+        verbose_name_plural = _('Notes de frais')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f'{self.title} — {self.employee.full_name} ({self.period_month})'
+
+    @property
+    def total_amount(self):
+        from django.db.models import Sum
+
+        return self.items.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+
+class ExpenseItem(models.Model):
+    """Ligne d'une note de frais."""
+
+    expense_report = models.ForeignKey(
+        ExpenseReport,
+        on_delete=models.CASCADE,
+        related_name='items',
+        verbose_name=_('Note de frais'),
+    )
+    category = models.ForeignKey(
+        ExpenseCategory,
+        on_delete=models.PROTECT,
+        related_name='items',
+        verbose_name=_('Catégorie'),
+    )
+    date = models.DateField(_('Date'))
+    description = models.CharField(_('Description'), max_length=200)
+    amount = models.DecimalField(_('Montant'), max_digits=10, decimal_places=2)
+    currency = models.ForeignKey(
+        'core.Currency',
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name=_('Devise'),
+    )
+    receipt = models.FileField(
+        _('Justificatif'),
+        upload_to='hr/expense_receipts/',
+        blank=True,
+        null=True,
+    )
+
+    created_at = models.DateTimeField(_('Créé le'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Modifié le'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Ligne de frais')
+        verbose_name_plural = _('Lignes de frais')
+        ordering = ['date']
+
+    def __str__(self):
+        return f'{self.category.name} — {self.amount} ({self.date})'

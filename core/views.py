@@ -712,6 +712,54 @@ class SetupCreateView(APIView):
         except Exception as e:
             logger.warning(f'Paramètres congés non initialisés pour {locale_pack}: {e}')
 
+        # ── Catégories de frais (universelles — identiques pour tous les packs) ──
+        try:
+            from hr.models import ExpenseCategory
+
+            EXPENSE_CATEGORIES = [
+                {
+                    'code': 'TRANSPORT',
+                    'name': 'Transport et déplacements',
+                    'description': 'Billets, taxis, transports en commun, location de véhicule.',
+                },
+                {
+                    'code': 'HEBERGEMENT',
+                    'name': 'Hébergement',
+                    'description': 'Hôtels, résidences, nuitées professionnelles.',
+                },
+                {
+                    'code': 'REPAS',
+                    'name': 'Repas et restauration',
+                    'description': 'Repas professionnels, déjeuners de travail, per diem repas.',
+                },
+                {
+                    'code': 'CARBURANT',
+                    'name': 'Carburant',
+                    'description': 'Essence, diesel, recharge électrique pour déplacements professionnels.',
+                },
+                {
+                    'code': 'AUTRES',
+                    'name': 'Autres frais',
+                    'description': 'Fournitures, téléphone, internet et tout frais non catégorisé.',
+                },
+            ]
+            for cat in EXPENSE_CATEGORIES:
+                ExpenseCategory.objects.get_or_create(
+                    code=cat['code'],
+                    defaults={
+                        'name': cat['name'],
+                        'description': cat['description'],
+                        'is_active': True,
+                    },
+                )
+            logger.info(
+                f'[SETUP] Catégories de frais chargées pour le pack {locale_pack}'
+            )
+        except Exception as e:
+            logger.warning(
+                f'Catégories de frais non initialisées pour {locale_pack}: {e}'
+            )
+
         from accounting.models import Account, Journal, Tax
 
         return {

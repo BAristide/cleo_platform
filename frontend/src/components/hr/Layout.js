@@ -6,7 +6,7 @@ import {
   SafetyCertificateOutlined, ExclamationCircleOutlined, TrophyOutlined,
   IdcardOutlined, BranchesOutlined, UsergroupAddOutlined,
   NotificationOutlined, CarOutlined, ScheduleOutlined,
-  ToolOutlined, BookOutlined, BankOutlined,
+  ToolOutlined, BookOutlined, BankOutlined, SettingOutlined,
 } from '@ant-design/icons';
 import ModuleLayout from '../common/ModuleLayout';
 import './Layout.css';
@@ -62,24 +62,32 @@ const menuItems = [
       { key: 'rewards',       icon: <TrophyOutlined />,       label: <Link to="/hr/rewards">Récompenses</Link> },
     ],
   },
+  {
+    type: 'group',
+    label: 'Configuration',
+    children: [
+      { key: 'public-holidays', icon: <SettingOutlined />, label: <Link to="/hr/public-holidays">Jours feries</Link> },
+    ],
+  },
 ];
 
 const breadcrumbMap = {
-  portal:           'Mon espace',
-  leaves:           'Congés',
-  expenses:         'Notes de frais',
-  certificates:     'Attestations',
-  complaints:       'Doléances',
-  rewards:          'Récompenses',
-  employees:        'Employés',
-  departments:      'Départements',
-  'job-titles':     'Postes',
-  missions:         'Missions',
-  availabilities:   'Disponibilités',
-  skills:           'Compétences',
+  portal:             'Mon espace',
+  leaves:             'Congés',
+  expenses:           'Notes de frais',
+  certificates:       'Attestations',
+  complaints:         'Doléances',
+  rewards:            'Récompenses',
+  employees:          'Employés',
+  departments:        'Départements',
+  'job-titles':       'Postes',
+  missions:           'Missions',
+  availabilities:     'Disponibilités',
+  skills:             'Compétences',
   'training-courses': 'Formations',
-  'training-plans': 'Plans de formation',
-  announcements:    'Annonces',
+  'training-plans':   'Plans de formation',
+  announcements:      'Annonces',
+  'public-holidays':  'Jours feries',
 };
 
 const HRLayout = ({ children }) => (

@@ -1247,3 +1247,42 @@ class ExpenseItem(models.Model):
 
     def __str__(self):
         return f'{self.category.name} — {self.amount} ({self.date})'
+
+
+# ── Jours fériés ──────────────────────────────────────────────────────────────
+
+
+class PublicHoliday(models.Model):
+    """
+    Jours fériés nationaux.
+    Pack-indépendant : les dates sont chargées via _load_locale_pack() dans core/views.py.
+    Aucune date nationale n'est hardcodée dans la logique métier.
+    """
+
+    name = models.CharField(_('Nom'), max_length=100)
+    date = models.DateField(_('Date'))
+    is_recurring = models.BooleanField(
+        _('Récurrent annuellement'),
+        default=True,
+        help_text=_('Si True, s applique chaque année à la même date (mois/jour).'),
+    )
+    country_code = models.CharField(
+        _('Code pack'),
+        max_length=10,
+        blank=True,
+        help_text=_('Code du pack de localisation. Vide = universel.'),
+    )
+
+    class Meta:
+        verbose_name = _('Jour férié')
+        verbose_name_plural = _('Jours fériés')
+        ordering = ['date']
+
+    def __str__(self):
+        return f'{self.name} ({self.date})'
+
+    def matches_date(self, d) -> bool:
+        """Retourne True si ce jour férié correspond à la date d."""
+        if self.is_recurring:
+            return self.date.month == d.month and self.date.day == d.day
+        return self.date == d

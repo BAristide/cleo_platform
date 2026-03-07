@@ -28,6 +28,7 @@ from .models import (
     LeaveRequest,
     LeaveType,
     Mission,
+    PublicHoliday,
     Reward,
     RewardType,
     Skill,
@@ -54,6 +55,7 @@ from .serializers import (
     LeaveRequestSerializer,
     LeaveTypeSerializer,
     MissionSerializer,
+    PublicHolidaySerializer,
     RewardSerializer,
     RewardTypeSerializer,
     SkillSerializer,
@@ -2059,3 +2061,28 @@ class ExpenseItemViewSet(viewsets.ModelViewSet):
         if err:
             return err
         return super().destroy(request, *args, **kwargs)
+
+
+# ── Jours feries ──────────────────────────────────────────────────────────────
+
+
+class PublicHolidayViewSet(viewsets.ModelViewSet):
+    """
+    CRUD des jours feries — accessible aux admins RH uniquement.
+    Pack-independant : aucun filtre par country_code en lecture.
+    Tous les enregistrements en base s'appliquent a l'instance courante.
+    """
+
+    queryset = PublicHoliday.objects.all().order_by('date')
+    serializer_class = PublicHolidaySerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
+    filterset_fields = ['is_recurring', 'country_code']
+    search_fields = ['name']
+    ordering_fields = ['date', 'name']
+    ordering = ['date']

@@ -18,6 +18,7 @@ from .models import (
     LeaveRequest,
     LeaveType,
     Mission,
+    PublicHoliday,
     Reward,
     RewardType,
     Skill,
@@ -854,3 +855,14 @@ class ExpenseReportSerializer(serializers.ModelSerializer):
 
     def get_total_amount(self, obj):
         return obj.total_amount
+
+
+# ── Jours fériés ──────────────────────────────────────────────────────────────
+
+
+class PublicHolidaySerializer(serializers.ModelSerializer):
+    """Serializer pour les jours feries — CRUD independant du pack actif."""
+
+    class Meta:
+        model = PublicHoliday
+        fields = ['id', 'name', 'date', 'is_recurring', 'country_code']

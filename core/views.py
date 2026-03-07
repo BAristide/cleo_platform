@@ -320,6 +320,56 @@ class SetupPacksView(APIView):
         return Response(serializer.data)
 
 
+def _get_public_holidays_for_pack(pack: str) -> list:
+    """
+    Retourne la liste des jours feries initiaux pour le pack donne.
+    Utilise par _load_locale_pack() et par la commande load_public_holidays.
+    Pack-independant : aucune logique metier nationale en dehors de ce dictionnaire.
+    """
+    PUBLIC_HOLIDAYS_MA = [
+        {'name': 'Nouvel An', 'date': '2024-01-01', 'is_recurring': True},
+        {'name': 'Fete du Travail', 'date': '2024-05-01', 'is_recurring': True},
+        {'name': 'Fete de la Jeunesse', 'date': '2024-07-30', 'is_recurring': True},
+        {'name': 'Fete du Trone', 'date': '2024-08-20', 'is_recurring': True},
+        {
+            'name': 'Recuperation de Oued Eddahab',
+            'date': '2024-08-21',
+            'is_recurring': True,
+        },
+        {
+            'name': 'Revolution du Roi et du Peuple',
+            'date': '2024-08-20',
+            'is_recurring': True,
+        },
+        {'name': 'Marche Verte', 'date': '2024-11-06', 'is_recurring': True},
+        {'name': 'Fete de l Independance', 'date': '2024-11-18', 'is_recurring': True},
+    ]
+    PUBLIC_HOLIDAYS_OHADA = [
+        {'name': 'Nouvel An', 'date': '2024-01-01', 'is_recurring': True},
+        {'name': 'Fete du Travail', 'date': '2024-05-01', 'is_recurring': True},
+        {'name': 'Fete Nationale', 'date': '2024-08-07', 'is_recurring': True},
+        {'name': 'Assomption', 'date': '2024-08-15', 'is_recurring': True},
+        {'name': 'Toussaint', 'date': '2024-11-01', 'is_recurring': True},
+        {'name': 'Noel', 'date': '2024-12-25', 'is_recurring': True},
+    ]
+    PUBLIC_HOLIDAYS_FR = [
+        {'name': 'Jour de l An', 'date': '2024-01-01', 'is_recurring': True},
+        {'name': 'Fete du Travail', 'date': '2024-05-01', 'is_recurring': True},
+        {'name': 'Victoire 1945', 'date': '2024-05-08', 'is_recurring': True},
+        {'name': 'Fete Nationale', 'date': '2024-07-14', 'is_recurring': True},
+        {'name': 'Assomption', 'date': '2024-08-15', 'is_recurring': True},
+        {'name': 'Toussaint', 'date': '2024-11-01', 'is_recurring': True},
+        {'name': 'Armistice', 'date': '2024-11-11', 'is_recurring': True},
+        {'name': 'Noel', 'date': '2024-12-25', 'is_recurring': True},
+    ]
+    HOLIDAYS_BY_PACK = {
+        'MA': PUBLIC_HOLIDAYS_MA,
+        'OHADA': PUBLIC_HOLIDAYS_OHADA,
+        'FR': PUBLIC_HOLIDAYS_FR,
+    }
+    return HOLIDAYS_BY_PACK.get(pack.upper(), [])
+
+
 class SetupCreateView(APIView):
     """POST /api/core/setup/ — Superuser requis."""
 
@@ -759,6 +809,25 @@ class SetupCreateView(APIView):
             logger.warning(
                 f'Catégories de frais non initialisées pour {locale_pack}: {e}'
             )
+
+        # ── Jours fériés — chargés depuis le pack, jamais hardcodés dans leave_service ──
+
+        # ── Jours feries — charges depuis le pack via _get_public_holidays_for_pack() ──
+        try:
+            from hr.models import PublicHoliday
+
+            for h in _get_public_holidays_for_pack(locale_pack):
+                PublicHoliday.objects.get_or_create(
+                    name=h['name'],
+                    date=h['date'],
+                    defaults={
+                        'is_recurring': h['is_recurring'],
+                        'country_code': locale_pack,
+                    },
+                )
+            logger.info(f'[SETUP] Jours feries charges pour le pack {locale_pack}')
+        except Exception as e:
+            logger.warning(f'Jours feries non charges pour {locale_pack}: {e}')
 
         from accounting.models import Account, Journal, Tax
 

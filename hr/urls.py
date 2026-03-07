@@ -23,6 +23,8 @@ router.register(r'rewards', views.RewardViewSet)
 router.register(r'leave-types', views.LeaveTypeViewSet)
 router.register(r'leave-allocations', views.LeaveAllocationViewSet)
 router.register(r'leave-requests', views.LeaveRequestViewSet)
+# Jours feries — TECH-01
+router.register(r'public-holidays', views.PublicHolidayViewSet)
 # Notes de frais — EVO-10
 router.register(r'expense-categories', views.ExpenseCategoryViewSet)
 router.register(r'expense-reports', views.ExpenseReportViewSet)

@@ -259,6 +259,27 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
             # Générer un numéro de bulletin unique
             number = f'BUL-{month_code}{year_code}-{employee.employee_id}'
 
+            # Congés approuvés chevauchant la période — pack-agnostique (is_paid sur LeaveType)
+            from decimal import Decimal as D
+
+            from hr.models import LeaveRequest
+
+            approved_leaves = LeaveRequest.objects.filter(
+                employee=employee,
+                status='approved_hr',
+                start_date__lte=period.end_date,
+                end_date__gte=period.start_date,
+            ).select_related('leave_type')
+
+            paid_leave_days = sum(
+                (req.nb_days for req in approved_leaves if req.leave_type.is_paid),
+                D('0'),
+            )
+            unpaid_leave_days = sum(
+                (req.nb_days for req in approved_leaves if not req.leave_type.is_paid),
+                D('0'),
+            )
+
             # Créer le bulletin
             PaySlip.objects.create(
                 payroll_run=payroll_run,
@@ -274,6 +295,8 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
                 amo_employee=0,  # Sera calculé
                 amo_employer=0,  # Sera calculé
                 income_tax=0,  # Sera calculé
+                paid_leave_days=paid_leave_days,
+                unpaid_leave_days=unpaid_leave_days,
                 status='draft',
             )
             created_count += 1

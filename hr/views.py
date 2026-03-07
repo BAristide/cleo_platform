@@ -1800,6 +1800,9 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         ).select_related('employee', 'leave_type')
         if month:
             qs = qs.filter(start_date__month=int(month))
+        department = request.query_params.get('department')
+        if department and department.isdigit():
+            qs = qs.filter(employee__department_id=int(department))
         serializer = LeaveRequestSerializer(qs, many=True)
         return Response(serializer.data)
 

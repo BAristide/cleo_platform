@@ -22,7 +22,15 @@ const menuItems = [
     label: 'Espace personnel',
     children: [
       { key: 'portal',       icon: <HomeOutlined />,              label: <Link to="/hr/portal">Mon espace</Link> },
-      { key: 'leaves',       icon: <CalendarOutlined />,          label: <Link to="/hr/leaves">Congés</Link> },
+      {
+        key: 'leaves',
+        icon: <CalendarOutlined />,
+        label: 'Congés',
+        children: [
+          { key: 'leaves-list',     label: <Link to="/hr/leaves">Mes congés</Link> },
+          { key: 'leaves-calendar', label: <Link to="/hr/leaves/calendar">Calendrier équipe</Link> },
+        ],
+      },
       { key: 'expenses',     icon: <WalletOutlined />,            label: <Link to="/hr/expenses">Notes de frais</Link> },
       { key: 'certificates', icon: <SafetyCertificateOutlined />, label: <Link to="/hr/certificates">Attestations</Link> },
       { key: 'complaints',   icon: <ExclamationCircleOutlined />, label: <Link to="/hr/complaints">Doléances</Link> },
@@ -74,6 +82,7 @@ const menuItems = [
 const breadcrumbMap = {
   portal:             'Mon espace',
   leaves:             'Congés',
+  'leaves/calendar':  'Calendrier équipe',
   expenses:           'Notes de frais',
   certificates:       'Attestations',
   complaints:         'Doléances',

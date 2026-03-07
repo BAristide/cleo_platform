@@ -237,3 +237,70 @@ def accrue_monthly_leave():
         f'pour {year}-{month:02d}'
     )
     return {'allocations_updated': allocations_updated, 'year': year, 'month': month}
+
+
+@shared_task(name='hr.tasks.carry_over_annual_leave')
+def carry_over_annual_leave():
+    """
+    Reporte les soldes de conges annuels non consommes au 1er janvier.
+    Pack-independant : le plafond est lu depuis PayrollParameter (LEAVE_MAX_CARRY_DAYS).
+    Idempotent : cache Redis TTL 367 jours.
+    """
+    from decimal import Decimal
+
+    from django.core.cache import cache
+
+    from .models import LeaveAllocation, LeaveType
+    from .services.leave_parameter_resolver import LeaveParameterResolver
+
+    today = date.today()
+    year = today.year
+    cache_key = f'carry_over_done_{year}'
+
+    if cache.get(cache_key):
+        logger.info(f'carry_over_annual_leave: report {year} deja effectue — skip.')
+        return {'skipped': True, 'reason': 'already_run_this_year'}
+
+    max_carry = LeaveParameterResolver.get_optional(
+        'LEAVE_MAX_CARRY_DAYS', Decimal('0')
+    )
+
+    annual_type = LeaveType.objects.filter(code='ANNUAL', is_active=True).first()
+    if not annual_type:
+        logger.warning('carry_over_annual_leave: LeaveType ANNUAL introuvable — skip.')
+        return {'skipped': True, 'reason': 'no_annual_leave_type'}
+
+    prev_year_allocs = LeaveAllocation.objects.filter(
+        leave_type=annual_type,
+        year=year - 1,
+    ).select_related('employee')
+
+    count = 0
+    for prev_alloc in prev_year_allocs:
+        remaining = prev_alloc.remaining_days
+        carry = min(remaining, max_carry) if max_carry > 0 else Decimal('0')
+
+        if carry <= 0:
+            continue
+
+        current_alloc, _ = LeaveAllocation.objects.get_or_create(
+            employee=prev_alloc.employee,
+            leave_type=annual_type,
+            year=year,
+            defaults={
+                'total_days': Decimal('0'),
+                'used_days': Decimal('0'),
+                'pending_days': Decimal('0'),
+                'carried_days': Decimal('0'),
+            },
+        )
+        current_alloc.carried_days = carry.quantize(Decimal('0.1'))
+        current_alloc.save(update_fields=['carried_days'])
+        count += 1
+
+    # Idempotence : TTL jusqu'au 2 janvier de l'annee suivante
+    cache.set(cache_key, True, timeout=60 * 60 * 24 * 367)
+    logger.info(
+        f'carry_over_annual_leave: {count} allocations mises a jour pour {year}.'
+    )
+    return {'allocations_updated': count, 'year': year}

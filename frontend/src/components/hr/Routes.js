@@ -45,9 +45,11 @@ import RewardForm from './forms/RewardForm';
 // Congés — EVO-09
 import LeaveList from './LeaveList';
 import LeaveRequestForm from './forms/LeaveRequestForm';
+import TeamCalendar from './TeamCalendar';
 
 // Jours feries — TECH-01
 import PublicHolidayList from './PublicHolidayList';
+
 // Notes de frais — EVO-10
 import ExpenseList from './ExpenseList';
 import ExpenseReportForm from './forms/ExpenseReportForm';
@@ -118,9 +120,11 @@ const HRRoutes = () => {
         <Route path="/rewards" element={<RewardBoard />} />
         <Route path="/rewards/new" element={<RewardForm />} />
 
-        {/* Congés — EVO-09 */}
+        {/* Congés — EVO-09 / EVO-11 */}
         <Route path="/leaves" element={<LeaveList />} />
         <Route path="/leaves/new" element={<LeaveRequestForm />} />
+        <Route path="/leaves/calendar" element={<TeamCalendar />} />
+
         {/* Jours feries — TECH-01 */}
         <Route path="/public-holidays" element={<PublicHolidayList />} />
 

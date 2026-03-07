@@ -1,5 +1,8 @@
 # hr/services/leave_parameter_resolver.py
+import logging
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 
 class LeaveParameterResolver:
@@ -41,6 +44,37 @@ class LeaveParameterResolver:
         value = param.value or Decimal('0')
         cache.set(cache_key, value, 3600)
         return value
+
+    @classmethod
+    def get_optional(cls, code: str, default=None):
+        """
+        Comme get() mais retourne `default` si le paramètre est absent.
+        Utilisé pour les paramètres optionnels selon le pack (ex: LEAVE_MAX_CARRY_DAYS).
+        """
+        from decimal import Decimal
+
+        from django.core.cache import cache
+
+        from payroll.models import PayrollParameter
+
+        if default is None:
+            default = Decimal('0')
+
+        cache_key = f'leave_param_{code}'
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached
+
+        try:
+            param = PayrollParameter.objects.get(code=code, is_active=True)
+            value = param.value or Decimal('0')
+            cache.set(cache_key, value, 3600)
+            return value
+        except PayrollParameter.DoesNotExist:
+            logger.info(
+                f"Paramètre congé '{code}' absent du pack actif — valeur par défaut : {default}"
+            )
+            return default
 
     @classmethod
     def clear_cache(cls):

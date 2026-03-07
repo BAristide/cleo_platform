@@ -10,5 +10,6 @@
     {"role": "salary_expense",              "account_code": "661",  "description": "Rémunérations du personnel"},
     {"role": "social_charges_expense",      "account_code": "664",  "description": "Charges sociales patronales"},
     {"role": "salary_payable",              "account_code": "421",  "description": "Personnel, rémunérations dues"},
-    {"role": "social_charges_payable",      "account_code": "431",  "description": "Sécurité sociale"}
+    {"role": "social_charges_payable",      "account_code": "431",  "description": "Sécurité sociale"},
+    {"role": "employee_expense_payable",    "account_code": "421",  "description": "Personnel — remboursements de frais"}
 ]

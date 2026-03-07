@@ -858,6 +858,76 @@ class JournalEntryService:
         return entry
 
     @staticmethod
+    def create_expense_entry(expense_report, user=None):
+        """
+        Crée une écriture comptable pour une note de frais approuvée Finance.
+        Résolution des comptes via AccountResolver (indépendant du pack comptable).
+
+        Schéma comptable :
+            Débit  : purchase_expense (charges)
+            Crédit : employee_expense_payable (dette envers l'employé)
+        """
+        from accounting.services.account_resolver import AccountResolver
+
+        # Protection anti-doublon
+        existing = JournalEntry.objects.filter(
+            source_module='hr',
+            source_model='ExpenseReport',
+            source_id=expense_report.id,
+        ).first()
+        if existing:
+            return existing
+
+        total = expense_report.total_amount
+        if total <= 0:
+            raise ValueError(
+                _('Le montant total de la note de frais est nul ou négatif')
+            )
+
+        # Résolution dynamique des comptes
+        expense_code = AccountResolver.get_code('purchase_expense')
+        payable_code = AccountResolver.get_code('employee_expense_payable')
+
+        # Date et libellés
+        entry_date = expense_report.updated_at.date()
+        employee_name = expense_report.employee.full_name
+        ref = f'NDF-{expense_report.id:04d}'
+        narration = f'Note de frais — {employee_name} — {expense_report.period_month}'
+
+        lines = [
+            {
+                'account_code': expense_code,
+                'name': f'Frais {expense_report.title} — {employee_name}',
+                'debit': total,
+                'credit': Decimal('0'),
+            },
+            {
+                'account_code': payable_code,
+                'name': f'À rembourser — {employee_name}',
+                'debit': Decimal('0'),
+                'credit': total,
+            },
+        ]
+
+        entry = JournalEntryService.create_entry(
+            journal_code='OD',
+            entry_date=entry_date,
+            narration=narration,
+            lines=lines,
+            ref=ref,
+            is_manual=False,
+            user=user,
+            source_info={
+                'module': 'hr',
+                'model': 'ExpenseReport',
+                'id': expense_report.id,
+            },
+        )
+
+        entry.post()
+        return entry
+
+    @staticmethod
     def create_supplier_payment_entry(supplier_payment, user=None):
         """
         Crée une écriture comptable pour un paiement fournisseur.

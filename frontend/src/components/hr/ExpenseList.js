@@ -4,7 +4,7 @@ import {
   Table, Tag, Button, Space, Select, Row, Col,
   Typography, Modal, Input, message, Tabs,
 } from 'antd';
-import { PlusOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { PlusOutlined, CheckOutlined, CloseOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
@@ -171,6 +171,17 @@ const ExpenseList = () => {
             onClick={() => openAction('reimburse', record)}
           >
             Rembourser
+          </Button>
+        )}
+        {['approved_finance', 'reimbursed'].includes(record.status) && (
+          <Button
+            size="small"
+            icon={<DownloadOutlined />}
+            onClick={() => {
+              window.open(`/api/hr/expense-reports/${record.id}/download_pdf/`, '_blank');
+            }}
+          >
+            PDF
           </Button>
         )}
       </Space>

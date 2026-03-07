@@ -96,3 +96,41 @@ class PDFGenerator:
 
         os.unlink(tmp.name)
         return os.path.join('hr', 'pdf', filename)
+
+    @staticmethod
+    def generate_expense_report_pdf(expense_report):
+        """Génère un PDF pour une note de frais."""
+        pdf_dir = os.path.join(settings.MEDIA_ROOT, 'hr', 'pdf')
+        os.makedirs(pdf_dir, exist_ok=True)
+
+        filename = f'note_frais_{expense_report.id}_{timezone.now().strftime("%Y%m%d%H%M%S")}.pdf'
+        pdf_path = os.path.join(pdf_dir, filename)
+
+        # Devise par défaut
+        from core.models import Currency
+
+        currency = Currency.objects.filter(is_default=True).first()
+        currency_code = currency.code if currency else 'MAD'
+
+        context = {
+            'report': expense_report,
+            'employee': expense_report.employee,
+            'items': expense_report.items.select_related('category').order_by('date'),
+            'company': get_company_context(),
+            'currency_code': currency_code,
+            'generated_date': timezone.now().date(),
+        }
+
+        html_string = render_to_string('hr/pdf/expense_report.html', context)
+        font_config = FontConfiguration()
+        html = HTML(string=html_string)
+        css = CSS(string='@page { size: A4; margin: 2cm; }')
+
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as tmp:
+            html.write_pdf(tmp.name, stylesheets=[css], font_config=font_config)
+            with open(pdf_path, 'wb') as f:
+                tmp.seek(0)
+                f.write(tmp.read())
+
+        os.unlink(tmp.name)
+        return os.path.join('hr', 'pdf', filename)

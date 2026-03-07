@@ -1139,6 +1139,8 @@ class AccountMapping(models.Model):
         ('social_charges_expense', 'Charges sociales patronales'),
         ('salary_payable', 'Personnel — rémunérations dues'),
         ('social_charges_payable', 'Organismes sociaux'),
+        # ── Frais professionnels ──
+        ('employee_expense_payable', 'Remboursements de frais au personnel'),
         # ── Stocks (futur) ──
         ('inventory_asset', 'Stocks de marchandises'),
         ('inventory_variation', 'Variation de stocks'),

@@ -1186,7 +1186,7 @@ class ExpenseReport(models.Model):
     approved_by_finance = models.BooleanField(_('Approuvé par Finance'), default=False)
     manager_notes = models.TextField(_('Notes du manager'), blank=True)
     finance_notes = models.TextField(_('Notes Finance'), blank=True)
-
+    pdf_file = models.CharField(_('Fichier PDF'), max_length=255, blank=True, null=True)
     created_at = models.DateTimeField(_('Créée le'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Modifiée le'), auto_now=True)
 

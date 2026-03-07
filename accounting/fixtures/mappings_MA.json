@@ -10,5 +10,6 @@
     {"role": "salary_expense",              "account_code": "6171", "description": "Rémunérations du personnel"},
     {"role": "social_charges_expense",      "account_code": "6174", "description": "Charges sociales patronales"},
     {"role": "salary_payable",              "account_code": "443",  "description": "Personnel créditeur"},
-    {"role": "social_charges_payable",      "account_code": "444",  "description": "Organismes sociaux"}
+    {"role": "social_charges_payable",      "account_code": "444",  "description": "Organismes sociaux"},
+    {"role": "employee_expense_payable",    "account_code": "443",  "description": "Personnel créditeur — remboursements de frais"}
 ]

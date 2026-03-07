@@ -1937,6 +1937,23 @@ class ExpenseReportViewSet(viewsets.ModelViewSet):
         report.save(update_fields=['approved_by_finance', 'finance_notes', 'status'])
         return Response({'success': True, 'message': 'Note approuvée par la Finance.'})
 
+        # Générer l'écriture comptable (non-bloquant)
+        accounting_message = ''
+        try:
+            from accounting.services.journal_entry_service import JournalEntryService
+
+            entry = JournalEntryService.create_expense_entry(report, user=request.user)
+            accounting_message = f'Écriture comptable {entry.name} générée.'
+        except Exception as e:
+            accounting_message = f'Écriture comptable non générée : {e}'
+
+        return Response(
+            {
+                'success': True,
+                'message': f'Note approuvée par la Finance. {accounting_message}'.strip(),
+            }
+        )
+
     @action(detail=True, methods=['post'])
     def reimburse(self, request, pk=None):
         """Marquer comme remboursée."""
@@ -1973,6 +1990,49 @@ class ExpenseReportViewSet(viewsets.ModelViewSet):
         report.status = 'rejected'
         report.save()
         return Response({'success': True, 'message': 'Note rejetée.'})
+
+    @action(detail=True, methods=['get'])
+    def download_pdf(self, request, pk=None):
+        """Télécharger le PDF de la note de frais."""
+        import os
+
+        from django.conf import settings
+        from django.http import FileResponse
+
+        from hr.services.pdf_generator import PDFGenerator
+
+        report = self.get_object()
+        if report.status not in ['approved_finance', 'reimbursed']:
+            from rest_framework import status as http_status
+            from rest_framework.response import Response
+
+            return Response(
+                {
+                    'error': 'Le PDF est disponible uniquement pour les notes approuvées Finance ou remboursées.'
+                },
+                status=http_status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Générer le PDF si absent
+        if not report.pdf_file:
+            report.pdf_file = PDFGenerator.generate_expense_report_pdf(report)
+            report.save(update_fields=['pdf_file'])
+
+        pdf_path = os.path.join(settings.MEDIA_ROOT, report.pdf_file)
+        if not os.path.exists(pdf_path):
+            # Regénérer si le fichier a disparu
+            report.pdf_file = PDFGenerator.generate_expense_report_pdf(report)
+            report.save(update_fields=['pdf_file'])
+            pdf_path = os.path.join(settings.MEDIA_ROOT, report.pdf_file)
+
+        response = FileResponse(
+            open(pdf_path, 'rb'),
+            content_type='application/pdf',
+        )
+        response['Content-Disposition'] = (
+            f'attachment; filename="note_frais_{report.id}.pdf"'
+        )
+        return response
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):

@@ -63,6 +63,12 @@ COUNTRY_PACKS = {
         'taxes_summary': 'TVA 18%, 9%, 0%',
         'legal_id_labels': ['RCCM', 'NCC', 'IDU'],
         'payroll_fixture': 'ci',
+        'payroll_labels': {
+            'social': 'Cotisation CNPS',
+            'health': 'CMU',
+            'tax': 'ITS',
+            'social_number': 'N° CNPS',
+        },
     },
     'SN': {
         'code': 'SN',
@@ -74,6 +80,12 @@ COUNTRY_PACKS = {
         'taxes_summary': 'TVA 18%, 10%, 0%',
         'legal_id_labels': ['NINEA', 'RCCM', 'RC'],
         'payroll_fixture': 'sn',
+        'payroll_labels': {
+            'social': 'Cotisation IPRES',
+            'health': 'IPM',
+            'tax': 'IR',
+            'social_number': 'N° IPRES',
+        },
     },
     'ML': {
         'code': 'ML',
@@ -85,6 +97,12 @@ COUNTRY_PACKS = {
         'taxes_summary': 'TVA 18%, 0%',
         'legal_id_labels': ['NINA', 'RCCM', 'NIF'],
         'payroll_fixture': 'ml',
+        'payroll_labels': {
+            'social': 'Cotisation INPS',
+            'health': 'AMO',
+            'tax': 'ITS',
+            'social_number': 'N° INPS',
+        },
     },
     'BF': {
         'code': 'BF',
@@ -96,6 +114,12 @@ COUNTRY_PACKS = {
         'taxes_summary': 'TVA 18%, 0%',
         'legal_id_labels': ['IFU', 'RCCM', 'CNSS'],
         'payroll_fixture': 'bf',
+        'payroll_labels': {
+            'social': 'Cotisation CNSS',
+            'health': 'Santé',
+            'tax': 'IUTS',
+            'social_number': 'N° CNSS',
+        },
     },
     'TG': {
         'code': 'TG',
@@ -107,6 +131,12 @@ COUNTRY_PACKS = {
         'taxes_summary': 'TVA 18%, 0%',
         'legal_id_labels': ['NIF', 'RCCM'],
         'payroll_fixture': 'tg',
+        'payroll_labels': {
+            'social': 'Cotisation CNSS',
+            'health': 'INAM',
+            'tax': 'IRPP',
+            'social_number': 'N° CNSS',
+        },
     },
     'BJ': {
         'code': 'BJ',
@@ -118,6 +148,12 @@ COUNTRY_PACKS = {
         'taxes_summary': 'TVA 18%, 0%',
         'legal_id_labels': ['IFU', 'RCCM'],
         'payroll_fixture': 'bj',
+        'payroll_labels': {
+            'social': 'Cotisation CNSS',
+            'health': 'Santé',
+            'tax': 'ITS',
+            'social_number': 'N° CNSS',
+        },
     },
     'NE': {
         'code': 'NE',
@@ -129,6 +165,12 @@ COUNTRY_PACKS = {
         'taxes_summary': 'TVA 19%, 0%',
         'legal_id_labels': ['NIF', 'RCCM'],
         'payroll_fixture': 'ne',
+        'payroll_labels': {
+            'social': 'Cotisation CNSS',
+            'health': 'Santé',
+            'tax': 'IUTS',
+            'social_number': 'N° CNSS',
+        },
     },
     'GN': {
         'code': 'GN',
@@ -140,6 +182,12 @@ COUNTRY_PACKS = {
         'taxes_summary': 'TVA 18%, 0%',
         'legal_id_labels': ['NIF', 'RCCM'],
         'payroll_fixture': 'gn',
+        'payroll_labels': {
+            'social': 'Cotisation CNSS',
+            'health': 'Santé',
+            'tax': 'ITS',
+            'social_number': 'N° CNSS',
+        },
     },
     'MA': {
         'code': 'MA',
@@ -151,6 +199,12 @@ COUNTRY_PACKS = {
         'taxes_summary': 'TVA 20%, 14%, 10%, 7%, 0%',
         'legal_id_labels': ['RC', 'IF', 'Patente', 'ICE'],
         'payroll_fixture': 'ma',
+        'payroll_labels': {
+            'social': 'Cotisation CNSS',
+            'health': 'AMO',
+            'tax': 'IR',
+            'social_number': 'N° CNSS',
+        },
     },
     'FR': {
         'code': 'FR',
@@ -162,6 +216,12 @@ COUNTRY_PACKS = {
         'taxes_summary': 'TVA 20%, 10%, 5.5%, 2.1%, 0%',
         'legal_id_labels': ['SIRET', 'SIREN', 'Code APE', 'TVA Intra.'],
         'payroll_fixture': 'fr',
+        'payroll_labels': {
+            'social': 'Cotisations SS',
+            'health': 'CSG/CRDS',
+            'tax': 'PAS',
+            'social_number': 'N° Sécurité Sociale',
+        },
     },
 }
 

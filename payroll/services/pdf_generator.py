@@ -14,6 +14,27 @@ class PayrollPDFGenerator:
     """Classe de service pour générer les PDF de paie."""
 
     @staticmethod
+    def _get_payroll_labels():
+        """Résout les labels de paie depuis COUNTRY_PACKS via CompanySetup.country_code."""
+        defaults = {
+            'social': 'Cotisations sociales',
+            'health': 'Cotisation complémentaire',
+            'tax': 'Impôt sur le revenu',
+            'social_number': 'N° immatriculation sociale',
+        }
+        try:
+            from core.models import CompanySetup
+            from core.views import COUNTRY_PACKS
+
+            setup = CompanySetup.objects.first()
+            if setup and setup.country_code:
+                country_info = COUNTRY_PACKS.get(setup.country_code, {})
+                return country_info.get('payroll_labels', defaults)
+        except Exception:
+            pass
+        return defaults
+
+    @staticmethod
     def generate_payslip_pdf(payslip):
         """Génère le PDF d'un bulletin de paie."""
         employee = payslip.employee
@@ -70,6 +91,9 @@ class PayrollPDFGenerator:
         elif payslip.period:
             period_name = payslip.period.name
 
+        # Labels dynamiques depuis COUNTRY_PACKS
+        payroll_labels = PayrollPDFGenerator._get_payroll_labels()
+
         context = {
             'payslip': payslip,
             'employee': employee,
@@ -84,6 +108,12 @@ class PayrollPDFGenerator:
             'total_employer': total_employer,
             'contract_type_display': contract_type_display,
             'payment_method_display': payment_method_display,
+            'label_social': payroll_labels.get('social', 'Cotisations sociales'),
+            'label_health': payroll_labels.get('health', 'Cotisation complémentaire'),
+            'label_tax': payroll_labels.get('tax', 'Impôt sur le revenu'),
+            'label_social_number': payroll_labels.get(
+                'social_number', 'N° immatriculation sociale'
+            ),
         }
 
         html_string = render_to_string('payroll/pdf/payslip.html', context)
@@ -146,10 +176,16 @@ class PayrollPDFGenerator:
         )
         total_income_tax = sum(p.income_tax or Decimal('0') for p in payslips_list)
 
+        # Labels dynamiques
+        _payroll_labels = PayrollPDFGenerator._get_payroll_labels()
+
         context = {
             'payroll_run': payroll_run,
             'period': payroll_run.period,
             'payslips': payslips_list,
+            'label_social': _payroll_labels.get('social', 'Cotisations sociales'),
+            'label_health': _payroll_labels.get('health', 'Cotisation complémentaire'),
+            'label_tax': _payroll_labels.get('tax', 'Impôt sur le revenu'),
             'summary': {
                 'total_gross': total_gross,
                 'total_net': total_net,

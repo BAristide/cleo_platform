@@ -56,7 +56,7 @@
         <div class="col">
             <p><strong>Nom et prénom :</strong> {{ employee.first_name }} {{ employee.last_name }}</p>
             <p><strong>Matricule :</strong> {{ employee.employee_id }}</p>
-            {% if payroll_info.cnss_number %}<p><strong>N° CNSS :</strong> {{ payroll_info.cnss_number }}</p>{% endif %}
+            {% if payroll_info.cnss_number %}<p><strong>{{ label_social_number }} :</strong> {{ payroll_info.cnss_number }}</p>{% endif %}
             <p><strong>Date d'embauche :</strong> {{ employee.hire_date|date:"d/m/Y" }}</p>
         </div>
         <div class="col">
@@ -92,7 +92,7 @@
             <!-- CNSS salariale -->
             {% if payslip.cnss_employee %}
             <tr>
-                <td>CNSS (part salariale)</td>
+                <td>{{ label_social }} (part salariale)</td>
                 <td class="text-right">{{ payslip.gross_salary }}</td>
                 <td class="text-right">{{ cnss_employee_rate }}%</td>
                 <td class="text-right"></td>
@@ -103,7 +103,7 @@
             <!-- AMO salariale -->
             {% if payslip.amo_employee %}
             <tr>
-                <td>AMO (part salariale)</td>
+                <td>{{ label_health }} (part salariale)</td>
                 <td class="text-right">{{ payslip.gross_salary }}</td>
                 <td class="text-right">{{ amo_employee_rate }}%</td>
                 <td class="text-right"></td>
@@ -114,7 +114,7 @@
             <!-- IR -->
             {% if payslip.income_tax %}
             <tr>
-                <td>Impôt sur le revenu (IR)</td>
+                <td>{{ label_tax }}</td>
                 <td class="text-right"></td>
                 <td class="text-right"></td>
                 <td class="text-right"></td>
@@ -143,9 +143,9 @@
         </div>
         <div class="col" style="text-align: right;">
             <p><strong>Salaire brut :</strong> {{ payslip.gross_salary }} {{ currency_code }}</p>
-            <p><strong>Cotisations CNSS :</strong> {{ payslip.cnss_employee }} {{ currency_code }}</p>
-            <p><strong>Cotisations AMO :</strong> {{ payslip.amo_employee }} {{ currency_code }}</p>
-            <p><strong>Impôt sur le revenu :</strong> {{ payslip.income_tax }} {{ currency_code }}</p>
+            <p><strong>{{ label_social }} :</strong> {{ payslip.cnss_employee }} {{ currency_code }}</p>
+            <p><strong>{{ label_health }} :</strong> {{ payslip.amo_employee }} {{ currency_code }}</p>
+            <p><strong>{{ label_tax }} :</strong> {{ payslip.income_tax }} {{ currency_code }}</p>
             <div class="net-box">
                 <p>NET À PAYER : {{ payslip.net_salary }} {{ currency_code }}</p>
             </div>
@@ -155,8 +155,8 @@
     <div style="margin-top: 20px; overflow: hidden;">
         <div style="float: left; width: 50%;">
             <p style="font-size: 9pt;"><strong>Charges patronales :</strong></p>
-            <p style="font-size: 8pt;">CNSS employeur : {{ payslip.cnss_employer }} {{ currency_code }}</p>
-            <p style="font-size: 8pt;">AMO employeur : {{ payslip.amo_employer }} {{ currency_code }}</p>
+            <p style="font-size: 8pt;">{{ label_social }} employeur : {{ payslip.cnss_employer }} {{ currency_code }}</p>
+            <p style="font-size: 8pt;">{{ label_health }} employeur : {{ payslip.amo_employer }} {{ currency_code }}</p>
             <p style="font-size: 8pt; font-weight: bold;">Total charges : {{ total_employer }} {{ currency_code }}</p>
         </div>
     </div>

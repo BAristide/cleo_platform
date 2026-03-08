@@ -47,7 +47,7 @@
             <th>Département</th>
             <th>Brut ({{ currency_code }})</th>
             <th>Cotisations sal. ({{ currency_code }})</th>
-            <th>Retenue fiscale ({{ currency_code }})</th>
+            <th>{{ label_tax }} ({{ currency_code }})</th>
             <th>Net ({{ currency_code }})</th>
             <th>Statut</th>
         </tr>
@@ -90,13 +90,13 @@
     </thead>
     <tbody>
         <tr>
-            <td>Cotisations sociales</td>
+            <td>{{ label_social }}</td>
             <td class="text-right">{{ summary.total_employee_contributions }}</td>
             <td class="text-right">{{ summary.total_employer_contributions }}</td>
             <td class="text-right">{{ summary.total_social_all|sub:summary.total_income_tax }}</td>
         </tr>
         <tr>
-            <td>Retenue fiscale</td>
+            <td>{{ label_tax }}</td>
             <td class="text-right">{{ summary.total_income_tax }}</td>
             <td class="text-right">-</td>
             <td class="text-right">{{ summary.total_income_tax }}</td>

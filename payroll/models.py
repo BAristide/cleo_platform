@@ -92,7 +92,9 @@ class SalaryComponent(models.Model):
     description = models.TextField(_('Description'), blank=True)
     component_type = models.CharField(_('Type'), max_length=20, choices=TYPE_CHOICES)
     is_taxable = models.BooleanField(_('Imposable'), default=True)
-    is_cnss_eligible = models.BooleanField(_('Soumis CNSS'), default=True)
+    is_cnss_eligible = models.BooleanField(
+        _('Soumis cotisations sociales'), default=True
+    )
     is_active = models.BooleanField(_('Actif'), default=True)
     formula = models.TextField(
         _('Formule de calcul'),
@@ -166,7 +168,9 @@ class EmployeePayroll(models.Model):
     )
 
     # Informations bancaires et fiscales
-    cnss_number = models.CharField(_('N° CNSS'), max_length=30, blank=True)
+    cnss_number = models.CharField(
+        _('N° immatriculation sociale'), max_length=30, blank=True
+    )
     bank_account = models.CharField(_('N° compte bancaire'), max_length=50, blank=True)
     bank_name = models.CharField(_('Banque'), max_length=100, blank=True)
     bank_swift = models.CharField(_('Code SWIFT'), max_length=20, blank=True)
@@ -327,18 +331,20 @@ class PaySlip(models.Model):
 
     # Cotisations
     cnss_employee = models.DecimalField(
-        _('CNSS employé'), max_digits=12, decimal_places=2
+        _('Cotisation sociale salariale'), max_digits=12, decimal_places=2
     )
     cnss_employer = models.DecimalField(
-        _('CNSS employeur'), max_digits=12, decimal_places=2
+        _('Cotisation sociale patronale'), max_digits=12, decimal_places=2
     )
     amo_employee = models.DecimalField(
-        _('AMO employé'), max_digits=12, decimal_places=2
+        _('Cotisation complémentaire salariale'), max_digits=12, decimal_places=2
     )
     amo_employer = models.DecimalField(
-        _('AMO employeur'), max_digits=12, decimal_places=2
+        _('Cotisation complémentaire patronale'), max_digits=12, decimal_places=2
     )
-    income_tax = models.DecimalField(_('IR'), max_digits=12, decimal_places=2)
+    income_tax = models.DecimalField(
+        _('Impôt sur le revenu'), max_digits=12, decimal_places=2
+    )
 
     # Statut du bulletin
     STATUS_CHOICES = [

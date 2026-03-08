@@ -16,6 +16,9 @@ import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
 
+/** Convertit une valeur API (potentiellement string) en nombre. */
+const num = (v) => parseFloat(v) || 0;
+
 const statusColors = {
   draft: 'default',
   calculated: 'warning',
@@ -41,19 +44,26 @@ const PaySlipDetail = () => {
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
+  const [labels, setLabels] = useState({
+    social: 'Cotisations sociales',
+    health: 'Cotisation complémentaire',
+    tax: 'Impôt sur le revenu',
+    social_employer: 'Cotisations sociales employeur',
+    health_employer: 'Cotisation complémentaire employeur',
+  });
 
   useEffect(() => {
     fetchData();
+    // Charger les labels dynamiques
+    axios.get('/api/payroll/labels/').then(r => setLabels(prev => ({ ...prev, ...r.data }))).catch(() => {});
   }, [id]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Récupérer les détails du bulletin
       const response = await axios.get(`/api/payroll/payslips/${id}/`);
       setPayslip(response.data);
 
-      // Récupérer les lignes du bulletin
       if (response.data.lines) {
         setPayslipLines(response.data.lines);
       } else {
@@ -70,166 +80,6 @@ const PaySlipDetail = () => {
     } catch (error) {
       console.error('Erreur lors du chargement des données:', error);
       message.error('Erreur lors du chargement des données');
-
-      // Données de démo en cas d'erreur
-      setPayslip({
-        id: parseInt(id),
-        number: 'BUL-MAI25-EMP001',
-        payroll_run: { id: 1, name: 'Paie Mai 2025 - Tous les départements' },
-        period_name: 'Mai 2025',
-        employee: { id: 1, first_name: 'Mohammed', last_name: 'Alami' },
-        employee_data: {
-          id: 1,
-          first_name: 'Mohammed',
-          last_name: 'Alami',
-          email: 'm.alami@example.com',
-          employee_id: 'EMP001'
-        },
-        worked_days: 22,
-        absence_days: 0,
-        paid_leave_days: 0,
-        unpaid_leave_days: 0,
-        overtime_25_hours: 10,
-        overtime_50_hours: 5,
-        overtime_100_hours: 0,
-        basic_salary: 12000,
-        gross_salary: 14300,
-        taxable_salary: 13577,
-        net_salary: 11500,
-        cnss_employee: 437,
-        cnss_employer: 1032,
-        amo_employee: 286,
-        amo_employer: 286,
-        income_tax: 577,
-        status: 'calculated',
-        status_display: 'Calculé',
-        is_paid: false,
-        payment_date: null,
-        payment_reference: '',
-        created_at: '2025-05-15T10:00:00Z',
-        updated_at: '2025-05-20T10:00:00Z',
-        pdf_file: null
-      });
-
-      setPayslipLines([
-        {
-          id: 1,
-          payslip: parseInt(id),
-          component: { id: 1, name: 'Salaire de base', code: 'SALBASE', component_type: 'brut' },
-          component_name: 'Salaire de base',
-          component_type: 'brut',
-          amount: 10182,
-          base_amount: null,
-          rate: null,
-          quantity: null,
-          is_employer_contribution: false,
-          display_order: 10
-        },
-        {
-          id: 2,
-          payslip: parseInt(id),
-          component: { id: 2, name: 'Heures supplémentaires 25%', code: 'HS25', component_type: 'brut' },
-          component_name: 'Heures supplémentaires 25%',
-          component_type: 'brut',
-          amount: 937.5,
-          base_amount: null,
-          rate: 25,
-          quantity: 10,
-          is_employer_contribution: false,
-          display_order: 20
-        },
-        {
-          id: 3,
-          payslip: parseInt(id),
-          component: { id: 3, name: 'Heures supplémentaires 50%', code: 'HS50', component_type: 'brut' },
-          component_name: 'Heures supplémentaires 50%',
-          component_type: 'brut',
-          amount: 562.5,
-          base_amount: null,
-          rate: 50,
-          quantity: 5,
-          is_employer_contribution: false,
-          display_order: 21
-        },
-        {
-          id: 4,
-          payslip: parseInt(id),
-          component: { id: 4, name: 'Prime d\'ancienneté', code: 'ANCIENNETE', component_type: 'brut' },
-          component_name: 'Prime d\'ancienneté',
-          component_type: 'brut',
-          amount: 1018.2,
-          base_amount: 10182,
-          rate: 10,
-          quantity: null,
-          is_employer_contribution: false,
-          display_order: 30
-        },
-        {
-          id: 5,
-          payslip: parseInt(id),
-          component: { id: 5, name: 'Indemnité de transport', code: 'TRANSPORT', component_type: 'non_soumise' },
-          component_name: 'Indemnité de transport',
-          component_type: 'non_soumise',
-          amount: 1000,
-          base_amount: null,
-          rate: null,
-          quantity: null,
-          is_employer_contribution: false,
-          display_order: 40
-        },
-        {
-          id: 6,
-          payslip: parseInt(id),
-          component: { id: 6, name: 'Prime de panier', code: 'REPAS', component_type: 'non_soumise' },
-          component_name: 'Prime de panier',
-          component_type: 'non_soumise',
-          amount: 600,
-          base_amount: null,
-          rate: null,
-          quantity: null,
-          is_employer_contribution: false,
-          display_order: 41
-        },
-        {
-          id: 7,
-          payslip: parseInt(id),
-          component: { id: 7, name: 'Cotisation CNSS', code: 'CNSS_EMP', component_type: 'cotisation' },
-          component_name: 'Cotisation CNSS',
-          component_type: 'cotisation',
-          amount: -437,
-          base_amount: 10182,
-          rate: 4.29,
-          quantity: null,
-          is_employer_contribution: false,
-          display_order: 50
-        },
-        {
-          id: 8,
-          payslip: parseInt(id),
-          component: { id: 8, name: 'Cotisation AMO', code: 'AMO_EMP', component_type: 'cotisation' },
-          component_name: 'Cotisation AMO',
-          component_type: 'cotisation',
-          amount: -286,
-          base_amount: 14300,
-          rate: 2,
-          quantity: null,
-          is_employer_contribution: false,
-          display_order: 51
-        },
-        {
-          id: 9,
-          payslip: parseInt(id),
-          component: { id: 9, name: 'Impôt sur le revenu', code: 'IR', component_type: 'cotisation' },
-          component_name: 'Impôt sur le revenu',
-          component_type: 'cotisation',
-          amount: -577,
-          base_amount: 13577,
-          rate: null,
-          quantity: null,
-          is_employer_contribution: false,
-          display_order: 60
-        }
-      ]);
     } finally {
       setLoading(false);
     }
@@ -246,10 +96,10 @@ const PaySlipDetail = () => {
         if (response.data.payslip.lines) {
           setPayslipLines(response.data.payslip.lines);
         } else {
-          fetchData(); // Recharger les données si les lignes ne sont pas incluses
+          fetchData();
         }
       } else {
-        fetchData(); // Recharger les données si le bulletin n'est pas inclus
+        fetchData();
       }
     } catch (error) {
       console.error('Erreur lors du calcul du bulletin:', error);
@@ -301,8 +151,8 @@ const PaySlipDetail = () => {
   const sortedLines = [...payslipLines].sort((a, b) => a.display_order - b.display_order);
 
   // Séparer les gains et les retenues
-  const gains = sortedLines.filter(line => line.amount > 0);
-  const deductions = sortedLines.filter(line => line.amount < 0);
+  const gains = sortedLines.filter(line => num(line.amount) > 0);
+  const deductions = sortedLines.filter(line => num(line.amount) < 0);
 
   return (
     <div style={{ padding: '20px' }}>
@@ -392,13 +242,13 @@ const PaySlipDetail = () => {
               <Descriptions.Item label="Jours travaillés">{payslip.worked_days}</Descriptions.Item>
               <Descriptions.Item label="Absences">{payslip.absence_days || 0}</Descriptions.Item>
               <Descriptions.Item label="Congés payés">{payslip.paid_leave_days || 0}</Descriptions.Item>
-              {payslip.overtime_25_hours > 0 && (
+              {num(payslip.overtime_25_hours) > 0 && (
                 <Descriptions.Item label="Heures supp. 25%">{payslip.overtime_25_hours}</Descriptions.Item>
               )}
-              {payslip.overtime_50_hours > 0 && (
+              {num(payslip.overtime_50_hours) > 0 && (
                 <Descriptions.Item label="Heures supp. 50%">{payslip.overtime_50_hours}</Descriptions.Item>
               )}
-              {payslip.overtime_100_hours > 0 && (
+              {num(payslip.overtime_100_hours) > 0 && (
                 <Descriptions.Item label="Heures supp. 100%">{payslip.overtime_100_hours}</Descriptions.Item>
               )}
             </Descriptions>
@@ -411,14 +261,14 @@ const PaySlipDetail = () => {
           <Col span={6}>
             <Statistic
               title="Salaire de base"
-              value={payslip.basic_salary.toLocaleString()}
+              value={num(payslip.basic_salary).toLocaleString()}
               suffix={currencyCode}
             />
           </Col>
           <Col span={6}>
             <Statistic
               title="Salaire brut"
-              value={payslip.gross_salary.toLocaleString()}
+              value={num(payslip.gross_salary).toLocaleString()}
               suffix={currencyCode}
               valueStyle={{ color: '#cf1322' }}
             />
@@ -426,7 +276,7 @@ const PaySlipDetail = () => {
           <Col span={6}>
             <Statistic
               title="Total cotisations"
-              value={(payslip.cnss_employee + payslip.amo_employee + payslip.income_tax).toLocaleString()}
+              value={(num(payslip.cnss_employee) + num(payslip.amo_employee) + num(payslip.income_tax)).toLocaleString()}
               suffix={currencyCode}
               valueStyle={{ color: '#faad14' }}
             />
@@ -434,7 +284,7 @@ const PaySlipDetail = () => {
           <Col span={6}>
             <Statistic
               title="Salaire net"
-              value={payslip.net_salary.toLocaleString()}
+              value={num(payslip.net_salary).toLocaleString()}
               suffix={currencyCode}
               valueStyle={{ color: '#3f8600' }}
             />
@@ -458,7 +308,7 @@ const PaySlipDetail = () => {
                   title: 'Base',
                   dataIndex: 'base_amount',
                   key: 'base_amount',
-                  render: value => value ? `${value.toLocaleString()} ${currencyCode}` : '-'
+                  render: value => value ? `${num(value).toLocaleString()} ${currencyCode}` : '-'
                 },
                 {
                   title: 'Taux',
@@ -476,15 +326,15 @@ const PaySlipDetail = () => {
                   title: 'Montant',
                   dataIndex: 'amount',
                   key: 'amount',
-                  render: value => `${value.toLocaleString()} ${currencyCode}`,
-                  sorter: (a, b) => a.amount - b.amount,
+                  render: value => `${num(value).toLocaleString()} ${currencyCode}`,
+                  sorter: (a, b) => num(a.amount) - num(b.amount),
                 },
               ]}
               pagination={false}
               summary={pageData => {
                 let totalAmount = 0;
                 pageData.forEach(({ amount }) => {
-                  totalAmount += amount;
+                  totalAmount += num(amount);
                 });
 
                 return (
@@ -516,7 +366,7 @@ const PaySlipDetail = () => {
                   title: 'Base',
                   dataIndex: 'base_amount',
                   key: 'base_amount',
-                  render: value => value ? `${value.toLocaleString()} ${currencyCode}` : '-'
+                  render: value => value ? `${num(value).toLocaleString()} ${currencyCode}` : '-'
                 },
                 {
                   title: 'Taux',
@@ -528,15 +378,15 @@ const PaySlipDetail = () => {
                   title: 'Montant',
                   dataIndex: 'amount',
                   key: 'amount',
-                  render: value => `${Math.abs(value).toLocaleString()} ${currencyCode}`,
-                  sorter: (a, b) => Math.abs(a.amount) - Math.abs(b.amount),
+                  render: value => `${Math.abs(num(value)).toLocaleString()} ${currencyCode}`,
+                  sorter: (a, b) => Math.abs(num(a.amount)) - Math.abs(num(b.amount)),
                 },
               ]}
               pagination={false}
               summary={pageData => {
                 let totalAmount = 0;
                 pageData.forEach(({ amount }) => {
-                  totalAmount += Math.abs(amount);
+                  totalAmount += Math.abs(num(amount));
                 });
 
                 return (
@@ -559,26 +409,26 @@ const PaySlipDetail = () => {
         <Row gutter={16}>
           <Col span={12}>
             <Descriptions bordered>
-              <Descriptions.Item label="CNSS Employeur" span={3}>
-                {payslip.cnss_employer.toLocaleString()} {currencyCode}
+              <Descriptions.Item label={labels.social_employer} span={3}>
+                {num(payslip.cnss_employer).toLocaleString()} {currencyCode}
               </Descriptions.Item>
-              <Descriptions.Item label="AMO Employeur" span={3}>
-                {payslip.amo_employer.toLocaleString()} {currencyCode}
+              <Descriptions.Item label={labels.health_employer} span={3}>
+                {num(payslip.amo_employer).toLocaleString()} {currencyCode}
               </Descriptions.Item>
               <Descriptions.Item label="Total charges patronales" span={3}>
-                <strong>{(payslip.cnss_employer + payslip.amo_employer).toLocaleString()} {currencyCode}</strong>
+                <strong>{(num(payslip.cnss_employer) + num(payslip.amo_employer)).toLocaleString()} {currencyCode}</strong>
               </Descriptions.Item>
             </Descriptions>
           </Col>
           <Col span={12}>
             <Descriptions bordered>
               <Descriptions.Item label="Coût total" span={3}>
-                <strong>{(payslip.gross_salary + payslip.cnss_employer + payslip.amo_employer).toLocaleString()} {currencyCode}</strong>
+                <strong>{(num(payslip.gross_salary) + num(payslip.cnss_employer) + num(payslip.amo_employer)).toLocaleString()} {currencyCode}</strong>
               </Descriptions.Item>
               <Descriptions.Item label="Détail" span={3}>
-                <Text>Salaire brut: {payslip.gross_salary.toLocaleString()} {currencyCode}</Text>
+                <Text>Salaire brut: {num(payslip.gross_salary).toLocaleString()} {currencyCode}</Text>
                 <br />
-                <Text>Charges patronales: {(payslip.cnss_employer + payslip.amo_employer).toLocaleString()} {currencyCode}</Text>
+                <Text>Charges patronales: {(num(payslip.cnss_employer) + num(payslip.amo_employer)).toLocaleString()} {currencyCode}</Text>
               </Descriptions.Item>
             </Descriptions>
           </Col>

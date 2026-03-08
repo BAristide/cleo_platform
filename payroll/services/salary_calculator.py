@@ -123,6 +123,17 @@ class SalaryCalculator:
                 display_order=41,
             )
 
+        # Ajouter les primes et indemnités dynamiques (EmployeeAllowance)
+        for allowance in payroll_info.allowances.filter(is_active=True).select_related(
+            'component'
+        ):
+            PaySlipLine.objects.create(
+                payslip=payslip,
+                component=allowance.component,
+                amount=allowance.amount,
+                display_order=45,
+            )
+
         # Calculer le salaire brut
         gross_salary = SalaryCalculator._calculate_gross_salary(payslip)
         payslip.gross_salary = gross_salary

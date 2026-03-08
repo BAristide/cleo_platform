@@ -465,3 +465,34 @@ class AdvanceSalary(models.Model):
 
     def __str__(self):
         return f'Acompte {self.employee.full_name} - {self.payment_date}'
+
+
+class EmployeeAllowance(models.Model):
+    """Primes et indemnités dynamiques rattachées à un dossier de paie employé."""
+
+    employee_payroll = models.ForeignKey(
+        EmployeePayroll,
+        on_delete=models.CASCADE,
+        related_name='allowances',
+        verbose_name=_('Données de paie'),
+    )
+    component = models.ForeignKey(
+        SalaryComponent,
+        on_delete=models.PROTECT,
+        verbose_name=_('Composant'),
+    )
+    amount = models.DecimalField(_('Montant'), max_digits=12, decimal_places=2)
+    is_active = models.BooleanField(_('Actif'), default=True)
+
+    # Métadonnées
+    created_at = models.DateTimeField(_('Créé le'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Modifié le'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Prime / Indemnité employé')
+        verbose_name_plural = _('Primes / Indemnités employés')
+        ordering = ['component__code']
+        unique_together = [['employee_payroll', 'component']]
+
+    def __str__(self):
+        return f'{self.employee_payroll.employee.full_name} — {self.component.name}: {self.amount}'

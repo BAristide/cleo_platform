@@ -51,8 +51,14 @@ const PayrollRunDetail = () => {
     total: 0
   });
 
+    const [labels, setLabels] = useState({
+    social: 'CNSS', health: 'AMO', tax: 'IR',
+    social_employer: 'CNSS Employeur', health_employer: 'AMO Employeur',
+  });
+
   useEffect(() => {
     fetchData();
+    axios.get('/api/payroll/labels/').then(r => setLabels(prev => ({ ...prev, ...r.data }))).catch(() => {});
   }, [id]);
 
   const fetchData = async () => {
@@ -561,7 +567,7 @@ const PayrollRunDetail = () => {
               dataSource={[
                 {
                   key: '1',
-                  organisme: 'CNSS',
+                  organisme: labels.social,
                   base: 'Plafonné',
                   part_salariale: payrollRun.payslips_summary?.total_cnss_employee || 0,
                   part_patronale: payrollRun.payslips_summary?.total_cnss_employer || 0,
@@ -569,7 +575,7 @@ const PayrollRunDetail = () => {
                 },
                 {
                   key: '2',
-                  organisme: 'AMO',
+                  organisme: labels.health,
                   base: payrollRun.payslips_summary?.total_gross || 0,
                   part_salariale: payrollRun.payslips_summary?.total_amo_employee || 0,
                   part_patronale: payrollRun.payslips_summary?.total_amo_employer || 0,
@@ -577,7 +583,7 @@ const PayrollRunDetail = () => {
                 },
                 {
                   key: '3',
-                  organisme: 'IR (Impôt sur le Revenu)',
+                  organisme: `${labels.tax} (Impôt)`,
                   base: '-',
                   part_salariale: payrollRun.payslips_summary?.total_income_tax || 0,
                   part_patronale: 0,

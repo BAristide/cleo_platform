@@ -13,6 +13,7 @@ from users.permissions import HasModulePermission, module_permission_required
 from .models import (
     AdvanceSalary,
     ContractType,
+    EmployeeAllowance,
     EmployeePayroll,
     PayrollParameter,
     PayrollPeriod,
@@ -25,6 +26,7 @@ from .models import (
 from .serializers import (
     AdvanceSalarySerializer,
     ContractTypeSerializer,
+    EmployeeAllowanceSerializer,
     EmployeePayrollSerializer,
     PayrollParameterSerializer,
     PayrollPeriodSerializer,
@@ -182,6 +184,22 @@ class EmployeePayrollViewSet(viewsets.ModelViewSet):
                 {'error': 'Informations de paie non trouvées pour cet employé'},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+
+class EmployeeAllowanceViewSet(viewsets.ModelViewSet):
+    """API pour les primes et indemnités dynamiques."""
+
+    queryset = EmployeeAllowance.objects.all()
+    serializer_class = EmployeeAllowanceSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'payroll'
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.OrderingFilter,
+    ]
+    filterset_fields = ['employee_payroll', 'component', 'is_active']
+    ordering_fields = ['component__code']
+    ordering = ['component__code']
 
 
 class PayrollRunViewSet(viewsets.ModelViewSet):
@@ -608,6 +626,43 @@ class AdvanceSalaryViewSet(viewsets.ModelViewSet):
         return Response(
             {'success': True, 'message': 'Acompte marqué comme payé avec succès'}
         )
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def payroll_labels(request):
+    """GET /api/payroll/labels/ — Labels dynamiques selon le pack actif."""
+    defaults = {
+        'social': 'Cotisations sociales',
+        'health': 'Cotisation complémentaire',
+        'tax': 'Impôt sur le revenu',
+        'social_number': 'N° immatriculation sociale',
+    }
+    try:
+        from core.models import CompanySetup
+        from core.views import COUNTRY_PACKS
+
+        setup = CompanySetup.objects.first()
+        if setup and setup.country_code:
+            labels = dict(
+                COUNTRY_PACKS.get(setup.country_code, {}).get(
+                    'payroll_labels', defaults
+                )
+            )
+            labels.setdefault(
+                'social_employer',
+                f'{labels.get("social", "Cotisations sociales")} employeur',
+            )
+            labels.setdefault(
+                'health_employer',
+                f'{labels.get("health", "Cotisation complémentaire")} employeur',
+            )
+            return Response(labels)
+    except Exception:
+        pass
+    defaults['social_employer'] = 'Cotisations sociales employeur'
+    defaults['health_employer'] = 'Cotisation complémentaire employeur'
+    return Response(defaults)
 
 
 @api_view(['GET'])

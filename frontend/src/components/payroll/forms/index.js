@@ -260,29 +260,28 @@ export const EmployeePayrollForm = () => {
   const [employees, setEmployees] = React.useState([]);
   const [contractTypes, setContractTypes] = React.useState([]);
   const [initialValues, setInitialValues] = React.useState({});
+  const [allowanceComponents, setAllowanceComponents] = React.useState([]);
+  const [allowances, setAllowances] = React.useState([]);
 
   React.useEffect(() => {
-    // Charger les employés
     axios.get('/api/hr/employees/')
-      .then(response => {
-        setEmployees(response.data.results || []);
-      })
-      .catch(error => {
-        console.error('Erreur lors du chargement des employés:', error);
-        message.error('Erreur lors du chargement des employés');
-      });
+      .then(response => setEmployees(response.data.results || []))
+      .catch(error => { console.error('Erreur employes:', error); message.error('Erreur lors du chargement des employes'); });
 
-    // Charger les types de contrat
     axios.get('/api/payroll/contract-types/')
-      .then(response => {
-        setContractTypes(response.data.results || []);
-      })
-      .catch(error => {
-        console.error('Erreur lors du chargement des types de contrat:', error);
-        message.error('Erreur lors du chargement des types de contrat');
-      });
+      .then(response => setContractTypes(response.data.results || []))
+      .catch(error => { console.error('Erreur contrats:', error); message.error('Erreur lors du chargement des types de contrat'); });
 
-    // Charger les données si en mode édition
+    // Charger les composants de type brut/non_soumise (hors systeme)
+    axios.get('/api/payroll/components/?is_active=true')
+      .then(response => {
+        const all = response.data.results || response.data || [];
+        const systemCodes = ['SALBASE', 'HS25', 'HS50', 'HS100', 'ANCIENNETE', 'TRANSPORT', 'REPAS', 'ACOMPTE', 'CNSS_EMP', 'AMO_EMP', 'IR'];
+        const filtered = all.filter(c => (c.component_type === 'brut' || c.component_type === 'non_soumise') && !systemCodes.includes(c.code));
+        setAllowanceComponents(filtered);
+      })
+      .catch(() => {});
+
     if (id) {
       setLoading(true);
       axios.get(`/api/payroll/employee-payrolls/${id}/`)
@@ -290,156 +289,169 @@ export const EmployeePayrollForm = () => {
           const data = response.data;
           setInitialValues(data);
           form.setFieldsValue(data);
+          if (data.allowances) {
+            setAllowances(data.allowances.map((a, i) => ({ key: i, id: a.id, component: a.component, amount: a.amount, is_active: a.is_active })));
+          }
           setLoading(false);
         })
-        .catch(error => {
-          console.error('Erreur lors du chargement des données de paie:', error);
-          message.error('Erreur lors du chargement des données de paie');
-          setLoading(false);
-        });
+        .catch(error => { console.error('Erreur chargement:', error); message.error('Erreur lors du chargement des donnees de paie'); setLoading(false); });
     }
   }, [id, form]);
 
-  const onFinish = (values) => {
+  const addAllowance = () => {
+    setAllowances([...allowances, { key: Date.now(), id: null, component: null, amount: 0, is_active: true }]);
+  };
+
+  const removeAllowance = (key) => {
+    const toRemove = allowances.find(a => a.key === key);
+    if (toRemove && toRemove.id) {
+      axios.delete(`/api/payroll/employee-allowances/${toRemove.id}/`).catch(console.error);
+    }
+    setAllowances(allowances.filter(a => a.key !== key));
+  };
+
+  const updateAllowance = (key, field, value) => {
+    setAllowances(allowances.map(a => a.key === key ? { ...a, [field]: value } : a));
+  };
+
+  const saveAllowances = async (employeePayrollId) => {
+    for (const alloc of allowances) {
+      if (!alloc.component || !alloc.amount) continue;
+      const payload = { employee_payroll: employeePayrollId, component: alloc.component, amount: alloc.amount, is_active: alloc.is_active !== false };
+      try {
+        if (alloc.id) {
+          await axios.put(`/api/payroll/employee-allowances/${alloc.id}/`, payload);
+        } else {
+          await axios.post('/api/payroll/employee-allowances/', payload);
+        }
+      } catch (err) { console.error('Erreur sauvegarde prime:', err); }
+    }
+  };
+
+  const onFinish = async (values) => {
     setLoading(true);
-
-    const request = id
-      ? axios.put(`/api/payroll/employee-payrolls/${id}/`, values)
-      : axios.post('/api/payroll/employee-payrolls/', values);
-
-    request
-      .then(response => {
-        message.success(`Données de paie ${id ? 'modifiées' : 'créées'} avec succès`);
-        navigate('/payroll/employee-payrolls');
-      })
-      .catch(error => {
-        console.error('Erreur lors de l\'enregistrement des données de paie:', error);
-        message.error('Erreur lors de l\'enregistrement des données de paie');
-        setLoading(false);
-      });
+    try {
+      let response;
+      if (id) {
+        response = await axios.put(`/api/payroll/employee-payrolls/${id}/`, values);
+      } else {
+        response = await axios.post('/api/payroll/employee-payrolls/', values);
+      }
+      const epId = response.data.id || id;
+      await saveAllowances(epId);
+      message.success(`Donnees de paie ${id ? 'modifiees' : 'creees'} avec succes`);
+      navigate('/payroll/employee-payrolls');
+    } catch (error) {
+      console.error('Erreur:', error);
+      message.error('Erreur lors de l\'enregistrement des donnees de paie');
+      setLoading(false);
+    }
   };
 
   return (
-    <Card title={id ? "Modifier les données de paie" : "Nouvelles données de paie"} loading={loading}>
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-        initialValues={initialValues}
-      >
-        <Form.Item
-          name="employee"
-          label="Employé"
-          rules={[{ required: true, message: 'Veuillez sélectionner l\'employé' }]}
-        >
-          <Select placeholder="Sélectionner l'employé">
-            {employees.map(emp => (
-              <Option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</Option>
-            ))}
+    <Card title={id ? "Modifier les donnees de paie" : "Nouvelles donnees de paie"} loading={loading}>
+      <Form form={form} layout="vertical" onFinish={onFinish} initialValues={initialValues}>
+        <Form.Item name="employee" label="Employe" rules={[{ required: true, message: 'Veuillez selectionner l\'employe' }]}>
+          <Select placeholder="Selectionner l'employe">
+            {employees.map(emp => (<Option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name}</Option>))}
           </Select>
         </Form.Item>
 
-        <Form.Item
-          name="contract_type"
-          label="Type de contrat"
-          rules={[{ required: true, message: 'Veuillez sélectionner le type de contrat' }]}
-        >
-          <Select placeholder="Sélectionner le type de contrat">
-            {contractTypes.map(ct => (
-              <Option key={ct.id} value={ct.id}>{ct.name}</Option>
-            ))}
+        <Form.Item name="contract_type" label="Type de contrat" rules={[{ required: true, message: 'Veuillez selectionner le type de contrat' }]}>
+          <Select placeholder="Selectionner le type de contrat">
+            {contractTypes.map(ct => (<Option key={ct.id} value={ct.id}>{ct.name}</Option>))}
           </Select>
         </Form.Item>
 
-        <Form.Item
-          name="base_salary"
-          label="Salaire de base"
-          rules={[{ required: true, message: 'Veuillez saisir le salaire de base' }]}
-        >
-          <InputNumber
-            style={{ width: '100%' }}
-            min={0}
-            step={100}
+        <Form.Item name="base_salary" label="Salaire de base" rules={[{ required: true, message: 'Veuillez saisir le salaire de base' }]}>
+          <InputNumber style={{ width: '100%' }} min={0} step={100}
             formatter={value => `${value} ${currencySymbol}`}
-            parser={value => value.replace(/[^\d.-]/g, '')}
-          />
+            parser={value => value.replace(/[^\d.-]/g, '')} />
         </Form.Item>
 
-        <Form.Item
-          name="hourly_rate"
-          label="Taux horaire"
-        >
-          <InputNumber
-            style={{ width: '100%' }}
-            min={0}
-            step={1}
+        <Form.Item name="hourly_rate" label="Taux horaire">
+          <InputNumber style={{ width: '100%' }} min={0} step={1}
             formatter={value => `${value} ${currencySymbol}/h`}
-            parser={value => value.replace(/[^\d.-]/g, '')}
-          />
+            parser={value => value.replace(/[^\d.-]/g, '')} />
         </Form.Item>
 
-        <Form.Item
-          name="cnss_number"
-          label="Numéro CNSS"
-        >
-          <Input placeholder="Numéro CNSS" />
+        <Form.Item name="cnss_number" label="Numero CNSS">
+          <Input placeholder="Numero CNSS" />
         </Form.Item>
 
-        <Form.Item
-          name="bank_account"
-          label="Compte bancaire"
-        >
-          <Input placeholder="Numéro de compte bancaire" />
+        <Form.Item name="bank_account" label="Compte bancaire">
+          <Input placeholder="Numero de compte bancaire" />
         </Form.Item>
 
-        <Form.Item
-          name="bank_name"
-          label="Banque"
-        >
+        <Form.Item name="bank_name" label="Banque">
           <Input placeholder="Nom de la banque" />
         </Form.Item>
 
-        <Form.Item
-          name="payment_method"
-          label="Méthode de paiement"
-          rules={[{ required: true, message: 'Veuillez sélectionner la méthode de paiement' }]}
-        >
-          <Select placeholder="Sélectionner la méthode de paiement">
+        <Form.Item name="payment_method" label="Methode de paiement" rules={[{ required: true, message: 'Veuillez selectionner la methode de paiement' }]}>
+          <Select placeholder="Selectionner la methode de paiement">
             <Option value="bank_transfer">Virement bancaire</Option>
-            <Option value="check">Chèque</Option>
-            <Option value="cash">Espèces</Option>
+            <Option value="check">Cheque</Option>
+            <Option value="cash">Especes</Option>
           </Select>
         </Form.Item>
 
-        <Form.Item
-          name="transport_allowance"
-          label="Indemnité de transport"
-        >
-          <InputNumber
-            style={{ width: '100%' }}
-            min={0}
-            step={100}
+        <Form.Item name="transport_allowance" label="Indemnite de transport">
+          <InputNumber style={{ width: '100%' }} min={0} step={100}
             formatter={value => `${value} ${currencySymbol}`}
-            parser={value => value.replace(/[^\d.-]/g, '')}
-          />
+            parser={value => value.replace(/[^\d.-]/g, '')} />
         </Form.Item>
 
-        <Form.Item
-          name="meal_allowance"
-          label="Prime de panier"
-        >
-          <InputNumber
-            style={{ width: '100%' }}
-            min={0}
-            step={100}
+        <Form.Item name="meal_allowance" label="Prime de panier">
+          <InputNumber style={{ width: '100%' }} min={0} step={100}
             formatter={value => `${value} ${currencySymbol}`}
-            parser={value => value.replace(/[^\d.-]/g, '')}
-          />
+            parser={value => value.replace(/[^\d.-]/g, '')} />
         </Form.Item>
+
+        {/* Section primes et indemnites dynamiques */}
+        <Card title="Primes et indemnites" size="small" style={{ marginBottom: 16 }}
+          extra={<Button type="dashed" size="small" onClick={addAllowance}>+ Ajouter</Button>}>
+          {allowances.length === 0 ? (
+            <p style={{ color: '#999', textAlign: 'center' }}>Aucune prime configuree. Cliquez sur "+ Ajouter" pour en ajouter.</p>
+          ) : (
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                  <th style={{ textAlign: 'left', padding: '8px' }}>Composant</th>
+                  <th style={{ textAlign: 'left', padding: '8px' }}>Montant</th>
+                  <th style={{ textAlign: 'center', padding: '8px', width: 80 }}>Actif</th>
+                  <th style={{ textAlign: 'center', padding: '8px', width: 60 }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {allowances.map(alloc => (
+                  <tr key={alloc.key} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                    <td style={{ padding: '4px 8px' }}>
+                      <Select style={{ width: '100%' }} value={alloc.component} onChange={v => updateAllowance(alloc.key, 'component', v)} placeholder="Selectionner">
+                        {allowanceComponents.map(c => (<Option key={c.id} value={c.id}>{c.name}</Option>))}
+                      </Select>
+                    </td>
+                    <td style={{ padding: '4px 8px' }}>
+                      <InputNumber style={{ width: '100%' }} min={0} step={1000} value={alloc.amount}
+                        onChange={v => updateAllowance(alloc.key, 'amount', v)}
+                        formatter={value => `${value} ${currencySymbol}`}
+                        parser={value => value.replace(/[^\d.-]/g, '')} />
+                    </td>
+                    <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                      <input type="checkbox" checked={alloc.is_active !== false} onChange={e => updateAllowance(alloc.key, 'is_active', e.target.checked)} />
+                    </td>
+                    <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                      <Button type="link" danger size="small" onClick={() => removeAllowance(alloc.key)}>X</Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </Card>
 
         <Form.Item>
           <Button type="primary" htmlType="submit" loading={loading}>
-            {id ? "Modifier" : "Créer"}
+            {id ? "Modifier" : "Creer"}
           </Button>
           <Button style={{ marginLeft: 8 }} onClick={() => navigate('/payroll/employee-payrolls')}>
             Annuler
@@ -449,6 +461,8 @@ export const EmployeePayrollForm = () => {
     </Card>
   );
 };
+
+// Formulaire pour les acomptes};
 
 // Formulaire pour les acomptes
 export const AdvanceSalaryForm = () => {

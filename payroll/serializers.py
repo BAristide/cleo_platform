@@ -6,6 +6,7 @@ from hr.models import Employee
 from .models import (
     AdvanceSalary,
     ContractType,
+    EmployeeAllowance,
     EmployeePayroll,
     PayrollParameter,
     PayrollPeriod,
@@ -120,12 +121,40 @@ class TaxBracketSerializer(serializers.ModelSerializer):
         return f'Plus de {obj.min_amount}: {obj.rate}%'
 
 
+class EmployeeAllowanceSerializer(serializers.ModelSerializer):
+    """Serializer pour les primes et indemnités dynamiques."""
+
+    component_name = serializers.SerializerMethodField()
+    component_code = serializers.SerializerMethodField()
+
+    class Meta:
+        model = EmployeeAllowance
+        fields = [
+            'id',
+            'employee_payroll',
+            'component',
+            'component_name',
+            'component_code',
+            'amount',
+            'is_active',
+            'created_at',
+            'updated_at',
+        ]
+
+    def get_component_name(self, obj):
+        return obj.component.name if obj.component else ''
+
+    def get_component_code(self, obj):
+        return obj.component.code if obj.component else ''
+
+
 class EmployeePayrollSerializer(serializers.ModelSerializer):
     """Serializer pour les données de paie des employés."""
 
     employee_name = serializers.SerializerMethodField()
     contract_type_name = serializers.SerializerMethodField()
     payment_method_display = serializers.SerializerMethodField()
+    allowances = EmployeeAllowanceSerializer(many=True, read_only=True)
 
     class Meta:
         model = EmployeePayroll
@@ -145,6 +174,7 @@ class EmployeePayrollSerializer(serializers.ModelSerializer):
             'payment_method_display',
             'transport_allowance',
             'meal_allowance',
+            'allowances',
             'created_at',
             'updated_at',
         ]

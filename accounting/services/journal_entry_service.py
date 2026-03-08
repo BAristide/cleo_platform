@@ -640,8 +640,10 @@ class JournalEntryService:
                 )
             )
 
-        # Date de l'écriture = fin de période
-        entry_date = payroll_run.period.end_date
+        # Date de l'écriture = fin de période ou date du jour (le plus tôt)
+        # On ne passe jamais une écriture à une date future
+        today = timezone.now().date()
+        entry_date = min(payroll_run.period.end_date, today)
 
         # Libellé et référence
         period_name = (

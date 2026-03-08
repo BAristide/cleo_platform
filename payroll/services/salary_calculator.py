@@ -316,52 +316,48 @@ class SalaryCalculator:
         )
         return sum(line.amount for line in cnss_lines)
 
+    # Codes méthodes de calcul fiscal (stockés dans TAX_CALCULATION_METHOD)
+    TAX_METHOD_PROGRESSIVE = 0  # Barème + somme à déduire + déductions familiales
+    TAX_METHOD_QUOTIENT_FAMILIAL = 1  # Barème + quotient familial (SN, CM)
+    TAX_METHOD_ABATEMENT = 2  # Abattement brut + barème (BF)
+
     @staticmethod
     def _calculate_income_tax(payslip, taxable_salary):
-        """Calcule l'impôt sur le revenu (IR)."""
-        # Récupérer les tranches d'imposition en vigueur
+        """
+        Dispatcher : choisit la méthode de calcul fiscal selon TAX_CALCULATION_METHOD.
+        0 = progressive_deduction (défaut), 1 = quotient_familial, 2 = progressive_abatement.
+        """
+        method = int(PayrollParameterResolver.get_optional('TAX_CALCULATION_METHOD'))
+
+        if method == SalaryCalculator.TAX_METHOD_QUOTIENT_FAMILIAL:
+            return SalaryCalculator._calculate_tax_quotient_familial(
+                payslip, taxable_salary
+            )
+        elif method == SalaryCalculator.TAX_METHOD_ABATEMENT:
+            return SalaryCalculator._calculate_tax_with_abatement(
+                payslip, taxable_salary
+            )
+        else:
+            return SalaryCalculator._calculate_tax_progressive_deduction(
+                payslip, taxable_salary
+            )
+
+    @staticmethod
+    def _get_tax_brackets(payslip):
+        """Récupère les tranches d'imposition en vigueur."""
         today = payslip.payroll_run.period.end_date
-        brackets = (
+        return (
             TaxBracket.objects.filter(effective_date__lte=today)
             .filter(models.Q(end_date__isnull=True) | models.Q(end_date__gte=today))
             .order_by('min_amount')
         )
 
-        # Récupérer l'employé
-        employee = payslip.employee
-
-        # Calculer l'IR annuel
-        annual_salary = taxable_salary * 12
-
-        # Déductions pour charges de famille (depuis paramètres de paie)
-        family_deduction = Decimal('0')
-
-        spouse_deduction = PayrollParameterResolver.get_optional('SPOUSE_DEDUCTION')
-        child_deduction_unit = PayrollParameterResolver.get_optional('CHILD_DEDUCTION')
-        max_children = int(
-            PayrollParameterResolver.get_optional('MAX_DEPENDENT_CHILDREN')
-        )
-
-        # Si marié, déduction pour le conjoint
-        if employee.marital_status == 'married':
-            family_deduction += spouse_deduction
-
-        # Déduction pour enfants à charge
-        child_count = (
-            min(employee.dependent_children, max_children) if max_children > 0 else 0
-        )
-        child_deduction = child_count * child_deduction_unit
-        family_deduction += child_deduction
-
-        # Appliquer les déductions
-        taxable_annual = annual_salary - family_deduction
-        if taxable_annual < 0:
-            taxable_annual = Decimal('0')
-
-        # Calculer l'impôt selon les tranches
+    @staticmethod
+    def _apply_progressive_tax(taxable_annual, brackets):
+        """Applique le barème progressif par tranches avec somme à déduire."""
         tax = Decimal('0.0')
         for bracket in brackets:
-            if bracket.max_amount is None:  # Dernière tranche
+            if bracket.max_amount is None:
                 if taxable_annual > bracket.min_amount:
                     tax += (taxable_annual - bracket.min_amount) * (
                         bracket.rate / Decimal('100')
@@ -376,7 +372,7 @@ class SalaryCalculator:
                         bracket.rate / Decimal('100')
                     )
 
-        # Soustraire la somme à déduire si applicable
+        # Soustraire la somme à déduire de la tranche applicable
         for bracket in brackets:
             if hasattr(bracket, 'deduction'):
                 if bracket.max_amount is None and taxable_annual > bracket.min_amount:
@@ -389,7 +385,145 @@ class SalaryCalculator:
                     tax -= bracket.deduction
                     break
 
-        # Impôt mensuel (diviser par 12)
-        monthly_tax = tax / 12
+        return max(tax, Decimal('0.0'))
 
+    @staticmethod
+    def _calculate_tax_progressive_deduction(payslip, taxable_salary):
+        """
+        Méthode par défaut (0) : barème progressif + somme à déduire + déductions familiales.
+        Utilisée par : MA, CI, ML, TG, BJ, NE, GN, FR.
+        """
+        brackets = SalaryCalculator._get_tax_brackets(payslip)
+        employee = payslip.employee
+        annual_salary = taxable_salary * 12
+
+        # Déductions pour charges de famille
+        family_deduction = Decimal('0')
+        spouse_deduction = PayrollParameterResolver.get_optional('SPOUSE_DEDUCTION')
+        child_deduction_unit = PayrollParameterResolver.get_optional('CHILD_DEDUCTION')
+        max_children = int(
+            PayrollParameterResolver.get_optional('MAX_DEPENDENT_CHILDREN')
+        )
+
+        if employee.marital_status == 'married':
+            family_deduction += spouse_deduction
+
+        child_count = (
+            min(employee.dependent_children, max_children) if max_children > 0 else 0
+        )
+        family_deduction += child_count * child_deduction_unit
+
+        taxable_annual = max(annual_salary - family_deduction, Decimal('0'))
+        tax = SalaryCalculator._apply_progressive_tax(taxable_annual, brackets)
+
+        monthly_tax = tax / 12
+        return monthly_tax if monthly_tax > 0 else Decimal('0.0')
+
+    @staticmethod
+    def _calculate_tax_quotient_familial(payslip, taxable_salary):
+        """
+        Quotient familial (1) : revenu / nb_parts → barème → IR × nb_parts.
+        Puis abattement sur le brut et réduction pour charges de famille.
+        Utilisé par : SN, CM.
+        """
+        brackets = SalaryCalculator._get_tax_brackets(payslip)
+        employee = payslip.employee
+        annual_salary = taxable_salary * 12
+
+        # Abattement sur le revenu (SN : 30% plafonné à 900 000 XOF)
+        abatement_rate = PayrollParameterResolver.get_optional(
+            'TAX_GROSS_ABATEMENT_RATE'
+        )
+        if abatement_rate > 0:
+            abatement = annual_salary * abatement_rate / Decimal('100')
+            abatement_cap = PayrollParameterResolver.get_optional('TAX_ABATEMENT_CAP')
+            if abatement_cap > 0 and abatement > abatement_cap:
+                abatement = abatement_cap
+            annual_salary = max(annual_salary - abatement, Decimal('0'))
+
+        # Nombre de parts fiscales
+        parts_single = PayrollParameterResolver.get_optional('TAX_PARTS_SINGLE')
+        parts_married = PayrollParameterResolver.get_optional('TAX_PARTS_MARRIED')
+        parts_per_child = PayrollParameterResolver.get_optional('TAX_PARTS_PER_CHILD')
+        max_parts = PayrollParameterResolver.get_optional('TAX_MAX_PARTS')
+
+        if parts_single <= 0:
+            parts_single = Decimal('1.0')
+
+        if employee.marital_status == 'married':
+            parts = parts_married if parts_married > 0 else Decimal('2.0')
+        else:
+            parts = parts_single
+
+        parts += employee.dependent_children * parts_per_child
+        if max_parts > 0:
+            parts = min(parts, max_parts)
+
+        # Barème appliqué au revenu par part
+        revenue_per_part = annual_salary / parts if parts > 0 else annual_salary
+        tax_per_part = SalaryCalculator._apply_progressive_tax(
+            revenue_per_part, brackets
+        )
+
+        # IR brut = IR par part × nombre de parts
+        tax_brut = tax_per_part * parts
+
+        # Réduction pour charges de famille
+        reduction_rate = PayrollParameterResolver.get_optional(
+            'TAX_FAMILY_REDUCTION_RATE'
+        )
+        if reduction_rate > 0 and parts > Decimal('1.0'):
+            extra_half_parts = (parts - Decimal('1.0')) * 2
+            reduction_pct = extra_half_parts * reduction_rate
+            reduction_cap = PayrollParameterResolver.get_optional(
+                'TAX_FAMILY_REDUCTION_CAP'
+            )
+            reduction = tax_brut * reduction_pct / Decimal('100')
+            if reduction_cap > 0 and reduction > reduction_cap:
+                reduction = reduction_cap
+            tax_brut = max(tax_brut - reduction, Decimal('0'))
+
+        monthly_tax = tax_brut / 12
+        return monthly_tax if monthly_tax > 0 else Decimal('0.0')
+
+    @staticmethod
+    def _calculate_tax_with_abatement(payslip, taxable_salary):
+        """
+        Abattement sur le brut imposable + barème progressif (2).
+        Puis réduction pour charges de famille (BF : marié 8% + 2% par enfant, max 20%).
+        Utilisé par : BF.
+        """
+        brackets = SalaryCalculator._get_tax_brackets(payslip)
+        employee = payslip.employee
+        annual_salary = taxable_salary * 12
+
+        # Abattement sur le brut imposable (BF : 25%)
+        abatement_rate = PayrollParameterResolver.get_optional(
+            'TAX_GROSS_ABATEMENT_RATE'
+        )
+        if abatement_rate > 0:
+            abatement = annual_salary * abatement_rate / Decimal('100')
+            annual_salary = max(annual_salary - abatement, Decimal('0'))
+
+        tax_brut = SalaryCalculator._apply_progressive_tax(annual_salary, brackets)
+
+        # Réduction pour charges de famille (BF)
+        # Marié = 8%, + 2% par enfant, plafonné à 20%
+        reduction_rate = PayrollParameterResolver.get_optional(
+            'TAX_FAMILY_REDUCTION_RATE'
+        )
+        if reduction_rate > 0:
+            reduction_pct = Decimal('0')
+            if employee.marital_status == 'married':
+                reduction_pct += reduction_rate
+            child_rate = PayrollParameterResolver.get_optional('TAX_FAMILY_CHILD_RATE')
+            reduction_pct += min(employee.dependent_children, 6) * child_rate
+            reduction_cap = PayrollParameterResolver.get_optional(
+                'TAX_FAMILY_REDUCTION_CAP'
+            )
+            if reduction_cap > 0:
+                reduction_pct = min(reduction_pct, reduction_cap)
+            tax_brut = tax_brut * (Decimal('100') - reduction_pct) / Decimal('100')
+
+        monthly_tax = tax_brut / 12
         return monthly_tax if monthly_tax > 0 else Decimal('0.0')

@@ -113,6 +113,36 @@ PAYROLL_PARAMETERS = [
         'value': Decimal('0.00'),
         'description': 'Max enfants pour déduction (0 si quotient familial)',
     },
+    {
+        'code': 'TAX_CALCULATION_METHOD',
+        'name': 'Méthode de calcul fiscal',
+        'value': Decimal('2'),
+        'description': '0=progressif, 1=quotient familial, 2=abattement',
+    },
+    {
+        'code': 'TAX_GROSS_ABATEMENT_RATE',
+        'name': 'Taux abattement brut imposable',
+        'value': Decimal('25.00'),
+        'description': 'Abattement 25% sur le brut avant barème IUTS (CGI BF)',
+    },
+    {
+        'code': 'TAX_FAMILY_REDUCTION_RATE',
+        'name': 'Réduction charges famille - marié',
+        'value': Decimal('8.00'),
+        'description': 'Réduction IUTS pour contribuable marié (8%)',
+    },
+    {
+        'code': 'TAX_FAMILY_CHILD_RATE',
+        'name': 'Réduction charges famille - par enfant',
+        'value': Decimal('2.00'),
+        'description': 'Réduction IUTS par enfant à charge (2%)',
+    },
+    {
+        'code': 'TAX_FAMILY_REDUCTION_CAP',
+        'name': 'Plafond réduction familiale',
+        'value': Decimal('20.00'),
+        'description': 'Plafond de la réduction familiale en % (20% max = 7 personnes)',
+    },
 ]
 
 SALARY_COMPONENTS = [

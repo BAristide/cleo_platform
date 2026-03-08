@@ -226,6 +226,8 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             'contract_start_date',
             'contract_end_date',
             'probation_end_date',
+            'marital_status',
+            'dependent_children',
             'manager_id',
             'second_manager_id',
         ]

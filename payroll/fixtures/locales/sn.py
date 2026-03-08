@@ -112,6 +112,60 @@ PAYROLL_PARAMETERS = [
         'value': Decimal('0.00'),
         'description': 'Max enfants pour déduction (0 si quotient familial)',
     },
+    {
+        'code': 'TAX_CALCULATION_METHOD',
+        'name': 'Méthode de calcul fiscal',
+        'value': Decimal('1'),
+        'description': '0=progressif, 1=quotient familial, 2=abattement',
+    },
+    {
+        'code': 'TAX_PARTS_SINGLE',
+        'name': 'Parts fiscales - célibataire',
+        'value': Decimal('1.0'),
+        'description': 'Nombre de parts pour un célibataire sans enfant',
+    },
+    {
+        'code': 'TAX_PARTS_MARRIED',
+        'name': 'Parts fiscales - marié',
+        'value': Decimal('2.0'),
+        'description': 'Nombre de parts pour un couple marié',
+    },
+    {
+        'code': 'TAX_PARTS_PER_CHILD',
+        'name': 'Parts fiscales - par enfant',
+        'value': Decimal('0.5'),
+        'description': 'Nombre de parts supplémentaires par enfant à charge',
+    },
+    {
+        'code': 'TAX_MAX_PARTS',
+        'name': 'Maximum de parts fiscales',
+        'value': Decimal('5.0'),
+        'description': 'Nombre maximum de parts fiscales autorisé',
+    },
+    {
+        'code': 'TAX_GROSS_ABATEMENT_RATE',
+        'name': 'Taux abattement revenu brut',
+        'value': Decimal('30.00'),
+        'description': 'Abattement 30% frais professionnels (CGI SN art. 57)',
+    },
+    {
+        'code': 'TAX_ABATEMENT_CAP',
+        'name': 'Plafond abattement',
+        'value': Decimal('900000.00'),
+        'description': 'Plafond annuel abattement 30% (900 000 XOF)',
+    },
+    {
+        'code': 'TAX_FAMILY_REDUCTION_RATE',
+        'name': 'Taux réduction familiale',
+        'value': Decimal('10.00'),
+        'description': 'Taux réduction IR par demi-part supplémentaire (%)',
+    },
+    {
+        'code': 'TAX_FAMILY_REDUCTION_CAP',
+        'name': 'Plafond réduction familiale',
+        'value': Decimal('0.00'),
+        'description': 'Plafond global (0 = pas de plafond)',
+    },
 ]
 
 SALARY_COMPONENTS = [

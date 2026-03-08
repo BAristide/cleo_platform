@@ -90,7 +90,7 @@ class PayrollParameterResolver:
 
     @staticmethod
     def clear_cache():
-        """Invalide le cache — à appeler après modification des paramètres en admin."""
-        all_codes = REQUIRED_PARAMS + list(OPTIONAL_PARAMS_DEFAULTS.keys())
+        """Invalide le cache de tous les paramètres en base (dynamique, pas de liste hardcodée)."""
+        all_codes = list(PayrollParameter.objects.values_list('code', flat=True))
         for code in all_codes:
             cache.delete(f'payroll_param_{code}')

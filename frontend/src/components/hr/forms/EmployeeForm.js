@@ -1,7 +1,7 @@
 // src/components/hr/forms/EmployeeForm.js
 import React, { useState, useEffect } from 'react';
 import {
-  Form, Input, Button, Select, DatePicker, Switch,
+  Form, Input, InputNumber, Button, Select, DatePicker, Switch,
   Card, Row, Col, Typography, message, Spin, Space
 } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -93,6 +93,8 @@ const EmployeeForm = () => {
             manager_id:        emp.manager ? emp.manager.id : null,
             second_manager_id: emp.second_manager ? emp.second_manager.id : null,
             user_id:           emp.user ? emp.user.id : null,
+            marital_status:     emp.marital_status || 'single',
+            dependent_children: emp.dependent_children || 0,
             is_active:         emp.is_active,
             is_hr:             emp.is_hr,
             is_finance:        emp.is_finance,
@@ -164,7 +166,7 @@ const EmployeeForm = () => {
         form={form}
         layout="vertical"
         onFinish={onFinish}
-        initialValues={{ is_active: true, is_hr: false, is_finance: false }}
+        initialValues={{ is_active: true, is_hr: false, is_finance: false, marital_status: 'single', dependent_children: 0 }}
       >
         <Title level={4}>Informations personnelles</Title>
         <Row gutter={16}>
@@ -223,6 +225,25 @@ const EmployeeForm = () => {
         <Form.Item name="address" label="Adresse">
           <TextArea rows={3} />
         </Form.Item>
+
+        <Title level={4} style={{ marginTop: 24 }}>Situation familiale</Title>
+        <Row gutter={16}>
+          <Col xs={24} sm={12}>
+            <Form.Item name="marital_status" label="Statut matrimonial">
+              <Select placeholder="Sélectionnez le statut" allowClear>
+                <Option value="single">Célibataire</Option>
+                <Option value="married">Marié(e)</Option>
+                <Option value="divorced">Divorcé(e)</Option>
+                <Option value="widowed">Veuf/Veuve</Option>
+              </Select>
+            </Form.Item>
+          </Col>
+          <Col xs={24} sm={12}>
+            <Form.Item name="dependent_children" label="Enfants à charge">
+              <InputNumber min={0} max={20} style={{ width: '100%' }} placeholder="0" />
+            </Form.Item>
+          </Col>
+        </Row>
 
         <Title level={4} style={{ marginTop: 24 }}>Informations professionnelles</Title>
         <Row gutter={16}>

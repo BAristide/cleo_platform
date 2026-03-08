@@ -91,7 +91,7 @@ const CompanyTab = () => {
             <Text type="secondary">Pack de localisation</Text>
             <div>
               <Tag color="blue" style={{ fontSize: 14, padding: '4px 12px', marginTop: 4 }}>
-                <GlobalOutlined /> {companyData?.locale_pack || '—'}
+                <GlobalOutlined /> {companyData?.accounting_pack || '—'}
               </Tag>
             </div>
           </Col>
@@ -661,7 +661,7 @@ const SystemTab = () => {
           <Tag color="blue" style={{ fontSize: 14 }}>v{info.version}</Tag>
         </Descriptions.Item>
         <Descriptions.Item label="Pack de localisation">
-          <Tag color="green">{info.locale_pack || '—'}</Tag>
+          <Tag color="green">{info.accounting_pack || '—'}</Tag>
         </Descriptions.Item>
         <Descriptions.Item label="Entreprise">{info.company_name || '—'}</Descriptions.Item>
         <Descriptions.Item label="Verrouillage">

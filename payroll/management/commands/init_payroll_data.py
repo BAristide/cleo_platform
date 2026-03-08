@@ -1,6 +1,6 @@
 """
 Commande d'initialisation des données de paie.
-Charge les fixtures génériques + les fixtures spécifiques au locale_pack.
+Charge les fixtures génériques + les fixtures spécifiques au pays (payroll_fixture).
 """
 
 import importlib
@@ -78,8 +78,20 @@ class Command(BaseCommand):
             from core.models import CompanySetup
 
             setup = CompanySetup.objects.first()
-            if setup and setup.locale_pack:
-                return setup.locale_pack
+            if setup and setup.accounting_pack:
+                # Rétrocompatibilité : retourner le payroll_fixture depuis COUNTRY_PACKS
+                try:
+                    from core.views import COUNTRY_PACKS
+
+                    country = setup.country_code or setup.accounting_pack
+                    info = COUNTRY_PACKS.get(country)
+                    if info:
+                        return info['payroll_fixture']
+                except Exception:
+                    pass
+                # Alias historiques
+                _legacy = {'OHADA': 'ci', 'MA': 'ma', 'FR': 'fr'}
+                return _legacy.get(setup.accounting_pack, setup.accounting_pack.lower())
         except Exception:
             pass
         self.stdout.write(

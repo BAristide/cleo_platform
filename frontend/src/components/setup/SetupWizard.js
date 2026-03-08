@@ -6,22 +6,17 @@ import axios from '../../utils/axiosConfig';
 const { Title, Text, Paragraph } = Typography;
 const { Step } = Steps;
 
-const PACK_COLORS = {
-  MA: '#c1272d',
+/* Couleurs par pack comptable — appliquées à tous les pays du même pack */
+const ACCOUNTING_PACK_COLORS = {
   OHADA: '#00804a',
+  MA: '#c1272d',
   FR: '#003399',
-};
-
-const PACK_COUNTRIES = {
-  MA: 'Maroc',
-  OHADA: "Côte d'Ivoire",
-  FR: 'France',
 };
 
 const SetupWizard = () => {
   const [current, setCurrent] = useState(0);
-  const [packs, setPacks] = useState([]);
-  const [selectedPack, setSelectedPack] = useState(null);
+  const [countries, setCountries] = useState([]);
+  const [selectedCountry, setSelectedCountry] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [setupDone, setSetupDone] = useState(false);
@@ -30,48 +25,46 @@ const SetupWizard = () => {
   const [form] = Form.useForm();
 
   useEffect(() => {
-    const fetchPacks = async () => {
+    const fetchCountries = async () => {
       try {
         const res = await axios.get('/api/core/setup/packs/');
-        setPacks(res.data);
+        setCountries(res.data);
       } catch (err) {
-        message.error('Impossible de charger les packs de localisation');
+        message.error('Impossible de charger la liste des pays');
       } finally {
         setLoading(false);
       }
     };
-    fetchPacks();
+    fetchCountries();
   }, []);
 
   useEffect(() => {
-    if (selectedPack) {
-      const pack = packs.find(p => p.code === selectedPack);
-      if (pack) {
+    if (selectedCountry) {
+      const country = countries.find(c => c.code === selectedCountry);
+      if (country) {
         const labels = {};
-        pack.legal_id_labels.forEach((label, i) => {
+        country.legal_id_labels.forEach((label, i) => {
           labels[`legal_id_${i + 1}_label`] = label;
         });
-        labels.country = PACK_COUNTRIES[selectedPack] || '';
+        labels.country = country.country_name || country.name || '';
         form.setFieldsValue(labels);
       }
     }
-  }, [selectedPack, packs, form]);
+  }, [selectedCountry, countries, form]);
 
   const handleSubmit = async () => {
     try {
       const values = form.getFieldsValue(true);
       setSubmitting(true);
 
-      // Normaliser le site web : ajouter https:// si absent
       let website = (values.website || '').trim();
       if (website && !/^https?:\/\//i.test(website)) {
         website = 'https://' + website;
       }
 
       const payload = {
-        locale_pack: selectedPack,
+        country_code: selectedCountry,
         company_name: values.company_name,
-        country_code: values.country_code || selectedPack,
         address_line1: values.address_line1 || '',
         address_line2: values.address_line2 || '',
         city: values.city || '',
@@ -129,8 +122,8 @@ const SetupWizard = () => {
   };
 
   const next = () => {
-    if (current === 0 && !selectedPack) {
-      message.warning('Veuillez sélectionner un pack de localisation');
+    if (current === 0 && !selectedCountry) {
+      message.warning('Veuillez sélectionner un pays');
       return;
     }
     if (current === 1) {
@@ -143,8 +136,6 @@ const SetupWizard = () => {
   };
 
   const prev = () => setCurrent(current - 1);
-
-  // ── Écran de succès ───────────────────────────────────────────────
 
   if (setupDone) {
     const details = setupResult?.details || {};
@@ -173,8 +164,6 @@ const SetupWizard = () => {
     );
   }
 
-  // ── Loading ───────────────────────────────────────────────────────
-
   if (loading) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f5f6f8' }}>
@@ -183,34 +172,32 @@ const SetupWizard = () => {
     );
   }
 
-  // ── Wizard ────────────────────────────────────────────────────────
-
-  const packInfo = packs.find(p => p.code === selectedPack);
-  const packColor = PACK_COLORS[selectedPack] || '#1890ff';
+  const countryInfo = countries.find(c => c.code === selectedCountry);
+  const packColor = countryInfo ? (ACCOUNTING_PACK_COLORS[countryInfo.accounting_pack] || '#1890ff') : '#1890ff';
 
   const steps = [
     {
-      title: 'Localisation',
+      title: 'Pays',
       icon: <GlobalOutlined />,
       content: (
         <div>
-          <Title level={4} style={{ marginBottom: 8 }}>Pack de localisation</Title>
+          <Title level={4} style={{ marginBottom: 8 }}>Pays de localisation</Title>
           <Paragraph type="secondary" style={{ marginBottom: 24 }}>
-            Détermine le plan comptable, les taxes, la devise par défaut et les identifiants légaux applicables.
+            Détermine le plan comptable, les taxes, la paie, la devise et les identifiants légaux applicables.
           </Paragraph>
           <Radio.Group
-            value={selectedPack}
-            onChange={e => setSelectedPack(e.target.value)}
+            value={selectedCountry}
+            onChange={e => setSelectedCountry(e.target.value)}
             style={{ width: '100%' }}
           >
             <Space direction="vertical" style={{ width: '100%' }} size={12}>
-              {packs.map(pack => {
-                const color = PACK_COLORS[pack.code] || '#1890ff';
-                const isSelected = selectedPack === pack.code;
+              {countries.map(country => {
+                const color = ACCOUNTING_PACK_COLORS[country.accounting_pack] || '#1890ff';
+                const isSelected = selectedCountry === country.code;
                 return (
                   <Radio.Button
-                    key={pack.code}
-                    value={pack.code}
+                    key={country.code}
+                    value={country.code}
                     style={{
                       width: '100%',
                       height: 'auto',
@@ -223,16 +210,16 @@ const SetupWizard = () => {
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: 15, color: isSelected ? color : '#262626' }}>{pack.name}</div>
+                        <div style={{ fontWeight: 600, fontSize: 15, color: isSelected ? color : '#262626' }}>{country.name}</div>
                         <div style={{ color: '#8c8c8c', fontSize: 13, marginTop: 2 }}>
-                          {pack.chart_of_accounts} — {pack.default_currency}
+                          {country.chart_of_accounts} — {country.default_currency}
                         </div>
                         <div style={{ color: '#bfbfbf', fontSize: 12, marginTop: 2 }}>
-                          {pack.taxes_summary}
+                          {country.taxes_summary}
                         </div>
                       </div>
                       <Tag color={isSelected ? color : 'default'} style={{ fontWeight: 600, fontSize: 13, margin: 0 }}>
-                        {pack.code}
+                        {country.code}
                       </Tag>
                     </div>
                   </Radio.Button>
@@ -312,9 +299,9 @@ const SetupWizard = () => {
               </Col>
             </Row>
 
-            <Divider orientation="left" plain style={{ fontSize: 13 }}>Identifiants légaux — {packInfo?.name || ''}</Divider>
+            <Divider orientation="left" plain style={{ fontSize: 13 }}>Identifiants légaux — {countryInfo?.name || ''}</Divider>
 
-            {(packInfo?.legal_id_labels || []).map((label, i) => (
+            {(countryInfo?.legal_id_labels || []).map((label, i) => (
               <Row gutter={16} key={i}>
                 <Col span={8}>
                   <Form.Item name={`legal_id_${i + 1}_label`} label={i === 0 ? 'Type' : ''}>
@@ -365,22 +352,22 @@ const SetupWizard = () => {
           <Card size="small" style={{ marginBottom: 16, borderLeft: `3px solid ${packColor}` }}>
             <Row gutter={16}>
               <Col span={12}>
-                <Text type="secondary" style={{ fontSize: 12 }}>Pack de localisation</Text>
-                <div style={{ fontSize: 15, fontWeight: 600 }}>{packInfo?.name}</div>
+                <Text type="secondary" style={{ fontSize: 12 }}>Pays</Text>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>{countryInfo?.name}</div>
               </Col>
               <Col span={12}>
                 <Text type="secondary" style={{ fontSize: 12 }}>Devise par défaut</Text>
-                <div style={{ fontSize: 15, fontWeight: 600 }}>{packInfo?.default_currency}</div>
+                <div style={{ fontSize: 15, fontWeight: 600 }}>{countryInfo?.default_currency}</div>
               </Col>
             </Row>
             <Row gutter={16} style={{ marginTop: 12 }}>
               <Col span={12}>
                 <Text type="secondary" style={{ fontSize: 12 }}>Plan comptable</Text>
-                <div style={{ fontSize: 13 }}>{packInfo?.chart_of_accounts}</div>
+                <div style={{ fontSize: 13 }}>{countryInfo?.chart_of_accounts}</div>
               </Col>
               <Col span={12}>
                 <Text type="secondary" style={{ fontSize: 12 }}>Taxes</Text>
-                <div style={{ fontSize: 13 }}>{packInfo?.taxes_summary}</div>
+                <div style={{ fontSize: 13 }}>{countryInfo?.taxes_summary}</div>
               </Col>
             </Row>
           </Card>
@@ -414,7 +401,7 @@ const SetupWizard = () => {
           <Alert
             type="info"
             showIcon
-            message="Le pack de localisation ne pourra plus être modifié après la première écriture comptable."
+            message="Le pays de localisation ne pourra plus être modifié après la première écriture comptable."
             style={{ marginTop: 16 }}
           />
         </div>

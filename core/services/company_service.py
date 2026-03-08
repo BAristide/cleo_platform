@@ -67,7 +67,7 @@ def get_company_context():
         'bank_name': setup.bank_name or '',
         'bank_account': setup.bank_account or '',
         'bank_swift': setup.bank_swift or '',
-        'locale_pack': setup.locale_pack or '',
+        'accounting_pack': setup.accounting_pack or '',
     }
 
 
@@ -92,5 +92,5 @@ def _get_fallback_context():
         'bank_name': '',
         'bank_account': '',
         'bank_swift': '',
-        'locale_pack': '',
+        'accounting_pack': '',
     }

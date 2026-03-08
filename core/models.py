@@ -226,16 +226,11 @@ class CompanySetup(models.Model):
         max_length=5,
         help_text=_('Code ISO du pays (MA, CI, SN, FR...)'),
     )
-    locale_pack = models.CharField(
-        _('Pack de localisation'),
+    accounting_pack = models.CharField(
+        _('Pack comptable'),
         max_length=10,
-        choices=[
-            ('MA', _('Maroc')),
-            ('OHADA', _('OHADA — Afrique francophone')),
-            ('FR', _('France')),
-        ],
+        help_text=_('Pack comptable (OHADA, MA, FR)'),
     )
-
     # ── Adresse ──────────────────────────────────────────────────────
     address_line1 = models.CharField(_('Adresse ligne 1'), max_length=200, blank=True)
     address_line2 = models.CharField(_('Adresse ligne 2'), max_length=200, blank=True)
@@ -300,7 +295,7 @@ class CompanySetup(models.Model):
         verbose_name_plural = _('Configurations entreprise')
 
     def __str__(self):
-        return f'{self.company_name} ({self.locale_pack})'
+        return f'{self.company_name} ({self.accounting_pack} / {self.country_code})'
 
     def get_legal_ids(self):
         """Retourne la liste des identifiants légaux non vides."""

@@ -5,14 +5,14 @@ from hr.models import PublicHoliday
 
 
 class Command(BaseCommand):
-    help = 'Charge les jours feries initiaux pour un pack de localisation donne'
+    help = 'Charge les jours feries initiaux pour un pays donne'
 
     def add_arguments(self, parser):
         parser.add_argument(
             '--pack',
             type=str,
             required=True,
-            help='Code du pack : MA, OHADA ou FR',
+            help='Code pays (CI, MA, FR, SN, etc.) ou ancien code pack (OHADA)',
         )
         parser.add_argument(
             '--force',
@@ -21,14 +21,20 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        from core.views import _get_public_holidays_for_pack
+        from core.views import _get_public_holidays_for_country
 
         pack = options['pack'].upper()
-        holidays = _get_public_holidays_for_pack(pack)
+        # Rétrocompatibilité : OHADA → CI
+        _legacy = {'OHADA': 'CI'}
+        country_code = _legacy.get(pack, pack)
+
+        holidays = _get_public_holidays_for_country(country_code)
 
         if not holidays:
             self.stdout.write(
-                self.style.WARNING(f'Aucun jours feries definis pour le pack {pack}.')
+                self.style.WARNING(
+                    f'Aucun jours feries definis pour le pays {country_code}.'
+                )
             )
             return
 
@@ -39,18 +45,18 @@ class Command(BaseCommand):
                 date=h['date'],
                 defaults={
                     'is_recurring': h['is_recurring'],
-                    'country_code': pack,
+                    'country_code': country_code,
                 },
             )
             if is_new:
                 created += 1
             elif options['force']:
-                obj.country_code = pack
+                obj.country_code = country_code
                 obj.save(update_fields=['country_code'])
                 updated += 1
 
         self.stdout.write(
             self.style.SUCCESS(
-                f'{created} jours feries crees, {updated} mis a jour (pack {pack})'
+                f'{created} jours feries crees, {updated} mis a jour (pays {country_code})'
             )
         )

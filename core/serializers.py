@@ -78,7 +78,8 @@ class SetupStatusSerializer(serializers.Serializer):
     """Retourne l'état du setup."""
 
     setup_completed = serializers.BooleanField()
-    locale_pack = serializers.CharField(allow_null=True)
+    accounting_pack = serializers.CharField(allow_null=True)
+    country_code = serializers.CharField(allow_null=True)
     company_name = serializers.CharField(allow_null=True)
     is_locked = serializers.BooleanField()
 
@@ -89,10 +90,12 @@ class LocalePackInfoSerializer(serializers.Serializer):
     code = serializers.CharField()
     name = serializers.CharField()
     country_name = serializers.CharField()
+    accounting_pack = serializers.CharField()
     chart_of_accounts = serializers.CharField()
     default_currency = serializers.CharField()
     taxes_summary = serializers.CharField()
     legal_id_labels = serializers.ListField(child=serializers.CharField())
+    payroll_fixture = serializers.CharField()
 
 
 class CompanySetupSerializer(serializers.ModelSerializer):
@@ -109,7 +112,7 @@ class CompanySetupSerializer(serializers.ModelSerializer):
             'id',
             'company_name',
             'country_code',
-            'locale_pack',
+            'accounting_pack',
             'address_line1',
             'address_line2',
             'city',
@@ -139,7 +142,7 @@ class CompanySetupSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'setup_completed', 'setup_date', 'is_locked']
         extra_kwargs = {
             'country_code': {'required': False},
-            'locale_pack': {'required': False},
+            'accounting_pack': {'required': False},
             'address_line1': {'required': False},
             'address_line2': {'required': False},
             'city': {'required': False},
@@ -177,7 +180,7 @@ class CompanyInfoSerializer(serializers.ModelSerializer):
         fields = [
             'id',
             'company_name',
-            'locale_pack',
+            'accounting_pack',
             'country_code',
             'address_line1',
             'address_line2',
@@ -204,7 +207,7 @@ class CompanyInfoSerializer(serializers.ModelSerializer):
             'currency_code',
             'currency_symbol',
         ]
-        read_only_fields = ['id', 'locale_pack', 'country_code', 'is_locked']
+        read_only_fields = ['id', 'accounting_pack', 'country_code', 'is_locked']
 
     def get_legal_ids(self, obj):
         return obj.get_legal_ids()

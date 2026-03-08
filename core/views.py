@@ -37,33 +37,131 @@ logger = logging.getLogger(__name__)
 
 # ── Packs disponibles (métadonnées statiques) ───────────────────────
 
-AVAILABLE_PACKS = {
+ACCOUNTING_PACKS = {
+    'OHADA': {
+        'name': 'SYSCOHADA révisé (2018)',
+        'description': "Plan comptable commun aux 17 pays de l'espace OHADA",
+    },
+    'MA': {
+        'name': 'PCGE Maroc',
+        'description': 'Plan comptable général des entreprises du Maroc',
+    },
+    'FR': {
+        'name': 'PCG ANC 2025',
+        'description': 'Plan comptable général France (ANC)',
+    },
+}
+
+COUNTRY_PACKS = {
+    'CI': {
+        'code': 'CI',
+        'name': "Côte d'Ivoire",
+        'country_name': "Côte d'Ivoire",
+        'accounting_pack': 'OHADA',
+        'chart_of_accounts': 'SYSCOHADA révisé (2018)',
+        'default_currency': 'XOF',
+        'taxes_summary': 'TVA 18%, 9%, 0%',
+        'legal_id_labels': ['RCCM', 'NCC', 'IDU'],
+        'payroll_fixture': 'ci',
+    },
+    'SN': {
+        'code': 'SN',
+        'name': 'Sénégal',
+        'country_name': 'Sénégal',
+        'accounting_pack': 'OHADA',
+        'chart_of_accounts': 'SYSCOHADA révisé (2018)',
+        'default_currency': 'XOF',
+        'taxes_summary': 'TVA 18%, 10%, 0%',
+        'legal_id_labels': ['NINEA', 'RCCM', 'RC'],
+        'payroll_fixture': 'sn',
+    },
+    'ML': {
+        'code': 'ML',
+        'name': 'Mali',
+        'country_name': 'Mali',
+        'accounting_pack': 'OHADA',
+        'chart_of_accounts': 'SYSCOHADA révisé (2018)',
+        'default_currency': 'XOF',
+        'taxes_summary': 'TVA 18%, 0%',
+        'legal_id_labels': ['NINA', 'RCCM', 'NIF'],
+        'payroll_fixture': 'ml',
+    },
+    'BF': {
+        'code': 'BF',
+        'name': 'Burkina Faso',
+        'country_name': 'Burkina Faso',
+        'accounting_pack': 'OHADA',
+        'chart_of_accounts': 'SYSCOHADA révisé (2018)',
+        'default_currency': 'XOF',
+        'taxes_summary': 'TVA 18%, 0%',
+        'legal_id_labels': ['IFU', 'RCCM', 'CNSS'],
+        'payroll_fixture': 'bf',
+    },
+    'TG': {
+        'code': 'TG',
+        'name': 'Togo',
+        'country_name': 'Togo',
+        'accounting_pack': 'OHADA',
+        'chart_of_accounts': 'SYSCOHADA révisé (2018)',
+        'default_currency': 'XOF',
+        'taxes_summary': 'TVA 18%, 0%',
+        'legal_id_labels': ['NIF', 'RCCM'],
+        'payroll_fixture': 'tg',
+    },
+    'BJ': {
+        'code': 'BJ',
+        'name': 'Bénin',
+        'country_name': 'Bénin',
+        'accounting_pack': 'OHADA',
+        'chart_of_accounts': 'SYSCOHADA révisé (2018)',
+        'default_currency': 'XOF',
+        'taxes_summary': 'TVA 18%, 0%',
+        'legal_id_labels': ['IFU', 'RCCM'],
+        'payroll_fixture': 'bj',
+    },
+    'NE': {
+        'code': 'NE',
+        'name': 'Niger',
+        'country_name': 'Niger',
+        'accounting_pack': 'OHADA',
+        'chart_of_accounts': 'SYSCOHADA révisé (2018)',
+        'default_currency': 'XOF',
+        'taxes_summary': 'TVA 19%, 0%',
+        'legal_id_labels': ['NIF', 'RCCM'],
+        'payroll_fixture': 'ne',
+    },
+    'GN': {
+        'code': 'GN',
+        'name': 'Guinée',
+        'country_name': 'Guinée',
+        'accounting_pack': 'OHADA',
+        'chart_of_accounts': 'SYSCOHADA révisé (2018)',
+        'default_currency': 'GNF',
+        'taxes_summary': 'TVA 18%, 0%',
+        'legal_id_labels': ['NIF', 'RCCM'],
+        'payroll_fixture': 'gn',
+    },
     'MA': {
         'code': 'MA',
         'name': 'Maroc',
         'country_name': 'Maroc',
+        'accounting_pack': 'MA',
         'chart_of_accounts': 'PCG Maroc (PCGE)',
         'default_currency': 'MAD',
         'taxes_summary': 'TVA 20%, 14%, 10%, 7%, 0%',
         'legal_id_labels': ['RC', 'IF', 'Patente', 'ICE'],
-    },
-    'OHADA': {
-        'code': 'OHADA',
-        'name': 'OHADA — Afrique francophone',
-        'country_name': "Côte d'Ivoire / Zone OHADA",
-        'chart_of_accounts': 'SYSCOHADA révisé (2018)',
-        'default_currency': 'XOF',
-        'taxes_summary': 'TVA 18%, 0%',
-        'legal_id_labels': ['RCCM', 'NCC', 'IDU'],
+        'payroll_fixture': 'ma',
     },
     'FR': {
         'code': 'FR',
         'name': 'France',
         'country_name': 'France',
+        'accounting_pack': 'FR',
         'chart_of_accounts': 'PCG France (ANC)',
         'default_currency': 'EUR',
         'taxes_summary': 'TVA 20%, 10%, 5.5%, 2.1%, 0%',
         'legal_id_labels': ['SIRET', 'SIREN', 'Code APE', 'TVA Intra.'],
+        'payroll_fixture': 'fr',
     },
 }
 
@@ -254,7 +352,7 @@ class SystemInfoView(APIView):
 
         data = {
             'version': django_settings.VERSION,
-            'locale_pack': setup.locale_pack if setup else None,
+            'accounting_pack': setup.accounting_pack if setup else None,
             'company_name': setup.company_name if setup else None,
             'is_locked': setup.is_locked if setup else False,
             'setup_date': setup.setup_date if setup else None,
@@ -294,14 +392,16 @@ class SetupStatusView(APIView):
         if setup:
             data = {
                 'setup_completed': setup.setup_completed,
-                'locale_pack': setup.locale_pack,
+                'accounting_pack': setup.accounting_pack,
+                'country_code': setup.country_code,
                 'company_name': setup.company_name,
                 'is_locked': setup.is_locked,
             }
         else:
             data = {
                 'setup_completed': False,
-                'locale_pack': None,
+                'accounting_pack': None,
+                'country_code': None,
                 'company_name': None,
                 'is_locked': False,
             }
@@ -315,16 +415,16 @@ class SetupPacksView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        packs = list(AVAILABLE_PACKS.values())
+        packs = list(COUNTRY_PACKS.values())
         serializer = LocalePackInfoSerializer(packs, many=True)
         return Response(serializer.data)
 
 
-def _get_public_holidays_for_pack(pack: str) -> list:
+def _get_public_holidays_for_country(country_code: str) -> list:
     """
-    Retourne la liste des jours feries initiaux pour le pack donne.
+    Retourne la liste des jours feries initiaux pour le pays donne.
     Utilise par _load_locale_pack() et par la commande load_public_holidays.
-    Pack-independant : aucune logique metier nationale en dehors de ce dictionnaire.
+    Indexe par country_code (CI, MA, FR, etc.).
     """
     PUBLIC_HOLIDAYS_MA = [
         {'name': 'Nouvel An', 'date': '2024-01-01', 'is_recurring': True},
@@ -362,12 +462,21 @@ def _get_public_holidays_for_pack(pack: str) -> list:
         {'name': 'Armistice', 'date': '2024-11-11', 'is_recurring': True},
         {'name': 'Noel', 'date': '2024-12-25', 'is_recurring': True},
     ]
-    HOLIDAYS_BY_PACK = {
+    HOLIDAYS_BY_COUNTRY = {
+        'CI': PUBLIC_HOLIDAYS_OHADA,
         'MA': PUBLIC_HOLIDAYS_MA,
-        'OHADA': PUBLIC_HOLIDAYS_OHADA,
         'FR': PUBLIC_HOLIDAYS_FR,
     }
-    return HOLIDAYS_BY_PACK.get(pack.upper(), [])
+    return HOLIDAYS_BY_COUNTRY.get(country_code.upper(), [])
+
+
+# Alias rétrocompatibilité
+def _get_public_holidays_for_pack(pack: str) -> list:
+    """Alias rétrocompatibilité → _get_public_holidays_for_country."""
+    _pack_to_country = {'OHADA': 'CI', 'MA': 'MA', 'FR': 'FR'}
+    return _get_public_holidays_for_country(
+        _pack_to_country.get(pack.upper(), pack.upper())
+    )
 
 
 class SetupCreateView(APIView):
@@ -389,22 +498,27 @@ class SetupCreateView(APIView):
                 status=status.HTTP_409_CONFLICT,
             )
 
-        locale_pack = request.data.get('locale_pack')
-        if locale_pack not in AVAILABLE_PACKS:
+        country_code = request.data.get('country_code') or request.data.get(
+            'locale_pack'
+        )
+        if country_code not in COUNTRY_PACKS:
             return Response(
                 {
                     'error': (
-                        f'Pack inconnu : {locale_pack}. Disponibles : '
-                        f'{list(AVAILABLE_PACKS.keys())}'
+                        f'Pays inconnu : {country_code}. Disponibles : '
+                        f'{list(COUNTRY_PACKS.keys())}'
                     )
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        pack_info = AVAILABLE_PACKS[locale_pack]
+        pack_info = COUNTRY_PACKS[country_code]
+        accounting_pack = pack_info['accounting_pack']
         install_demo = request.data.get('install_demo', False)
 
         data = request.data.copy()
+        data['country_code'] = country_code
+        data['accounting_pack'] = accounting_pack
         labels = pack_info['legal_id_labels']
         for i, label in enumerate(labels, start=1):
             data.setdefault(f'legal_id_{i}_label', label)
@@ -419,8 +533,8 @@ class SetupCreateView(APIView):
 
         setup = CompanySetup(
             company_name=serializer.validated_data['company_name'],
-            country_code=serializer.validated_data.get('country_code', locale_pack),
-            locale_pack=locale_pack,
+            country_code=country_code,
+            accounting_pack=accounting_pack,
             address_line1=serializer.validated_data.get('address_line1', ''),
             address_line2=serializer.validated_data.get('address_line2', ''),
             city=serializer.validated_data.get('city', ''),
@@ -445,9 +559,9 @@ class SetupCreateView(APIView):
         setup.save()
 
         try:
-            result = self._load_locale_pack(locale_pack, install_demo)
+            result = self._load_locale_pack(country_code, install_demo)
         except Exception as e:
-            logger.exception(f'Erreur lors du chargement du pack {locale_pack}')
+            logger.exception(f'Erreur lors du chargement du pack {country_code}')
             setup.delete()
             return Response(
                 {'error': f'Erreur lors du chargement du pack : {str(e)}'},
@@ -463,8 +577,7 @@ class SetupCreateView(APIView):
             try:
                 from sales.models import BankAccount
 
-                pack_currencies = {'MA': 'MAD', 'OHADA': 'XOF', 'FR': 'EUR'}
-                currency_code = pack_currencies.get(setup.locale_pack, 'MAD')
+                currency_code = pack_info.get('default_currency', 'MAD')
                 currency = Currency.objects.filter(code=currency_code).first()
                 if currency:
                     BankAccount.objects.get_or_create(
@@ -489,10 +602,14 @@ class SetupCreateView(APIView):
             status=status.HTTP_201_CREATED,
         )
 
-    def _load_locale_pack(self, locale_pack, install_demo=False):
+    def _load_locale_pack(self, country_code, install_demo=False):
         from accounting.services.init_accounting_service import InitAccountingService
 
-        init_service = InitAccountingService(locale_pack=locale_pack, force=False)
+        country_info = COUNTRY_PACKS[country_code]
+        accounting_pack = country_info['accounting_pack']
+        payroll_fixture = country_info['payroll_fixture']
+
+        init_service = InitAccountingService(locale_pack=accounting_pack, force=False)
         init_service.init_all()
 
         # ── Chargement des mappings de comptes (AccountMapping) ─────────
@@ -505,7 +622,7 @@ class SetupCreateView(APIView):
                 django_settings.BASE_DIR,
                 'accounting',
                 'fixtures',
-                f'mappings_{locale_pack}.json',
+                f'mappings_{accounting_pack}.json',
             )
             if os.path.exists(fixture_path):
                 with open(fixture_path, encoding='utf-8') as _f:
@@ -524,21 +641,23 @@ class SetupCreateView(APIView):
                         if _is_new:
                             _created += 1
                 logger.info(
-                    f'AccountMapping: {_created} rôles créés pour le pack {locale_pack}'
+                    f'AccountMapping: {_created} rôles créés pour le pack {accounting_pack}'
                 )
             else:
                 logger.warning(
-                    f'Aucun fichier de mappings trouvé pour le pack {locale_pack}: {fixture_path}'
+                    f'Aucun fichier de mappings trouvé pour le pack {accounting_pack}: {fixture_path}'
                 )
         except Exception as e:
-            logger.warning(f'Mappings de comptes non chargés pour {locale_pack}: {e}')
+            logger.warning(
+                f'Mappings de comptes non chargés pour {accounting_pack}: {e}'
+            )
 
         try:
             from django.core.management import call_command
 
-            call_command('init_payroll_data', '--locale', locale_pack, '--force')
+            call_command('init_payroll_data', '--locale', payroll_fixture, '--force')
         except Exception as e:
-            logger.warning(f'Paie non initialisée pour {locale_pack}: {e}')
+            logger.warning(f'Paie non initialisée pour {country_code}: {e}')
 
         # ── Données de référence CRM (SalesStage, ActivityType) ────────
         try:
@@ -606,15 +725,50 @@ class SetupCreateView(APIView):
             from inventory.models import Warehouse
 
             WAREHOUSE_DEFAULTS = {
+                'CI': {
+                    'code': 'DEP-001',
+                    'name': 'Dépôt Principal',
+                    'address': "Abidjan, Côte d'Ivoire",
+                },
+                'SN': {
+                    'code': 'DEP-001',
+                    'name': 'Dépôt Principal',
+                    'address': 'Dakar, Sénégal',
+                },
+                'ML': {
+                    'code': 'DEP-001',
+                    'name': 'Dépôt Principal',
+                    'address': 'Bamako, Mali',
+                },
+                'BF': {
+                    'code': 'DEP-001',
+                    'name': 'Dépôt Principal',
+                    'address': 'Ouagadougou, Burkina Faso',
+                },
+                'TG': {
+                    'code': 'DEP-001',
+                    'name': 'Dépôt Principal',
+                    'address': 'Lomé, Togo',
+                },
+                'BJ': {
+                    'code': 'DEP-001',
+                    'name': 'Dépôt Principal',
+                    'address': 'Cotonou, Bénin',
+                },
+                'NE': {
+                    'code': 'DEP-001',
+                    'name': 'Dépôt Principal',
+                    'address': 'Niamey, Niger',
+                },
+                'GN': {
+                    'code': 'DEP-001',
+                    'name': 'Dépôt Principal',
+                    'address': 'Conakry, Guinée',
+                },
                 'MA': {
                     'code': 'DEP-001',
                     'name': 'Dépôt Principal',
                     'address': 'Casablanca, Maroc',
-                },
-                'OHADA': {
-                    'code': 'DEP-001',
-                    'name': 'Dépôt Principal',
-                    'address': "Abidjan, Côte d'Ivoire",
                 },
                 'FR': {
                     'code': 'DEP-001',
@@ -622,7 +776,7 @@ class SetupCreateView(APIView):
                     'address': 'France',
                 },
             }
-            wh_data = WAREHOUSE_DEFAULTS.get(locale_pack, WAREHOUSE_DEFAULTS['FR'])
+            wh_data = WAREHOUSE_DEFAULTS.get(country_code, WAREHOUSE_DEFAULTS.get('FR'))
             Warehouse.objects.get_or_create(
                 code=wh_data['code'],
                 defaults={
@@ -638,13 +792,13 @@ class SetupCreateView(APIView):
         if install_demo:
             try:
                 demo_module = importlib.import_module(
-                    f'accounting.fixtures.locales.demo.{locale_pack.lower()}'
+                    f'accounting.fixtures.locales.demo.{accounting_pack.lower()}'
                 )
                 if hasattr(demo_module, 'load_demo_data'):
                     demo_module.load_demo_data()
                     demo_loaded = True
             except (ImportError, ModuleNotFoundError):
-                logger.info(f'Pas de données de démo pour le pack {locale_pack}')
+                logger.info(f'Pas de données de démo pour le pack {accounting_pack}')
 
         # ── Paramètres congés + types de congés ─────────────────────────────
         try:
@@ -653,8 +807,8 @@ class SetupCreateView(APIView):
             from hr.models import LeaveType
             from payroll.models import PayrollParameter
 
-            LEAVE_PARAMS_BY_PACK = {
-                'OHADA': [
+            LEAVE_PARAMS_BY_COUNTRY = {
+                'CI': [
                     ('LEAVE_ANNUAL_DAYS', _D('24')),
                     ('LEAVE_ACCRUAL_DAY', _D('1')),
                     ('LEAVE_SICK_DAYS_ANNUAL', _D('30')),
@@ -693,7 +847,7 @@ class SetupCreateView(APIView):
             }
             from datetime import date as _date
 
-            for key, val in LEAVE_PARAMS_BY_PACK.get(locale_pack, []):
+            for key, val in LEAVE_PARAMS_BY_COUNTRY.get(country_code, []):
                 PayrollParameter.objects.get_or_create(
                     code=key,
                     defaults={
@@ -757,10 +911,12 @@ class SetupCreateView(APIView):
                 LeaveType.objects.get_or_create(code=lt['code'], defaults=lt)
 
             logger.info(
-                f'[SETUP] Paramètres congés et types chargés pour le pack {locale_pack}'
+                f'[SETUP] Paramètres congés et types chargés pour le pack {country_code}'
             )
         except Exception as e:
-            logger.warning(f'Paramètres congés non initialisés pour {locale_pack}: {e}')
+            logger.warning(
+                f'Paramètres congés non initialisés pour {country_code}: {e}'
+            )
 
         # ── Catégories de frais (universelles — identiques pour tous les packs) ──
         try:
@@ -803,31 +959,31 @@ class SetupCreateView(APIView):
                     },
                 )
             logger.info(
-                f'[SETUP] Catégories de frais chargées pour le pack {locale_pack}'
+                f'[SETUP] Catégories de frais chargées pour le pack {country_code}'
             )
         except Exception as e:
             logger.warning(
-                f'Catégories de frais non initialisées pour {locale_pack}: {e}'
+                f'Catégories de frais non initialisées pour {country_code}: {e}'
             )
 
         # ── Jours fériés — chargés depuis le pack, jamais hardcodés dans leave_service ──
 
-        # ── Jours feries — charges depuis le pack via _get_public_holidays_for_pack() ──
+        # ── Jours feries — charges depuis le pays via _get_public_holidays_for_country() ──
         try:
             from hr.models import PublicHoliday
 
-            for h in _get_public_holidays_for_pack(locale_pack):
+            for h in _get_public_holidays_for_country(country_code):
                 PublicHoliday.objects.get_or_create(
                     name=h['name'],
                     date=h['date'],
                     defaults={
                         'is_recurring': h['is_recurring'],
-                        'country_code': locale_pack,
+                        'country_code': country_code,
                     },
                 )
-            logger.info(f'[SETUP] Jours feries charges pour le pack {locale_pack}')
+            logger.info(f'[SETUP] Jours feries charges pour le pack {country_code}')
         except Exception as e:
-            logger.warning(f'Jours feries non charges pour {locale_pack}: {e}')
+            logger.warning(f'Jours feries non charges pour {country_code}: {e}')
 
         from accounting.models import Account, Journal, Tax
 
@@ -837,7 +993,8 @@ class SetupCreateView(APIView):
             'journals_created': Journal.objects.count(),
             'currencies_created': Currency.objects.count(),
             'demo_data': demo_loaded,
-            'locale_pack': locale_pack,
+            'accounting_pack': accounting_pack,
+            'country_code': country_code,
         }
 
 
@@ -1315,7 +1472,7 @@ class ExportRGPDView(APIView):
                         'id',
                         'company_name',
                         'country_code',
-                        'locale_pack',
+                        'accounting_pack',
                         'address_line1',
                         'city',
                         'postal_code',

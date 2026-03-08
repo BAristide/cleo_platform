@@ -1792,9 +1792,9 @@ def esg_report(request):
         from core.models import CompanySetup
 
         setup = CompanySetup.objects.first()
-        locale_pack = setup.locale_pack if setup else 'MA'
+        accounting_pack = setup.accounting_pack if setup else 'MA'
     except Exception:
-        locale_pack = 'MA'
+        accounting_pack = 'MA'
 
     def account_balance(prefix, sd=start_date, ed=end_date):
         """Somme des soldes des comptes commençant par prefix."""
@@ -1857,7 +1857,7 @@ def esg_report(request):
 
     return Response(
         {
-            'locale_pack': locale_pack,
+            'accounting_pack': accounting_pack,
             'period': {'start_date': start_date, 'end_date': end_date},
             'tfr': [
                 {'label': 'Ventes de marchandises', 'value': str(ventes_marchandises)},

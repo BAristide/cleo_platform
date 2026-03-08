@@ -18,7 +18,7 @@ class Command(BaseCommand):
         parser.add_argument(
             '--country',
             type=str,
-            help=_('Code du pack (MA, OHADA, FR)'),
+            help=_('Code pays (CI, MA, FR, SN, ML, BF, TG, BJ, NE, GN)'),
         )
         parser.add_argument(
             '--company-name',
@@ -55,7 +55,7 @@ class Command(BaseCommand):
             if setup and setup.setup_completed:
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'Setup déjà effectué : {setup.company_name} ({setup.locale_pack})'
+                        f'Setup déjà effectué : {setup.company_name} ({setup.accounting_pack})'
                     )
                 )
             else:
@@ -78,24 +78,25 @@ class Command(BaseCommand):
         if existing and existing.setup_completed and not force:
             self.stdout.write(
                 self.style.SUCCESS(
-                    f'Setup déjà effectué : {existing.company_name} ({existing.locale_pack}). '
+                    f'Setup déjà effectué : {existing.company_name} ({existing.accounting_pack}). '
                     'Utilisez --force pour recréer.'
                 )
             )
             return
 
-        from core.views import AVAILABLE_PACKS
+        from core.views import COUNTRY_PACKS
 
         country = country.upper()
-        if country not in AVAILABLE_PACKS:
+        if country not in COUNTRY_PACKS:
             self.stderr.write(
                 self.style.ERROR(
-                    f'Pack inconnu : {country}. Disponibles : {list(AVAILABLE_PACKS.keys())}'
+                    f'Pays inconnu : {country}. Disponibles : {list(COUNTRY_PACKS.keys())}'
                 )
             )
             return
 
-        pack_info = AVAILABLE_PACKS[country]
+        pack_info = COUNTRY_PACKS[country]
+        accounting_pack = pack_info['accounting_pack']
         self.stdout.write(
             self.style.NOTICE(f'[SETUP] Chargement du pack {pack_info["name"]}...')
         )
@@ -108,8 +109,8 @@ class Command(BaseCommand):
 
         setup = CompanySetup(
             company_name=company_name,
-            country_code=country if country != 'OHADA' else 'CI',
-            locale_pack=country,
+            country_code=country,
+            accounting_pack=accounting_pack,
         )
         labels = pack_info['legal_id_labels']
         for i, label in enumerate(labels, start=1):
@@ -121,14 +122,21 @@ class Command(BaseCommand):
                 InitAccountingService,
             )
 
-            init_service = InitAccountingService(locale_pack=country, force=False)
+            init_service = InitAccountingService(
+                locale_pack=accounting_pack, force=False
+            )
             init_service.init_all()
             self.stdout.write(self.style.SUCCESS('  [OK] Comptabilité initialisée'))
 
             try:
                 from django.core.management import call_command
 
-                call_command('init_payroll_data', '--locale', country, '--force')
+                call_command(
+                    'init_payroll_data',
+                    '--locale',
+                    pack_info['payroll_fixture'],
+                    '--force',
+                )
                 self.stdout.write(self.style.SUCCESS('  [OK] Paie initialisée'))
             except Exception as e:
                 self.stdout.write(self.style.WARNING(f'  [WARN] Paie : {e}'))
@@ -138,7 +146,7 @@ class Command(BaseCommand):
                     import importlib
 
                     demo_module = importlib.import_module(
-                        f'accounting.fixtures.demo.{country.lower()}'
+                        f'accounting.fixtures.locales.demo.{accounting_pack.lower()}'
                     )
                     if hasattr(demo_module, 'load_demo_data'):
                         demo_module.load_demo_data()

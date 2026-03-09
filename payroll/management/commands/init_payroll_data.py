@@ -132,13 +132,17 @@ class Command(BaseCommand):
             )
 
     def _create_salary_components(self, items):
-        """Crée les composants de salaire."""
+        """Crée ou met à jour les composants de salaire."""
         for item in items:
-            obj, created = SalaryComponent.objects.get_or_create(
-                code=item['code'], defaults=item
+            item_data = dict(item)
+            code = item_data.pop('code')
+            obj, created = SalaryComponent.objects.update_or_create(
+                code=code, defaults=item_data
             )
-            status = '✨' if created else '⏭️ '
-            self.stdout.write(f'  {status} Composant : {item["code"]} — {item["name"]}')
+            status = '✨' if created else '🔄'
+            self.stdout.write(
+                f'  {status} Composant : {code} — {item_data.get("name", "")}'
+            )
 
     def _create_tax_brackets(self, items):
         """Crée les tranches d'imposition."""

@@ -24,7 +24,6 @@
         td { padding: 5px 8px; font-size: 9pt; border-bottom: 1px solid #e0e0e0; }
         tr:nth-child(even) { background-color: #f8f8f8; }
         .text-right { text-align: right; }
-        .text-bold { font-weight: bold; }
         .totals-row td { border-top: 2px solid #1a1a2e; font-weight: bold; background-color: #f0f0f0; }
         .summary { border: 1px solid #ccc; padding: 12px; margin-top: 15px; overflow: hidden; border-radius: 3px; }
         .summary .col { float: left; width: 50%; }
@@ -32,6 +31,7 @@
         .net-box { background: #1a1a2e; color: white; padding: 8px 12px; border-radius: 3px; margin-top: 8px; display: inline-block; }
         .net-box p { color: white; font-size: 11pt; font-weight: bold; margin: 0; }
         .footer { margin-top: 25px; font-size: 8pt; text-align: center; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+        .section-title { font-size: 9pt; font-weight: bold; color: #1a1a2e; margin: 10px 0 5px 0; }
     </style>
 </head>
 <body>
@@ -80,54 +80,32 @@
             </tr>
         </thead>
         <tbody>
-            <!-- Salaire de base -->
+            {% for line in gain_lines %}
             <tr>
-                <td>Salaire de base</td>
-                <td class="text-right">{{ payslip.base_salary }}</td>
-                <td class="text-right"></td>
-                <td class="text-right">{{ payslip.worked_days }} j</td>
-                <td class="text-right">{{ payslip.gross_salary }}</td>
+                <td>{{ line.component.name }}</td>
+                <td class="text-right">{% if line.base_amount %}{{ line.base_amount }}{% endif %}</td>
+                <td class="text-right">{% if line.rate %}{{ line.rate }}%{% endif %}</td>
+                <td class="text-right">{% if line.quantity %}{{ line.quantity }}{% endif %}</td>
+                <td class="text-right">{{ line.amount }}</td>
                 <td class="text-right"></td>
             </tr>
-            <!-- CNSS salariale -->
-            {% if payslip.cnss_employee %}
+            {% endfor %}
+            {% for line in deduction_lines %}
             <tr>
-                <td>{{ label_social }} (part salariale)</td>
-                <td class="text-right">{{ payslip.gross_salary }}</td>
-                <td class="text-right">{{ cnss_employee_rate }}%</td>
+                <td>{{ line.component.name }}</td>
+                <td class="text-right">{% if line.base_amount %}{{ line.base_amount }}{% endif %}</td>
+                <td class="text-right">{% if line.rate %}{{ line.rate }}%{% endif %}</td>
                 <td class="text-right"></td>
                 <td class="text-right"></td>
-                <td class="text-right">{{ payslip.cnss_employee }}</td>
+                <td class="text-right">{{ line.abs_amount }}</td>
             </tr>
-            {% endif %}
-            <!-- AMO salariale -->
-            {% if payslip.amo_employee %}
-            <tr>
-                <td>{{ label_health }} (part salariale)</td>
-                <td class="text-right">{{ payslip.gross_salary }}</td>
-                <td class="text-right">{{ amo_employee_rate }}%</td>
-                <td class="text-right"></td>
-                <td class="text-right"></td>
-                <td class="text-right">{{ payslip.amo_employee }}</td>
-            </tr>
-            {% endif %}
-            <!-- IR -->
-            {% if payslip.income_tax %}
-            <tr>
-                <td>{{ label_tax }}</td>
-                <td class="text-right"></td>
-                <td class="text-right"></td>
-                <td class="text-right"></td>
-                <td class="text-right"></td>
-                <td class="text-right">{{ payslip.income_tax }}</td>
-            </tr>
-            {% endif %}
+            {% endfor %}
         </tbody>
         <tfoot>
             <tr class="totals-row">
                 <td colspan="4" class="text-right">TOTAUX</td>
-                <td class="text-right">{{ payslip.gross_salary }}</td>
-                <td class="text-right">{{ total_deductions }}</td>
+                <td class="text-right">{{ total_gains }}</td>
+                <td class="text-right">{{ total_retenues }}</td>
             </tr>
         </tfoot>
     </table>
@@ -143,8 +121,7 @@
         </div>
         <div class="col" style="text-align: right;">
             <p><strong>Salaire brut :</strong> {{ payslip.gross_salary }} {{ currency_code }}</p>
-            <p><strong>{{ label_social }} :</strong> {{ payslip.cnss_employee }} {{ currency_code }}</p>
-            <p><strong>{{ label_health }} :</strong> {{ payslip.amo_employee }} {{ currency_code }}</p>
+            <p><strong>Total retenues :</strong> {{ total_retenues }} {{ currency_code }}</p>
             <p><strong>{{ label_tax }} :</strong> {{ payslip.income_tax }} {{ currency_code }}</p>
             <div class="net-box">
                 <p>NET À PAYER : {{ payslip.net_salary }} {{ currency_code }}</p>
@@ -152,14 +129,39 @@
         </div>
     </div>
 
+    {% if employer_lines %}
     <div style="margin-top: 20px; overflow: hidden;">
-        <div style="float: left; width: 50%;">
-            <p style="font-size: 9pt;"><strong>Charges patronales :</strong></p>
-            <p style="font-size: 8pt;">{{ label_social }} employeur : {{ payslip.cnss_employer }} {{ currency_code }}</p>
-            <p style="font-size: 8pt;">{{ label_health }} employeur : {{ payslip.amo_employer }} {{ currency_code }}</p>
-            <p style="font-size: 8pt; font-weight: bold;">Total charges : {{ total_employer }} {{ currency_code }}</p>
+        <div style="float: left; width: 70%;">
+            <p class="section-title">Charges patronales :</p>
+            <table style="margin-bottom: 5px;">
+                <thead>
+                    <tr>
+                        <th>Désignation</th>
+                        <th class="text-right">Base</th>
+                        <th class="text-right">Taux</th>
+                        <th class="text-right">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for line in employer_lines %}
+                    <tr>
+                        <td>{{ line.component.name }}</td>
+                        <td class="text-right">{% if line.base_amount %}{{ line.base_amount }}{% endif %}</td>
+                        <td class="text-right">{% if line.rate %}{{ line.rate }}%{% endif %}</td>
+                        <td class="text-right">{{ line.amount }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="totals-row">
+                        <td colspan="3" class="text-right">Total charges patronales</td>
+                        <td class="text-right">{{ total_employer_lines }}</td>
+                    </tr>
+                </tfoot>
+            </table>
         </div>
     </div>
+    {% endif %}
 
     <div class="footer">
         <p>Ce bulletin de paie doit être conservé sans limitation de durée.</p>

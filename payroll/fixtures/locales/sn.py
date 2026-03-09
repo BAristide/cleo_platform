@@ -176,6 +176,11 @@ SALARY_COMPONENTS = [
         'is_taxable': False,
         'is_cnss_eligible': False,
         'formula': 'cnss_base * (cnss_employee_rate / 100)',
+        'category': 'social_employee',
+        'rate_parameter_code': 'CNSS_EMPLOYEE_RATE',
+        'base_rule': 'capped',
+        'cap_parameter_code': 'CNSS_CEILING',
+        'default_display_order': 50,
     },
     {
         'code': 'AMO_EMP',
@@ -184,6 +189,11 @@ SALARY_COMPONENTS = [
         'is_taxable': False,
         'is_cnss_eligible': False,
         'formula': 'gross_salary * (amo_employee_rate / 100)',
+        'category': 'health_employee',
+        'rate_parameter_code': 'AMO_EMPLOYEE_RATE',
+        'base_rule': 'gross',
+        'cap_parameter_code': '',
+        'default_display_order': 51,
     },
     {
         'code': 'IR',
@@ -192,6 +202,11 @@ SALARY_COMPONENTS = [
         'is_taxable': False,
         'is_cnss_eligible': False,
         'formula': 'calculate_income_tax()',
+        'category': 'tax',
+        'rate_parameter_code': '',
+        'base_rule': 'fixed',
+        'cap_parameter_code': '',
+        'default_display_order': 60,
     },
 ]
 

@@ -50,18 +50,8 @@ class PayrollPDFGenerator:
             currency_code = 'XOF'
 
         # Récupérer les taux depuis les paramètres
-        from payroll.services.parameter_resolver import PayrollParameterResolver
 
-        try:
-            cnss_employee_rate = PayrollParameterResolver.get_required(
-                'CNSS_EMPLOYEE_RATE'
-            )
-            amo_employee_rate = PayrollParameterResolver.get_required(
-                'AMO_EMPLOYEE_RATE'
-            )
-        except Exception:
-            cnss_employee_rate = Decimal('0')
-            amo_employee_rate = Decimal('0')
+        # Taux resolus dynamiquement via les PaySlipLines (v3.26.0)
 
         # Calculer les totaux
         total_deductions = (
@@ -94,6 +84,32 @@ class PayrollPDFGenerator:
         # Labels dynamiques depuis COUNTRY_PACKS
         payroll_labels = PayrollPDFGenerator._get_payroll_labels()
 
+        # Charger les lignes triees
+        from payroll.models import PaySlipLine
+
+        all_lines = list(
+            PaySlipLine.objects.filter(payslip=payslip)
+            .select_related('component')
+            .order_by('display_order', 'component__code')
+        )
+        gain_lines = [
+            ln for ln in all_lines if ln.amount > 0 and not ln.is_employer_contribution
+        ]
+        deduction_lines = [
+            ln for ln in all_lines if ln.amount < 0 and not ln.is_employer_contribution
+        ]
+        employer_lines = [
+            ln for ln in all_lines if ln.is_employer_contribution and ln.amount > 0
+        ]
+
+        # Precalculer abs_amount pour le template
+        for ln in deduction_lines:
+            ln.abs_amount = abs(ln.amount)
+
+        total_gains = sum(ln.amount for ln in gain_lines)
+        total_retenues = sum(abs(ln.amount) for ln in deduction_lines)
+        total_employer_lines = sum(ln.amount for ln in employer_lines)
+
         context = {
             'payslip': payslip,
             'employee': employee,
@@ -102,8 +118,12 @@ class PayrollPDFGenerator:
             'generation_date': timezone.now(),
             'currency_code': currency_code,
             'period_name': period_name,
-            'cnss_employee_rate': cnss_employee_rate,
-            'amo_employee_rate': amo_employee_rate,
+            'gain_lines': gain_lines,
+            'deduction_lines': deduction_lines,
+            'employer_lines': employer_lines,
+            'total_gains': total_gains,
+            'total_retenues': total_retenues,
+            'total_employer_lines': total_employer_lines,
             'total_deductions': total_deductions,
             'total_employer': total_employer,
             'contract_type_display': contract_type_display,

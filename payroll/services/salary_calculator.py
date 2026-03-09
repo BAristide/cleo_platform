@@ -1,4 +1,10 @@
 # payroll/services/salary_calculator.py
+"""
+Moteur de calcul de paie generique — v3.26.0.
+Les cotisations sont resolues dynamiquement depuis SalaryComponent.category
+et SalaryComponent.rate_parameter_code, sans aucun hardcoding pays.
+"""
+
 from decimal import Decimal
 
 from django.db import models
@@ -10,6 +16,18 @@ from ..models import (
     TaxBracket,
 )
 from .parameter_resolver import PayrollParameterResolver
+
+# Categories de cotisations gerees par le moteur generique
+_COTISATION_CATEGORIES = (
+    'social_employee',
+    'social_employer',
+    'health_employee',
+    'health_employer',
+    'other_deduction',
+    'other_employer',
+)
+
+_EMPLOYER_CATEGORIES = ('social_employer', 'health_employer', 'other_employer')
 
 
 class SalaryCalculator:
@@ -23,11 +41,11 @@ class SalaryCalculator:
                 "Impossible de calculer un bulletin qui n'est pas en brouillon"
             )
 
-        # Validation de complétude du pack de paie
+        # Validation de completude du pack de paie
         pack_check = PayrollParameterResolver.validate_pack()
         if not pack_check['valid']:
             raise ValueError(
-                f'Pack de paie incomplet — {len(pack_check["missing"])} paramètre(s) manquant(s) : '
+                f'Pack de paie incomplet — {len(pack_check["missing"])} parametre(s) manquant(s) : '
                 f'{pack_check["missing"]}. '
                 f"Lancez 'python manage.py init_payroll_data --locale <pack> --force'."
             )
@@ -35,95 +53,73 @@ class SalaryCalculator:
         employee = payslip.employee
         payroll_info = EmployeePayroll.objects.get(employee=employee)
 
-        # Récupérer la période de paie
-        _period = payslip.payroll_run.period
-
-        # Calculer le salaire de base au prorata des jours travaillés
-        base_salary = SalaryCalculator._calculate_base_salary(payslip, payroll_info)
-        payslip.basic_salary = base_salary
-
         # Supprimer les anciennes lignes si recalcul
         if recalculate:
             PaySlipLine.objects.filter(payslip=payslip).delete()
 
-        # Créer la ligne de salaire de base
+        # ── 1. Salaire de base ──
+        base_salary = SalaryCalculator._calculate_base_salary(payslip, payroll_info)
+        payslip.basic_salary = base_salary
+
         base_component = SalaryComponent.objects.get(code='SALBASE')
         PaySlipLine.objects.create(
             payslip=payslip,
             component=base_component,
             amount=base_salary,
-            display_order=10,
+            display_order=base_component.default_display_order or 10,
         )
 
-        # Calculer les heures supplémentaires
-        hs_25_amount = SalaryCalculator._calculate_overtime(payslip, Decimal('0.25'))
-        hs_50_amount = SalaryCalculator._calculate_overtime(payslip, Decimal('0.50'))
-        hs_100_amount = SalaryCalculator._calculate_overtime(payslip, Decimal('1.00'))
+        # ── 2. Heures supplementaires ──
+        for rate_val, code, hours_field, order in [
+            (Decimal('0.25'), 'HS25', 'overtime_25_hours', 20),
+            (Decimal('0.50'), 'HS50', 'overtime_50_hours', 21),
+            (Decimal('1.00'), 'HS100', 'overtime_100_hours', 22),
+        ]:
+            hours = getattr(payslip, hours_field, Decimal('0'))
+            if hours > 0:
+                amount = SalaryCalculator._calculate_overtime(payslip, rate_val)
+                comp = SalaryComponent.objects.get(code=code)
+                PaySlipLine.objects.create(
+                    payslip=payslip,
+                    component=comp,
+                    amount=amount,
+                    quantity=hours,
+                    display_order=comp.default_display_order or order,
+                )
 
-        # Ajouter les lignes d'heures supplémentaires si nécessaire
-        if payslip.overtime_25_hours > 0:
-            hs_25_component = SalaryComponent.objects.get(code='HS25')
-            PaySlipLine.objects.create(
-                payslip=payslip,
-                component=hs_25_component,
-                amount=hs_25_amount,
-                quantity=payslip.overtime_25_hours,
-                display_order=20,
-            )
-
-        if payslip.overtime_50_hours > 0:
-            hs_50_component = SalaryComponent.objects.get(code='HS50')
-            PaySlipLine.objects.create(
-                payslip=payslip,
-                component=hs_50_component,
-                amount=hs_50_amount,
-                quantity=payslip.overtime_50_hours,
-                display_order=21,
-            )
-
-        if payslip.overtime_100_hours > 0:
-            hs_100_component = SalaryComponent.objects.get(code='HS100')
-            PaySlipLine.objects.create(
-                payslip=payslip,
-                component=hs_100_component,
-                amount=hs_100_amount,
-                quantity=payslip.overtime_100_hours,
-                display_order=22,
-            )
-
-        # Calculer la prime d'ancienneté
+        # ── 3. Prime d'anciennete ──
         seniority_amount = SalaryCalculator._calculate_seniority_bonus(
             payslip, base_salary
         )
         if seniority_amount > 0:
-            seniority_component = SalaryComponent.objects.get(code='ANCIENNETE')
+            seniority_comp = SalaryComponent.objects.get(code='ANCIENNETE')
             PaySlipLine.objects.create(
                 payslip=payslip,
-                component=seniority_component,
+                component=seniority_comp,
                 amount=seniority_amount,
-                display_order=30,
+                display_order=seniority_comp.default_display_order or 30,
             )
 
-        # Ajouter les indemnités régulières
+        # ── 4. Indemnites fixes ──
         if payroll_info.transport_allowance > 0:
-            transport_component = SalaryComponent.objects.get(code='TRANSPORT')
+            transport_comp = SalaryComponent.objects.get(code='TRANSPORT')
             PaySlipLine.objects.create(
                 payslip=payslip,
-                component=transport_component,
+                component=transport_comp,
                 amount=payroll_info.transport_allowance,
-                display_order=40,
+                display_order=transport_comp.default_display_order or 40,
             )
 
         if payroll_info.meal_allowance > 0:
-            meal_component = SalaryComponent.objects.get(code='REPAS')
+            meal_comp = SalaryComponent.objects.get(code='REPAS')
             PaySlipLine.objects.create(
                 payslip=payslip,
-                component=meal_component,
+                component=meal_comp,
                 amount=payroll_info.meal_allowance,
-                display_order=41,
+                display_order=meal_comp.default_display_order or 41,
             )
 
-        # Ajouter les primes et indemnités dynamiques (EmployeeAllowance)
+        # ── 5. Primes dynamiques (EmployeeAllowance) ──
         for allowance in payroll_info.allowances.filter(is_active=True).select_related(
             'component'
         ):
@@ -131,87 +127,109 @@ class SalaryCalculator:
                 payslip=payslip,
                 component=allowance.component,
                 amount=allowance.amount,
-                display_order=45,
+                display_order=allowance.component.default_display_order or 45,
             )
 
-        # Calculer le salaire brut
+        # ── 6. Salaire brut ──
         gross_salary = SalaryCalculator._calculate_gross_salary(payslip)
         payslip.gross_salary = gross_salary
 
-        # Calculer les cotisations CNSS et AMO
+        # ── 7. Bases de cotisation ──
         cnss_base = SalaryCalculator._get_cnss_base(payslip)
-        cnss_ceiling = PayrollParameterResolver.get_required('CNSS_CEILING')
-        if cnss_base > cnss_ceiling:
-            cnss_base = cnss_ceiling
 
-        # Taux CNSS employé et employeur
-        cnss_employee_rate = (
-            PayrollParameterResolver.get_required('CNSS_EMPLOYEE_RATE') / 100
-        )
-        cnss_employer_rate = (
-            PayrollParameterResolver.get_required('CNSS_EMPLOYER_RATE') / 100
-        )
-
-        # Taux AMO employé et employeur
-        amo_employee_rate = (
-            PayrollParameterResolver.get_required('AMO_EMPLOYEE_RATE') / 100
-        )
-        amo_employer_rate = (
-            PayrollParameterResolver.get_required('AMO_EMPLOYER_RATE') / 100
+        # ── 8. Cotisations generiques (moteur pack-agnostique) ──
+        cotisation_components = (
+            SalaryComponent.objects.filter(
+                category__in=_COTISATION_CATEGORIES,
+                is_active=True,
+            )
+            .exclude(rate_parameter_code='')
+            .order_by('default_display_order', 'code')
         )
 
-        # Calcul des cotisations
-        cnss_employee_amount = cnss_base * cnss_employee_rate
-        cnss_employer_amount = cnss_base * cnss_employer_rate
-        amo_employee_amount = gross_salary * amo_employee_rate
-        amo_employer_amount = gross_salary * amo_employer_rate
+        for comp in cotisation_components:
+            rate = PayrollParameterResolver.get_optional(comp.rate_parameter_code)
+            if rate is None or rate <= 0:
+                continue
 
-        # Enregistrer dans le bulletin
-        payslip.cnss_employee = cnss_employee_amount
-        payslip.cnss_employer = cnss_employer_amount
-        payslip.amo_employee = amo_employee_amount
-        payslip.amo_employer = amo_employer_amount
+            # Determiner la base selon base_rule
+            if comp.base_rule == 'capped':
+                cap_code = comp.cap_parameter_code
+                if cap_code:
+                    cap = PayrollParameterResolver.get_required(cap_code)
+                    base = min(cnss_base, cap)
+                else:
+                    base = cnss_base
+            elif comp.base_rule == 'gross':
+                base = gross_salary
+            elif comp.base_rule == 'taxable':
+                # taxable_salary pas encore calcule ici, utiliser estimation
+                base = gross_salary
+            else:
+                base = gross_salary
 
-        # Créer les lignes de cotisations
-        cnss_component = SalaryComponent.objects.get(code='CNSS_EMP')
-        PaySlipLine.objects.create(
-            payslip=payslip,
-            component=cnss_component,
-            amount=-cnss_employee_amount,
-            base_amount=cnss_base,
-            rate=cnss_employee_rate * 100,
-            display_order=50,
+            amount = base * rate / Decimal('100')
+            is_employer = comp.category in _EMPLOYER_CATEGORIES
+
+            PaySlipLine.objects.create(
+                payslip=payslip,
+                component=comp,
+                amount=-amount if not is_employer else amount,
+                base_amount=base,
+                rate=rate,
+                is_employer_contribution=is_employer,
+                display_order=comp.default_display_order or 50,
+            )
+
+        # ── 9. Remplir les champs agreges pour retrocompatibilite ──
+        _lines = PaySlipLine.objects.filter(payslip=payslip).select_related('component')
+
+        payslip.cnss_employee = sum(
+            abs(ln.amount)
+            for ln in _lines
+            if ln.component.category == 'social_employee'
+        )
+        payslip.amo_employee = sum(
+            abs(ln.amount)
+            for ln in _lines
+            if ln.component.category == 'health_employee'
+        )
+        payslip.cnss_employer = sum(
+            abs(ln.amount)
+            for ln in _lines
+            if ln.component.category == 'social_employer'
+        )
+        payslip.amo_employer = sum(
+            abs(ln.amount)
+            for ln in _lines
+            if ln.component.category == 'health_employer'
         )
 
-        amo_component = SalaryComponent.objects.get(code='AMO_EMP')
-        PaySlipLine.objects.create(
-            payslip=payslip,
-            component=amo_component,
-            amount=-amo_employee_amount,
-            base_amount=gross_salary,
-            rate=amo_employee_rate * 100,
-            display_order=51,
+        # ── 10. Salaire imposable ──
+        total_employee_cotisations = payslip.cnss_employee + payslip.amo_employee
+        # Ajouter les other_deduction au total
+        total_employee_cotisations += sum(
+            abs(ln.amount)
+            for ln in _lines
+            if ln.component.category == 'other_deduction'
         )
-
-        # Calculer le salaire imposable
-        taxable_salary = gross_salary - cnss_employee_amount - amo_employee_amount
+        taxable_salary = gross_salary - total_employee_cotisations
         payslip.taxable_salary = taxable_salary
 
-        # Calculer l'impôt sur le revenu (IR)
+        # ── 11. Impot sur le revenu (moteur fiscal specialise) ──
         income_tax = SalaryCalculator._calculate_income_tax(payslip, taxable_salary)
         payslip.income_tax = income_tax
 
-        # Créer la ligne de l'IR
         ir_component = SalaryComponent.objects.get(code='IR')
         PaySlipLine.objects.create(
             payslip=payslip,
             component=ir_component,
             amount=-income_tax,
             base_amount=taxable_salary,
-            display_order=60,
+            display_order=ir_component.default_display_order or 60,
         )
 
-        # Déduire les acomptes
+        # ── 12. Acomptes ──
         advances = payslip.advances.filter(is_paid=True, payslip__isnull=True)
         advance_total = sum(a.amount for a in advances)
 
@@ -221,55 +239,48 @@ class SalaryCalculator:
                 payslip=payslip,
                 component=advance_component,
                 amount=-advance_total,
-                display_order=70,
+                display_order=advance_component.default_display_order or 70,
             )
-
-            # Marquer les acomptes comme utilisés
             for advance in advances:
                 advance.payslip = payslip
                 advance.save(update_fields=['payslip'])
 
-        # Calculer le salaire net
+        # ── 13. Salaire net ──
         net_salary = (
             gross_salary
-            - cnss_employee_amount
-            - amo_employee_amount
+            - payslip.cnss_employee
+            - payslip.amo_employee
+            - sum(
+                abs(ln.amount)
+                for ln in _lines
+                if ln.component.category == 'other_deduction'
+            )
             - income_tax
             - advance_total
         )
         payslip.net_salary = net_salary
 
-        # Mettre à jour le statut et la date de calcul
+        # ── 14. Statut ──
         payslip.status = 'calculated'
         payslip.save()
 
         return payslip
 
+    # ── Methodes de calcul inchangees ──
+
     @staticmethod
     def _calculate_base_salary(payslip, payroll_info):
-        """Calcule le salaire de base au prorata des jours travaillés."""
         full_salary = payroll_info.base_salary
-
-        # Jours ouvrés par mois depuis les paramètres de paie
         base_days = PayrollParameterResolver.get_required('WORKING_DAYS_MONTH')
-
         actual_days = base_days - payslip.absence_days - payslip.unpaid_leave_days
-
-        # Calcul proratisé
         return (full_salary / base_days) * actual_days
 
     @staticmethod
     def _calculate_overtime(payslip, rate):
-        """Calcule la rémunération des heures supplémentaires."""
         employee = payslip.employee
         payroll_info = EmployeePayroll.objects.get(employee=employee)
-
-        # Heures standard par mois depuis les paramètres de paie
         monthly_hours = PayrollParameterResolver.get_required('WORKING_HOURS_MONTH')
-
         hourly_rate = payroll_info.base_salary / monthly_hours
-
-        # Déterminer les heures concernées
         if rate == Decimal('0.25'):
             hours = payslip.overtime_25_hours
         elif rate == Decimal('0.50'):
@@ -278,25 +289,16 @@ class SalaryCalculator:
             hours = payslip.overtime_100_hours
         else:
             hours = Decimal('0.0')
-
-        # Calculer le montant
-        amount = hourly_rate * hours * (1 + rate)
-        return amount
+        return hourly_rate * hours * (1 + rate)
 
     @staticmethod
     def _calculate_seniority_bonus(payslip, base_salary):
-        """Calcule la prime d'ancienneté selon les paramètres du locale_pack."""
         employee = payslip.employee
-
-        # Calculer l'ancienneté en années
         today = payslip.payroll_run.period.end_date
         hire_date = employee.hire_date
         years = today.year - hire_date.year
-
-        # Ajuster si l'anniversaire d'embauche n'est pas encore passé cette année
         if (today.month, today.day) < (hire_date.month, hire_date.day):
             years -= 1
-
         rate = Decimal('0.0')
         if years >= 25:
             rate = PayrollParameterResolver.get_optional('SENIORITY_25Y_RATE') / 100
@@ -308,38 +310,29 @@ class SalaryCalculator:
             rate = PayrollParameterResolver.get_optional('SENIORITY_5Y_RATE') / 100
         elif years >= 2:
             rate = PayrollParameterResolver.get_optional('SENIORITY_2Y_RATE') / 100
-
-        # Calculer la prime d'ancienneté
         return base_salary * rate
 
     @staticmethod
     def _calculate_gross_salary(payslip):
-        """Calcule le salaire brut en additionnant toutes les composantes positives."""
         positive_lines = PaySlipLine.objects.filter(payslip=payslip, amount__gt=0)
         return sum(line.amount for line in positive_lines)
 
     @staticmethod
     def _get_cnss_base(payslip):
-        """Récupère la base de calcul pour les cotisations CNSS."""
-        # Récupérer les lignes soumises à CNSS
         cnss_lines = PaySlipLine.objects.filter(
             payslip=payslip, component__is_cnss_eligible=True, amount__gt=0
         )
         return sum(line.amount for line in cnss_lines)
 
-    # Codes méthodes de calcul fiscal (stockés dans TAX_CALCULATION_METHOD)
-    TAX_METHOD_PROGRESSIVE = 0  # Barème + somme à déduire + déductions familiales
-    TAX_METHOD_QUOTIENT_FAMILIAL = 1  # Barème + quotient familial (SN, CM)
-    TAX_METHOD_ABATEMENT = 2  # Abattement brut + barème (BF)
+    # ── Moteur fiscal (inchange) ──
+
+    TAX_METHOD_PROGRESSIVE = 0
+    TAX_METHOD_QUOTIENT_FAMILIAL = 1
+    TAX_METHOD_ABATEMENT = 2
 
     @staticmethod
     def _calculate_income_tax(payslip, taxable_salary):
-        """
-        Dispatcher : choisit la méthode de calcul fiscal selon TAX_CALCULATION_METHOD.
-        0 = progressive_deduction (défaut), 1 = quotient_familial, 2 = progressive_abatement.
-        """
         method = int(PayrollParameterResolver.get_optional('TAX_CALCULATION_METHOD'))
-
         if method == SalaryCalculator.TAX_METHOD_QUOTIENT_FAMILIAL:
             return SalaryCalculator._calculate_tax_quotient_familial(
                 payslip, taxable_salary
@@ -355,7 +348,6 @@ class SalaryCalculator:
 
     @staticmethod
     def _get_tax_brackets(payslip):
-        """Récupère les tranches d'imposition en vigueur."""
         today = payslip.payroll_run.period.end_date
         return (
             TaxBracket.objects.filter(effective_date__lte=today)
@@ -365,7 +357,6 @@ class SalaryCalculator:
 
     @staticmethod
     def _apply_progressive_tax(taxable_annual, brackets):
-        """Applique le barème progressif par tranches avec somme à déduire."""
         tax = Decimal('0.0')
         for bracket in brackets:
             if bracket.max_amount is None:
@@ -382,8 +373,6 @@ class SalaryCalculator:
                     tax += (taxable_annual - bracket.min_amount) * (
                         bracket.rate / Decimal('100')
                     )
-
-        # Soustraire la somme à déduire de la tranche applicable
         for bracket in brackets:
             if hasattr(bracket, 'deduction'):
                 if bracket.max_amount is None and taxable_annual > bracket.min_amount:
@@ -395,53 +384,35 @@ class SalaryCalculator:
                 ):
                     tax -= bracket.deduction
                     break
-
         return max(tax, Decimal('0.0'))
 
     @staticmethod
     def _calculate_tax_progressive_deduction(payslip, taxable_salary):
-        """
-        Méthode par défaut (0) : barème progressif + somme à déduire + déductions familiales.
-        Utilisée par : MA, CI, ML, TG, BJ, NE, GN, FR.
-        """
         brackets = SalaryCalculator._get_tax_brackets(payslip)
         employee = payslip.employee
         annual_salary = taxable_salary * 12
-
-        # Déductions pour charges de famille
         family_deduction = Decimal('0')
         spouse_deduction = PayrollParameterResolver.get_optional('SPOUSE_DEDUCTION')
         child_deduction_unit = PayrollParameterResolver.get_optional('CHILD_DEDUCTION')
         max_children = int(
             PayrollParameterResolver.get_optional('MAX_DEPENDENT_CHILDREN')
         )
-
         if employee.marital_status == 'married':
             family_deduction += spouse_deduction
-
         child_count = (
             min(employee.dependent_children, max_children) if max_children > 0 else 0
         )
         family_deduction += child_count * child_deduction_unit
-
         taxable_annual = max(annual_salary - family_deduction, Decimal('0'))
         tax = SalaryCalculator._apply_progressive_tax(taxable_annual, brackets)
-
         monthly_tax = tax / 12
         return monthly_tax if monthly_tax > 0 else Decimal('0.0')
 
     @staticmethod
     def _calculate_tax_quotient_familial(payslip, taxable_salary):
-        """
-        Quotient familial (1) : revenu / nb_parts → barème → IR × nb_parts.
-        Puis abattement sur le brut et réduction pour charges de famille.
-        Utilisé par : SN, CM.
-        """
         brackets = SalaryCalculator._get_tax_brackets(payslip)
         employee = payslip.employee
         annual_salary = taxable_salary * 12
-
-        # Abattement sur le revenu (SN : 30% plafonné à 900 000 XOF)
         abatement_rate = PayrollParameterResolver.get_optional(
             'TAX_GROSS_ABATEMENT_RATE'
         )
@@ -451,35 +422,24 @@ class SalaryCalculator:
             if abatement_cap > 0 and abatement > abatement_cap:
                 abatement = abatement_cap
             annual_salary = max(annual_salary - abatement, Decimal('0'))
-
-        # Nombre de parts fiscales
         parts_single = PayrollParameterResolver.get_optional('TAX_PARTS_SINGLE')
         parts_married = PayrollParameterResolver.get_optional('TAX_PARTS_MARRIED')
         parts_per_child = PayrollParameterResolver.get_optional('TAX_PARTS_PER_CHILD')
         max_parts = PayrollParameterResolver.get_optional('TAX_MAX_PARTS')
-
         if parts_single <= 0:
             parts_single = Decimal('1.0')
-
         if employee.marital_status == 'married':
             parts = parts_married if parts_married > 0 else Decimal('2.0')
         else:
             parts = parts_single
-
         parts += employee.dependent_children * parts_per_child
         if max_parts > 0:
             parts = min(parts, max_parts)
-
-        # Barème appliqué au revenu par part
         revenue_per_part = annual_salary / parts if parts > 0 else annual_salary
         tax_per_part = SalaryCalculator._apply_progressive_tax(
             revenue_per_part, brackets
         )
-
-        # IR brut = IR par part × nombre de parts
         tax_brut = tax_per_part * parts
-
-        # Réduction pour charges de famille
         reduction_rate = PayrollParameterResolver.get_optional(
             'TAX_FAMILY_REDUCTION_RATE'
         )
@@ -493,33 +453,21 @@ class SalaryCalculator:
             if reduction_cap > 0 and reduction > reduction_cap:
                 reduction = reduction_cap
             tax_brut = max(tax_brut - reduction, Decimal('0'))
-
         monthly_tax = tax_brut / 12
         return monthly_tax if monthly_tax > 0 else Decimal('0.0')
 
     @staticmethod
     def _calculate_tax_with_abatement(payslip, taxable_salary):
-        """
-        Abattement sur le brut imposable + barème progressif (2).
-        Puis réduction pour charges de famille (BF : marié 8% + 2% par enfant, max 20%).
-        Utilisé par : BF.
-        """
         brackets = SalaryCalculator._get_tax_brackets(payslip)
         employee = payslip.employee
         annual_salary = taxable_salary * 12
-
-        # Abattement sur le brut imposable (BF : 25%)
         abatement_rate = PayrollParameterResolver.get_optional(
             'TAX_GROSS_ABATEMENT_RATE'
         )
         if abatement_rate > 0:
             abatement = annual_salary * abatement_rate / Decimal('100')
             annual_salary = max(annual_salary - abatement, Decimal('0'))
-
         tax_brut = SalaryCalculator._apply_progressive_tax(annual_salary, brackets)
-
-        # Réduction pour charges de famille (BF)
-        # Marié = 8%, + 2% par enfant, plafonné à 20%
         reduction_rate = PayrollParameterResolver.get_optional(
             'TAX_FAMILY_REDUCTION_RATE'
         )
@@ -535,6 +483,5 @@ class SalaryCalculator:
             if reduction_cap > 0:
                 reduction_pct = min(reduction_pct, reduction_cap)
             tax_brut = tax_brut * (Decimal('100') - reduction_pct) / Decimal('100')
-
         monthly_tax = tax_brut / 12
         return monthly_tax if monthly_tax > 0 else Decimal('0.0')

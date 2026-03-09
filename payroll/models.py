@@ -87,10 +87,35 @@ class SalaryComponent(models.Model):
         ('non_soumise', _('Indemnité non soumise')),
     ]
 
-    code = models.CharField(_('Code'), max_length=20, unique=True)
+    CATEGORY_CHOICES = [
+        ('earnings', _('Gains')),
+        ('social_employee', _('Cotisation sociale salariale')),
+        ('social_employer', _('Cotisation sociale patronale')),
+        ('health_employee', _('Cotisation santé salariale')),
+        ('health_employer', _('Cotisation santé patronale')),
+        ('tax', _('Impôt')),
+        ('other_deduction', _('Autre retenue salariale')),
+        ('other_employer', _('Autre charge patronale')),
+    ]
+
+    BASE_RULE_CHOICES = [
+        ('gross', _('Brut total')),
+        ('capped', _('Brut plafonné')),
+        ('taxable', _('Imposable')),
+        ('fixed', _('Montant fixe')),
+    ]
+
+    code = models.CharField(_('Code'), max_length=50, unique=True)
     name = models.CharField(_('Nom'), max_length=100)
     description = models.TextField(_('Description'), blank=True)
     component_type = models.CharField(_('Type'), max_length=20, choices=TYPE_CHOICES)
+    category = models.CharField(
+        _('Catégorie'),
+        max_length=30,
+        choices=CATEGORY_CHOICES,
+        default='earnings',
+        blank=True,
+    )
     is_taxable = models.BooleanField(_('Imposable'), default=True)
     is_cnss_eligible = models.BooleanField(
         _('Soumis cotisations sociales'), default=True
@@ -100,6 +125,31 @@ class SalaryComponent(models.Model):
         _('Formule de calcul'),
         blank=True,
         help_text=_('Formule ou référence à une fonction de calcul'),
+    )
+
+    # Champs pour le moteur de cotisations génériques (v3.26.0)
+    rate_parameter_code = models.CharField(
+        _('Code paramètre taux'),
+        max_length=50,
+        blank=True,
+        help_text=_('Code PayrollParameter pour résoudre le taux dynamiquement'),
+    )
+    base_rule = models.CharField(
+        _('Règle de base'),
+        max_length=20,
+        choices=BASE_RULE_CHOICES,
+        default='fixed',
+        blank=True,
+    )
+    cap_parameter_code = models.CharField(
+        _('Code paramètre plafond'),
+        max_length=50,
+        blank=True,
+        help_text=_('Code PayrollParameter pour le plafond (si base_rule=capped)'),
+    )
+    default_display_order = models.PositiveSmallIntegerField(
+        _("Ordre d'affichage par défaut"),
+        default=0,
     )
 
     # Métadonnées

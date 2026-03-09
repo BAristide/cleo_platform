@@ -1,0 +1,308 @@
+{% load payroll_filters %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Bulletin de Paie - {{ payslip.number }}</title>
+    <style>
+        @page { size: A4 portrait; margin: 6mm 8mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 7.5pt; line-height: 1.2; color: #000; }
+
+        /* Header */
+        .header { overflow: hidden; margin-bottom: 4px; }
+        .header .left { float: left; width: 55%; }
+        .header .right { float: right; width: 43%; text-align: center; }
+        .header .right h1 { font-size: 13pt; font-weight: bold; border: 2px solid #000; padding: 4px 12px; display: inline-block; margin-bottom: 4px; }
+        .company-name { font-size: 11pt; font-weight: bold; margin-bottom: 2px; }
+        .header p { font-size: 7pt; margin-bottom: 1px; }
+
+        /* Info tables */
+        .info-table { border-collapse: collapse; width: 100%; margin-bottom: 3px; }
+        .info-table td { border: 1px solid #000; padding: 2px 4px; font-size: 7pt; }
+        .info-table .label { font-weight: bold; background: #f0f0f0; }
+
+        /* Classification table (Classe/Echelon/Points) */
+        .class-table { border-collapse: collapse; width: 100%; margin-bottom: 4px; }
+        .class-table th { border: 1px solid #000; padding: 2px 3px; font-size: 6.5pt; background: #f0f0f0; text-align: center; }
+        .class-table td { border: 1px solid #000; padding: 2px 3px; font-size: 7pt; text-align: center; }
+
+        /* Main payslip table */
+        .main-table { border-collapse: collapse; width: 100%; margin-bottom: 4px; }
+        .main-table th { border: 1px solid #000; padding: 2px 4px; font-size: 7pt; text-align: center; background: #e8e8e8; font-weight: bold; }
+        .main-table td { border-left: 1px solid #ccc; border-right: 1px solid #ccc; border-bottom: 1px solid #ddd; padding: 1.5px 4px; font-size: 7pt; }
+        .main-table .r { text-align: right; }
+        .main-table .c { text-align: center; }
+        .main-table .subtotal td { border-top: 1px solid #000; font-weight: bold; }
+        .main-table .total td { border-top: 2px solid #000; border-bottom: 2px solid #000; font-weight: bold; background: #f0f0f0; }
+        .main-table .spacer td { border: none; height: 3px; }
+
+        /* Bottom section */
+        .bottom-grid { border-collapse: collapse; width: 100%; margin-bottom: 3px; }
+        .bottom-grid td { border: 1px solid #000; padding: 2px 4px; font-size: 7pt; }
+        .bottom-grid .label { font-weight: bold; background: #f0f0f0; }
+        .net-cell { font-size: 12pt; font-weight: bold; text-align: center; background: #f0f0f0; }
+
+        /* Cumuls */
+        .cumuls-table { border-collapse: collapse; width: 100%; margin-bottom: 3px; }
+        .cumuls-table th { border: 1px solid #000; padding: 2px 3px; font-size: 6.5pt; background: #e8e8e8; text-align: center; }
+        .cumuls-table td { border: 1px solid #000; padding: 2px 3px; font-size: 7pt; text-align: right; }
+        .cumuls-table .row-label { text-align: left; font-weight: bold; background: #f5f5f5; }
+
+        .clearfix::after { content: ""; display: table; clear: both; }
+        .footer { margin-top: 4px; font-size: 6pt; text-align: center; color: #666; border-top: 1px solid #ccc; padding-top: 3px; }
+    </style>
+</head>
+<body>
+    <!-- ══ EN-TETE ══ -->
+    <div class="header clearfix">
+        <div class="left">
+            {% if logo_base64 %}<img src="{{ logo_base64 }}" alt="Logo" style="max-height: 35px; max-width: 130px; margin-bottom: 2px; display: block;" />{% endif %}
+            <p class="company-name">{{ company.name }}</p>
+            <p>{{ company.address }}</p>
+            <p>{{ company.city }}{% if company.country %} - {{ company.country }}{% endif %}</p>
+            {% if company.email %}<p>Email : {{ company.email }}</p>{% endif %}
+        </div>
+        <div class="right">
+            <h1>BULLETIN DE PAIE</h1>
+            <p><strong>Mois de paie :</strong> {{ period_name }}</p>
+            <p><strong>N° :</strong> {{ payslip.number }}</p>
+        </div>
+    </div>
+
+    <!-- ══ INFORMATIONS EMPLOYE ══ -->
+    <table class="info-table">
+        <tr>
+            <td class="label" style="width: 12%;">Matricule</td>
+            <td style="width: 13%;">{{ employee.employee_id }}</td>
+            <td class="label" style="width: 12%;">Fonction</td>
+            <td style="width: 25%;">{% if employee.job_title %}{{ employee.job_title.name }}{% endif %}</td>
+            <td class="label" style="width: 12%;">Affectation</td>
+            <td>{% if employee.department %}{{ employee.department.name }}{% endif %}</td>
+        </tr>
+        <tr>
+            <td class="label">Nom</td>
+            <td colspan="2"><strong>{{ employee.last_name|upper }}</strong></td>
+            <td class="label" style="width: 10%;">Prenom</td>
+            <td colspan="2"><strong>{{ employee.first_name }}</strong></td>
+        </tr>
+    </table>
+
+    <table class="info-table">
+        <tr>
+            <td class="label" style="width: 14%;">Période de Paie</td>
+            <td colspan="5">Du {{ payslip.payroll_run.period.start_date|date:"d/m/Y" }} Au {{ payslip.payroll_run.period.end_date|date:"d/m/Y" }}</td>
+        </tr>
+    </table>
+
+    <table class="info-table">
+        <tr>
+            <td class="label" style="width: 14%;">Date Naissance</td>
+            <td style="width: 14%;">{% if employee.birth_date %}{{ employee.birth_date|date:"d/m/Y" }}{% endif %}</td>
+            <td class="label" style="width: 14%;">Date d'embauche</td>
+            <td style="width: 14%;">{{ employee.hire_date|date:"d/m/Y" }}</td>
+            <td class="label" style="width: 10%;">N° C.N.S.S</td>
+            <td style="width: 14%;">{{ payroll_info.cnss_number }}</td>
+            <td class="label" style="width: 14%;">Anc. Bancaire</td>
+            <td>{{ seniority_display }}</td>
+        </tr>
+    </table>
+
+    <!-- ══ CLASSIFICATION (Classe/Echelon/Points — style Attijari) ══ -->
+    {% if classification_visible %}
+    <table class="class-table">
+        <thead>
+            <tr>
+                <th>Classe<br/>Echelon</th>
+                {% if payroll_info.coefficient %}<th>Coefficient</th>{% endif %}
+                {% if payroll_info.indice %}<th>Indice</th>{% endif %}
+                <th>Sal.Mens.<br/>De Base</th>
+                <th>Situation Famille</th>
+                <th>Nombre<br/>Enfants</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ payroll_info.professional_category }}{% if payroll_info.echelon %} / {{ payroll_info.echelon }}{% endif %}</td>
+                {% if payroll_info.coefficient %}<td>{{ payroll_info.coefficient }}</td>{% endif %}
+                {% if payroll_info.indice %}<td>{{ payroll_info.indice }}</td>{% endif %}
+                <td>{{ payroll_info.base_salary|fmt }}</td>
+                <td>{{ marital_status_display }}</td>
+                <td>{{ employee.dependent_children }}</td>
+            </tr>
+        </tbody>
+    </table>
+    {% endif %}
+
+    <!-- ══ TABLEAU PRINCIPAL — STYLE ATTIJARI ══ -->
+    <table class="main-table">
+        <thead>
+            <tr>
+                <th style="width: 6%;">Code</th>
+                <th style="width: 30%;">Libellé</th>
+                <th style="width: 14%;">Nombre Ou Base</th>
+                <th style="width: 8%;">Taux</th>
+                <th style="width: 14%;">Gains</th>
+                <th style="width: 14%;">Retenues</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- ── Gains ── -->
+            {% for line in gain_lines %}
+            <tr>
+                <td class="c">{{ line.component.code }}</td>
+                <td>{{ line.component.name }}</td>
+                <td class="r">{% if line.base_amount %}{{ line.base_amount|fmt }}{% elif line.quantity %}{{ line.quantity }}{% endif %}</td>
+                <td class="r">{% if line.rate %}{{ line.rate }}{% endif %}</td>
+                <td class="r">{{ line.amount|fmt }}</td>
+                <td class="r"></td>
+            </tr>
+            {% endfor %}
+
+            <!-- ── TOTAL BRUT ── -->
+            <tr class="subtotal">
+                <td class="c">A01</td>
+                <td><strong>......TOTAL BRUT .......</strong></td>
+                <td></td>
+                <td></td>
+                <td class="r">{{ payslip.gross_salary|fmt }}</td>
+                <td></td>
+            </tr>
+
+            <!-- ── BASE IR ── -->
+            <tr class="subtotal">
+                <td class="c">A10</td>
+                <td><strong>BASE IR</strong></td>
+                <td></td>
+                <td></td>
+                <td class="r">{{ payslip.taxable_salary|fmt }}</td>
+                <td></td>
+            </tr>
+
+            <!-- ── Retenues (cotisations salariales) ── -->
+            {% for line in deduction_lines %}
+            <tr>
+                <td class="c">{{ line.component.code }}</td>
+                <td>{{ line.component.name }}</td>
+                <td class="r">{% if line.base_amount %}{{ line.base_amount|fmt }}{% endif %}</td>
+                <td class="r">{% if line.rate %}{{ line.rate }}{% endif %}</td>
+                <td class="r"></td>
+                <td class="r">{{ line.abs_amount|fmt }}</td>
+            </tr>
+            {% endfor %}
+
+            <!-- ── Spacer ── -->
+            <tr class="spacer"><td colspan="6"></td></tr>
+
+            <!-- ── Net paie ── -->
+            <tr class="total">
+                <td class="c">976</td>
+                <td>Net paie</td>
+                <td></td>
+                <td></td>
+                <td class="r">{{ payslip.net_salary|fmt }}</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- ══ PAIEMENT + NET A PAYER ══ -->
+    <table class="bottom-grid">
+        <tr>
+            <td class="label" style="width: 12%;">N° Compte</td>
+            <td style="width: 28%;">{{ payroll_info.bank_account }}</td>
+            <td class="label" style="width: 15%;">Date de Valeur</td>
+            <td style="width: 15%;">{{ generation_date|date:"d/m/Y" }}</td>
+            <td class="label" style="width: 10%;">Net a Payer :</td>
+            <td class="net-cell">{{ payslip.net_salary|fmt }}</td>
+        </tr>
+    </table>
+
+    <!-- ══ CUMULS MOIS / CUMUL ══ -->
+    <table class="cumuls-table">
+        <thead>
+            <tr>
+                <th style="width: 10%;"></th>
+                <th>NJ.Paye</th>
+                <th>Brut</th>
+                <th>{{ label_social }}</th>
+                <th>{{ label_health }}</th>
+                <th>{{ label_tax }}</th>
+                <th>Ch. Patronales</th>
+                {% if leave_allocations %}<th>Congés de l'année</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="row-label">Mois</td>
+                <td>{{ payslip.worked_days }}</td>
+                <td>{{ payslip.gross_salary|fmt }}</td>
+                <td>{{ payslip.cnss_employee|fmt }}</td>
+                <td>{{ payslip.amo_employee|fmt }}</td>
+                <td>{{ payslip.income_tax|fmt }}</td>
+                <td>{{ total_employer_lines|fmt }}</td>
+                {% if leave_allocations %}
+                <td style="font-size: 6.5pt;">
+                    {% for alloc in leave_allocations %}
+                    {% if alloc.leave_type.code == 'ANNUAL' %}Droit : {{ alloc.droit_total }}{% endif %}
+                    {% endfor %}
+                </td>
+                {% endif %}
+            </tr>
+            {% if ytd_totals %}
+            <tr>
+                <td class="row-label">Cumul</td>
+                <td></td>
+                <td>{{ ytd_totals.ytd_gross|fmt }}</td>
+                <td>{{ ytd_totals.ytd_cnss|fmt }}</td>
+                <td>{{ ytd_totals.ytd_amo|fmt }}</td>
+                <td>{{ ytd_totals.ytd_tax|fmt }}</td>
+                <td></td>
+                {% if leave_allocations %}
+                <td style="font-size: 6.5pt;">
+                    {% for alloc in leave_allocations %}
+                    {% if alloc.leave_type.code == 'ANNUAL' %}Reliquat : {{ alloc.remaining_days }}{% endif %}
+                    {% endfor %}
+                </td>
+                {% endif %}
+            </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    <!-- ══ CHARGES PATRONALES (detail) ══ -->
+    {% if employer_lines %}
+    <table class="cumuls-table" style="width: 70%;">
+        <thead>
+            <tr>
+                <th>Charges patronales</th>
+                <th>Base</th>
+                <th>Taux</th>
+                <th>Montant</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for line in employer_lines %}
+            <tr>
+                <td class="row-label">{{ line.component.name }}</td>
+                <td>{% if line.base_amount %}{{ line.base_amount|fmt }}{% endif %}</td>
+                <td style="text-align: center;">{% if line.rate %}{{ line.rate }}%{% endif %}</td>
+                <td>{{ line.amount|fmt }}</td>
+            </tr>
+            {% endfor %}
+            <tr style="font-weight: bold; background: #e8e8e8;">
+                <td class="row-label">Total</td>
+                <td></td>
+                <td></td>
+                <td>{{ total_employer_lines|fmt }}</td>
+            </tr>
+        </tbody>
+    </table>
+    {% endif %}
+
+    <div class="footer">
+        <p>{{ company.name }} — {{ company.rc }}{% if company.tax_id %} | IF : {{ company.tax_id }}{% endif %}{% if company.ice %} | ICE : {{ company.ice }}{% endif %}</p>
+        <p>Généré par Cleo ERP le {{ generation_date|date:"d/m/Y a H:i" }}</p>
+    </div>
+</body>
+</html>

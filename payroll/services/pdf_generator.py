@@ -17,6 +17,13 @@ MARITAL_STATUS_MAP = {
     'widowed': 'Veuf/Veuve',
 }
 
+# Templates PDF par pays (v3.29.0)
+PAYSLIP_TEMPLATE_MAP = {
+    'CI': 'payroll/pdf/payslip_ci.html',
+    'MA': 'payroll/pdf/payslip_ma.html',
+}
+PAYSLIP_TEMPLATE_DEFAULT = 'payroll/pdf/payslip_generic.html'
+
 
 class PayrollPDFGenerator:
     """Classe de service pour générer les PDF de paie."""
@@ -256,7 +263,18 @@ class PayrollPDFGenerator:
             'logo_base64': logo_base64,
         }
 
-        html_string = render_to_string('payroll/pdf/payslip.html', context)
+        # Selection du template selon le pays (v3.29.0)
+        country_code = ''
+        try:
+            from core.models import CompanySetup as _CS
+
+            _setup = _CS.objects.first()
+            if _setup:
+                country_code = _setup.country_code or ''
+        except Exception:
+            pass
+        template_name = PAYSLIP_TEMPLATE_MAP.get(country_code, PAYSLIP_TEMPLATE_DEFAULT)
+        html_string = render_to_string(template_name, context)
 
         output_dir = os.path.join(
             settings.MEDIA_ROOT,

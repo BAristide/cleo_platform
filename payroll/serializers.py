@@ -244,6 +244,7 @@ class PaySlipSerializer(serializers.ModelSerializer):
     period_name = serializers.SerializerMethodField()
     status_display = serializers.SerializerMethodField()
     lines = PaySlipLineSerializer(many=True, read_only=True)
+    ytd_totals = serializers.SerializerMethodField()
 
     class Meta:
         model = PaySlip
@@ -278,6 +279,7 @@ class PaySlipSerializer(serializers.ModelSerializer):
             'pdf_file',
             'notes',
             'lines',
+            'ytd_totals',
             'created_at',
             'updated_at',
         ]
@@ -291,6 +293,31 @@ class PaySlipSerializer(serializers.ModelSerializer):
 
     def get_status_display(self, obj):
         return dict(PaySlip.STATUS_CHOICES).get(obj.status, '')
+
+    def get_ytd_totals(self, obj):
+        """Cumuls depuis le début de l'exercice (year-to-date)."""
+        from datetime import date
+
+        from django.db.models import Sum
+
+        if not obj.payroll_run or not obj.payroll_run.period:
+            return None
+        year = obj.payroll_run.period.end_date.year
+        year_start = date(year, 1, 1)
+        ytd_slips = PaySlip.objects.filter(
+            employee=obj.employee,
+            status__in=['calculated', 'validated', 'paid'],
+            payroll_run__period__start_date__gte=year_start,
+            payroll_run__period__end_date__lte=obj.payroll_run.period.end_date,
+        )
+        agg = ytd_slips.aggregate(
+            ytd_gross=Sum('gross_salary'),
+            ytd_cnss=Sum('cnss_employee'),
+            ytd_amo=Sum('amo_employee'),
+            ytd_tax=Sum('income_tax'),
+            ytd_net=Sum('net_salary'),
+        )
+        return {k: float(v or 0) for k, v in agg.items()}
 
 
 class PayrollRunSerializer(serializers.ModelSerializer):

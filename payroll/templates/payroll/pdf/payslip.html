@@ -129,6 +129,30 @@
         </div>
     </div>
 
+   {% if ytd_totals %}
+    <div style="margin-top: 15px;">
+        <p class="section-title">Cumuls annuels :</p>
+        <table style="width: 70%;">
+            <thead>
+                <tr>
+                    <th>Cumul Brut</th>
+                    <th>Cumul Cotisations</th>
+                    <th>Cumul IR</th>
+                    <th>Cumul NET</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="text-right">{{ ytd_totals.ytd_gross }}</td>
+                    <td class="text-right">{{ ytd_totals.ytd_cnss }}</td>
+                    <td class="text-right">{{ ytd_totals.ytd_tax }}</td>
+                    <td class="text-right">{{ ytd_totals.ytd_net }}</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
     {% if employer_lines %}
     <div style="margin-top: 20px; overflow: hidden;">
         <div style="float: left; width: 70%;">

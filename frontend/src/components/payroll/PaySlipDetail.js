@@ -434,6 +434,48 @@ const PaySlipDetail = () => {
           </Col>
         </Row>
       </Card>
+      {payslip.ytd_totals && (
+        <Card title="Cumuls annuels" style={{ marginBottom: '20px' }}>
+          <Row gutter={16}>
+            <Col span={5}>
+              <Statistic
+                title="Cumul brut"
+                value={num(payslip.ytd_totals.ytd_gross).toLocaleString()}
+                suffix={currencyCode}
+              />
+            </Col>
+            <Col span={5}>
+              <Statistic
+                title="Cumul cotisations sociales"
+                value={num(payslip.ytd_totals.ytd_cnss).toLocaleString()}
+                suffix={currencyCode}
+              />
+            </Col>
+            <Col span={4}>
+              <Statistic
+                title="Cumul santé"
+                value={num(payslip.ytd_totals.ytd_amo).toLocaleString()}
+                suffix={currencyCode}
+              />
+            </Col>
+            <Col span={5}>
+              <Statistic
+                title="Cumul IR"
+                value={num(payslip.ytd_totals.ytd_tax).toLocaleString()}
+                suffix={currencyCode}
+              />
+            </Col>
+            <Col span={5}>
+              <Statistic
+                title="Cumul net"
+                value={num(payslip.ytd_totals.ytd_net).toLocaleString()}
+                suffix={currencyCode}
+                valueStyle={{ color: '#3f8600' }}
+              />
+            </Col>
+          </Row>
+        </Card>
+      )}
     </div>
   );
 };

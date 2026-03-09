@@ -110,6 +110,34 @@ class PayrollPDFGenerator:
         total_retenues = sum(abs(ln.amount) for ln in deduction_lines)
         total_employer_lines = sum(ln.amount for ln in employer_lines)
 
+        # Cumuls annuels (year-to-date)
+        from datetime import date as _date
+
+        from django.db.models import Sum
+
+        ytd_totals = {}
+        try:
+            period = payslip.payroll_run.period
+            year_start = _date(period.end_date.year, 1, 1)
+            from payroll.models import PaySlip as _PaySlip
+
+            ytd_slips = _PaySlip.objects.filter(
+                employee=payslip.employee,
+                status__in=['calculated', 'validated', 'paid'],
+                payroll_run__period__start_date__gte=year_start,
+                payroll_run__period__end_date__lte=period.end_date,
+            )
+            agg = ytd_slips.aggregate(
+                ytd_gross=Sum('gross_salary'),
+                ytd_cnss=Sum('cnss_employee'),
+                ytd_amo=Sum('amo_employee'),
+                ytd_tax=Sum('income_tax'),
+                ytd_net=Sum('net_salary'),
+            )
+            ytd_totals = {k: v or Decimal('0') for k, v in agg.items()}
+        except Exception:
+            pass
+
         context = {
             'payslip': payslip,
             'employee': employee,
@@ -124,6 +152,7 @@ class PayrollPDFGenerator:
             'total_gains': total_gains,
             'total_retenues': total_retenues,
             'total_employer_lines': total_employer_lines,
+            'ytd_totals': ytd_totals,
             'total_deductions': total_deductions,
             'total_employer': total_employer,
             'contract_type_display': contract_type_display,

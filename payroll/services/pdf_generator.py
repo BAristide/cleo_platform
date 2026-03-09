@@ -9,6 +9,13 @@ from weasyprint import HTML
 
 from core.services import get_company_context
 
+MARITAL_STATUS_MAP = {
+    'single': 'Celibataire',
+    'married': 'Marie(e)',
+    'divorced': 'Divorce(e)',
+    'widowed': 'Veuf/Veuve',
+}
+
 
 class PayrollPDFGenerator:
     """Classe de service pour générer les PDF de paie."""
@@ -138,6 +145,61 @@ class PayrollPDFGenerator:
         except Exception:
             pass
 
+        # -- PAIE-07 : Solde de conges --
+        leave_allocations = []
+        try:
+            from hr.models import LeaveAllocation
+
+            period = payslip.payroll_run.period
+            leave_allocations = list(
+                LeaveAllocation.objects.filter(
+                    employee=employee,
+                    year=period.end_date.year,
+                ).select_related('leave_type')
+            )
+            for alloc in leave_allocations:
+                alloc.droit_total = alloc.total_days + alloc.carried_days
+        except Exception:
+            pass
+
+        # -- PAIE-06 : Classification visible ? --
+        classification_visible = any(
+            [
+                payroll_info.professional_category,
+                payroll_info.coefficient,
+                payroll_info.echelon,
+                payroll_info.indice,
+                payroll_info.collective_agreement,
+                payroll_info.monthly_hours,
+            ]
+        )
+
+        # -- Anciennete --
+        seniority_display = ''
+        try:
+            today = payslip.payroll_run.period.end_date
+            hire = employee.hire_date
+            years = today.year - hire.year
+            months = today.month - hire.month
+            if today.day < hire.day:
+                months -= 1
+            if months < 0:
+                years -= 1
+                months += 12
+            if years > 0:
+                seniority_display = f'{years} an{"s" if years > 1 else ""}'
+                if months > 0:
+                    seniority_display += f' et {months} mois'
+            elif months > 0:
+                seniority_display = f'{months} mois'
+        except Exception:
+            pass
+
+        # -- Situation familiale --
+        marital_status_display = MARITAL_STATUS_MAP.get(
+            getattr(employee, 'marital_status', ''), ''
+        )
+
         context = {
             'payslip': payslip,
             'employee': employee,
@@ -163,6 +225,10 @@ class PayrollPDFGenerator:
             'label_social_number': payroll_labels.get(
                 'social_number', 'N° immatriculation sociale'
             ),
+            'leave_allocations': leave_allocations,
+            'classification_visible': classification_visible,
+            'seniority_display': seniority_display,
+            'marital_status_display': marital_status_display,
         }
 
         html_string = render_to_string('payroll/pdf/payslip.html', context)

@@ -1,12 +1,19 @@
 """
-Payroll Fixtures : Côte d'Ivoire (CI).
-CNPS (Caisse Nationale de Prévoyance Sociale), ITS (Impôt sur Traitements et Salaires).
-Référence : Code du travail CI, CNPS.ci, DGI Côte d'Ivoire.
+Payroll Fixtures : Cote d'Ivoire (CI).
+CNPS (Caisse Nationale de Prevoyance Sociale), ITS (Impot sur Traitements et Salaires).
+Reference : Code du travail CI, CNPS.ci, DGI Cote d'Ivoire, cleiss.fr.
+
+v3.27.0 — PAIE-08a : enrichissement cotisations detaillees.
+- Retraite salariale/patronale separee des PF et AT.
+- Contribution Nationale (CN) 1,20% salariale.
+- Taxe d'Apprentissage + Formation Prof. Continue patronales.
+- Plafond retraite CNPS = 45 x SMIG = 3 375 000 XOF.
+- Plafond PF/AT = 70 000 XOF.
 """
 
 from decimal import Decimal
 
-# ── Types de contrat spécifiques OHADA ───────────────────────────────
+# -- Types de contrat specifiques OHADA --
 CONTRACT_TYPES = [
     {
         'code': 'STAGE',
@@ -15,111 +22,156 @@ CONTRACT_TYPES = [
         'requires_end_date': True,
     },
 ]
-# ── Paramètres de paie ───────────────────────────────────────────────
+
+# -- Parametres de paie --
 PAYROLL_PARAMETERS = [
+    # ── Plafonds ──
     {
         'code': 'CNSS_CEILING',
-        'name': 'Plafond CNPS',
-        'value': Decimal('70000.00'),
-        'description': 'Plafond mensuel des cotisations CNPS (XOF)',
+        'name': 'Plafond CNPS Retraite',
+        'value': Decimal('3375000.00'),
+        'description': 'Plafond mensuel cotisations retraite CNPS (45 x SMIG, XOF)',
     },
+    {
+        'code': 'CNPS_PF_CEILING',
+        'name': 'Plafond CNPS PF/AT',
+        'value': Decimal('70000.00'),
+        'description': 'Plafond mensuel Prestations Familiales et Accident du Travail (XOF)',
+    },
+    # ── Taux salariaux ──
     {
         'code': 'CNSS_EMPLOYEE_RATE',
-        'name': 'Taux CNPS Employé',
+        'name': 'Taux CNPS Retraite Employe',
         'value': Decimal('6.30'),
-        'description': 'Taux de cotisation salariale CNPS (retraite 6.3%)',
+        'description': 'Cotisation salariale retraite CNPS (6,30%)',
     },
     {
-        'code': 'CNSS_EMPLOYER_RATE',
-        'name': 'Taux CNPS Employeur',
-        'value': Decimal('15.75'),
-        'description': 'Taux de cotisation patronale CNPS (PF 5.75% + AT 2-5% + retraite 7.7%)',
+        'code': 'CN_EMPLOYEE_RATE',
+        'name': 'Taux Contribution Nationale',
+        'value': Decimal('1.20'),
+        'description': 'Contribution Nationale salariale (1,20% du brut, sans plafond)',
     },
     {
         'code': 'AMO_EMPLOYEE_RATE',
-        'name': 'Taux CMU Employé',
+        'name': 'Taux CMU Employe',
         'value': Decimal('0.00'),
-        'description': 'Couverture Maladie Universelle (financée par impôt, pas de cotisation salariale)',
+        'description': 'CMU financee par impot — pas de cotisation salariale',
+    },
+    # ── Taux patronaux ──
+    {
+        'code': 'CNSS_EMPLOYER_RATE',
+        'name': 'Taux CNPS Retraite Employeur',
+        'value': Decimal('7.70'),
+        'description': 'Cotisation patronale retraite CNPS (7,70%)',
+    },
+    {
+        'code': 'CNPS_PF_EMPLOYER_RATE',
+        'name': 'Taux Prestations Familiales',
+        'value': Decimal('5.75'),
+        'description': 'Prestations Familiales patronales (5,75%, plafond PF)',
+    },
+    {
+        'code': 'CNPS_AT_EMPLOYER_RATE',
+        'name': 'Taux Accident du Travail',
+        'value': Decimal('2.00'),
+        'description': 'Accident du Travail patronal (2% a 5%, defaut 2%, plafond PF)',
     },
     {
         'code': 'AMO_EMPLOYER_RATE',
         'name': 'Taux CMU Employeur',
         'value': Decimal('0.00'),
-        'description': 'Couverture Maladie Universelle (financée par impôt)',
+        'description': 'CMU financee par impot — pas de cotisation patronale',
     },
+    {
+        'code': 'TAXE_APPRENTISSAGE_EMPLOYER_RATE',
+        'name': "Taux Taxe d'Apprentissage",
+        'value': Decimal('0.40'),
+        'description': "Taxe d'Apprentissage patronale (0,40% du brut, sans plafond)",
+    },
+    {
+        'code': 'FPC_EMPLOYER_RATE',
+        'name': 'Taux Formation Prof. Continue',
+        'value': Decimal('0.60'),
+        'description': 'Formation Professionnelle Continue patronale (0,60% du brut, sans plafond)',
+    },
+    # ── Salaire minimum ──
     {
         'code': 'SMIG',
         'name': 'SMIG',
         'value': Decimal('75000.00'),
         'description': 'Salaire minimum interprofessionnel garanti mensuel (XOF)',
     },
+    # ── Horaires ──
     {
         'code': 'WORKING_DAYS_MONTH',
-        'name': 'Jours ouvrés par mois',
+        'name': 'Jours ouvres par mois',
         'value': Decimal('26.00'),
-        'description': 'Nombre de jours ouvrés par mois (Code du travail OHADA)',
+        'description': 'Nombre de jours ouvres par mois (Code du travail OHADA)',
     },
     {
         'code': 'WORKING_HOURS_MONTH',
         'name': 'Heures standard par mois',
         'value': Decimal('173.33'),
-        'description': "Nombre d'heures standard par mois (40h/sem × 52/12)",
+        'description': "Nombre d'heures standard par mois (40h/sem x 52/12)",
     },
+    # ── Anciennete ──
     {
         'code': 'SENIORITY_2Y_RATE',
-        'name': 'Ancienneté 2-5 ans',
+        'name': 'Anciennete 2-5 ans',
         'value': Decimal('5.00'),
-        'description': 'Taux prime ancienneté après 2 ans (%)',
+        'description': 'Taux prime anciennete apres 2 ans (%)',
     },
     {
         'code': 'SENIORITY_5Y_RATE',
-        'name': 'Ancienneté 5-12 ans',
+        'name': 'Anciennete 5-12 ans',
         'value': Decimal('10.00'),
-        'description': 'Taux prime ancienneté après 5 ans (%)',
+        'description': 'Taux prime anciennete apres 5 ans (%)',
     },
     {
         'code': 'SENIORITY_12Y_RATE',
-        'name': 'Ancienneté 12-20 ans',
+        'name': 'Anciennete 12-20 ans',
         'value': Decimal('15.00'),
-        'description': 'Taux prime ancienneté après 12 ans (%)',
+        'description': 'Taux prime anciennete apres 12 ans (%)',
     },
     {
         'code': 'SENIORITY_20Y_RATE',
-        'name': 'Ancienneté 20-25 ans',
+        'name': 'Anciennete 20-25 ans',
         'value': Decimal('20.00'),
-        'description': 'Taux prime ancienneté après 20 ans (%)',
+        'description': 'Taux prime anciennete apres 20 ans (%)',
     },
     {
         'code': 'SENIORITY_25Y_RATE',
-        'name': 'Ancienneté 25+ ans',
+        'name': 'Anciennete 25+ ans',
         'value': Decimal('25.00'),
-        'description': 'Taux prime ancienneté après 25 ans (%)',
+        'description': 'Taux prime anciennete apres 25 ans (%)',
     },
+    # ── Deductions fiscales (non applicable en CI — ITS progressif) ──
     {
         'code': 'SPOUSE_DEDUCTION',
-        'name': 'Déduction ITS conjoint',
+        'name': 'Deduction ITS conjoint',
         'value': Decimal('0.00'),
-        'description': 'Déduction annuelle ITS pour conjoint (non applicable en CI)',
+        'description': 'Non applicable — ITS CI bareme progressif',
     },
     {
         'code': 'CHILD_DEDUCTION',
-        'name': 'Déduction ITS enfant',
+        'name': 'Deduction ITS enfant',
         'value': Decimal('0.00'),
-        'description': 'Déduction annuelle ITS par enfant (non applicable en CI)',
+        'description': 'Non applicable — ITS CI bareme progressif',
     },
     {
         'code': 'MAX_DEPENDENT_CHILDREN',
-        'name': 'Maximum enfants à charge',
+        'name': 'Maximum enfants a charge',
         'value': Decimal('0.00'),
-        'description': 'Non applicable — ITS CI utilise un quotient familial différent',
+        'description': 'Non applicable en CI',
     },
 ]
 
-# ── Composants de cotisation (mêmes codes internes) ─────────────────
+# -- Composants de cotisation --
 SALARY_COMPONENTS = [
+    # ── Salariales ──
     {
         'code': 'CNSS_EMP',
-        'name': 'Cotisation CNPS',
+        'name': 'Cotisation CNPS Retraite',
         'component_type': 'cotisation',
         'is_taxable': False,
         'is_cnss_eligible': False,
@@ -129,6 +181,19 @@ SALARY_COMPONENTS = [
         'base_rule': 'capped',
         'cap_parameter_code': 'CNSS_CEILING',
         'default_display_order': 50,
+    },
+    {
+        'code': 'CN_EMP',
+        'name': 'Contribution Nationale',
+        'component_type': 'cotisation',
+        'is_taxable': False,
+        'is_cnss_eligible': False,
+        'formula': 'gross * (cn_rate / 100)',
+        'category': 'social_employee',
+        'rate_parameter_code': 'CN_EMPLOYEE_RATE',
+        'base_rule': 'gross',
+        'cap_parameter_code': '',
+        'default_display_order': 52,
     },
     {
         'code': 'AMO_EMP',
@@ -141,11 +206,11 @@ SALARY_COMPONENTS = [
         'rate_parameter_code': 'AMO_EMPLOYEE_RATE',
         'base_rule': 'gross',
         'cap_parameter_code': '',
-        'default_display_order': 51,
+        'default_display_order': 53,
     },
     {
         'code': 'IR',
-        'name': 'ITS (Impôt sur Traitements et Salaires)',
+        'name': 'ITS (Impot sur Traitements et Salaires)',
         'component_type': 'cotisation',
         'is_taxable': False,
         'is_cnss_eligible': False,
@@ -156,9 +221,88 @@ SALARY_COMPONENTS = [
         'cap_parameter_code': '',
         'default_display_order': 60,
     },
+    # ── Patronales ──
+    {
+        'code': 'CNSS_PAT',
+        'name': 'CNPS Retraite (patronale)',
+        'component_type': 'cotisation',
+        'is_taxable': False,
+        'is_cnss_eligible': False,
+        'formula': '',
+        'category': 'social_employer',
+        'rate_parameter_code': 'CNSS_EMPLOYER_RATE',
+        'base_rule': 'capped',
+        'cap_parameter_code': 'CNSS_CEILING',
+        'default_display_order': 80,
+    },
+    {
+        'code': 'CNPS_PF_PAT',
+        'name': 'Prestations Familiales',
+        'component_type': 'cotisation',
+        'is_taxable': False,
+        'is_cnss_eligible': False,
+        'formula': '',
+        'category': 'social_employer',
+        'rate_parameter_code': 'CNPS_PF_EMPLOYER_RATE',
+        'base_rule': 'capped',
+        'cap_parameter_code': 'CNPS_PF_CEILING',
+        'default_display_order': 82,
+    },
+    {
+        'code': 'CNPS_AT_PAT',
+        'name': 'Accident du Travail',
+        'component_type': 'cotisation',
+        'is_taxable': False,
+        'is_cnss_eligible': False,
+        'formula': '',
+        'category': 'social_employer',
+        'rate_parameter_code': 'CNPS_AT_EMPLOYER_RATE',
+        'base_rule': 'capped',
+        'cap_parameter_code': 'CNPS_PF_CEILING',
+        'default_display_order': 83,
+    },
+    {
+        'code': 'AMO_PAT',
+        'name': 'CMU (patronale)',
+        'component_type': 'cotisation',
+        'is_taxable': False,
+        'is_cnss_eligible': False,
+        'formula': '',
+        'category': 'health_employer',
+        'rate_parameter_code': 'AMO_EMPLOYER_RATE',
+        'base_rule': 'gross',
+        'cap_parameter_code': '',
+        'default_display_order': 84,
+    },
+    {
+        'code': 'TAXE_APPRENT_PAT',
+        'name': "Taxe d'Apprentissage",
+        'component_type': 'cotisation',
+        'is_taxable': False,
+        'is_cnss_eligible': False,
+        'formula': '',
+        'category': 'other_employer',
+        'rate_parameter_code': 'TAXE_APPRENTISSAGE_EMPLOYER_RATE',
+        'base_rule': 'gross',
+        'cap_parameter_code': '',
+        'default_display_order': 85,
+    },
+    {
+        'code': 'FPC_PAT',
+        'name': 'Formation Prof. Continue',
+        'component_type': 'cotisation',
+        'is_taxable': False,
+        'is_cnss_eligible': False,
+        'formula': '',
+        'category': 'other_employer',
+        'rate_parameter_code': 'FPC_EMPLOYER_RATE',
+        'base_rule': 'gross',
+        'cap_parameter_code': '',
+        'default_display_order': 86,
+    },
 ]
 
-# ── Tranches ITS Côte d'Ivoire (barème annuel progressif) ───────────
+# -- Tranches ITS Cote d'Ivoire (bareme annuel progressif) --
 TAX_BRACKETS = [
     {
         'min_amount': Decimal('0.00'),

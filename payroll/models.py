@@ -246,6 +246,47 @@ class EmployeePayroll(models.Model):
         _('Prime de panier'), max_digits=10, decimal_places=2, default=0
     )
 
+    # Classification professionnelle (v3.27.0)
+    professional_category = models.CharField(
+        _('Categorie professionnelle'),
+        max_length=50,
+        blank=True,
+        help_text=_('Ex: P.18, C3, Cadre, Agent de maitrise'),
+    )
+    coefficient = models.DecimalField(
+        _('Coefficient'),
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    echelon = models.CharField(
+        _('Echelon'),
+        max_length=20,
+        blank=True,
+    )
+    indice = models.DecimalField(
+        _('Indice'),
+        max_digits=8,
+        decimal_places=2,
+        null=True,
+        blank=True,
+    )
+    collective_agreement = models.CharField(
+        _('Convention collective'),
+        max_length=200,
+        blank=True,
+        help_text=_('Ex: Convention Collective Interprofessionnelle de CI'),
+    )
+    monthly_hours = models.DecimalField(
+        _('Horaire mensuel'),
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text=_('Ex: 173.33 pour 40h/semaine'),
+    )
+
     # Métadonnées
     created_at = models.DateTimeField(_('Créé le'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Modifié le'), auto_now=True)

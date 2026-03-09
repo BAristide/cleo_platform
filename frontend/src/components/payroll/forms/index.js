@@ -407,6 +407,36 @@ export const EmployeePayrollForm = () => {
             parser={value => value.replace(/[^\d.-]/g, '')} />
         </Form.Item>
 
+        {/* Section classification professionnelle (PAIE-06) */}
+        <Card title="Classification professionnelle" size="small" style={{ marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+            <Form.Item name="professional_category" label="Categorie professionnelle">
+              <Input placeholder="Ex: P.18, C3, Cadre" />
+            </Form.Item>
+
+            <Form.Item name="coefficient" label="Coefficient">
+              <InputNumber style={{ width: '100%' }} min={0} step={1} />
+            </Form.Item>
+
+            <Form.Item name="echelon" label="Echelon">
+              <Input placeholder="Ex: E1, E2" />
+            </Form.Item>
+
+            <Form.Item name="indice" label="Indice">
+              <InputNumber style={{ width: '100%' }} min={0} step={1} />
+            </Form.Item>
+
+            <Form.Item name="collective_agreement" label="Convention collective" style={{ gridColumn: '1 / -1' }}>
+              <Input placeholder="Ex: Convention Collective Interprofessionnelle" />
+            </Form.Item>
+
+            <Form.Item name="monthly_hours" label="Horaire mensuel">
+              <InputNumber style={{ width: '100%' }} min={0} step={0.01} addonAfter="h"
+                placeholder="Ex: 173.33" />
+            </Form.Item>
+          </div>
+        </Card>
+
         {/* Section primes et indemnites dynamiques */}
         <Card title="Primes et indemnites" size="small" style={{ marginBottom: 16 }}
           extra={<Button type="dashed" size="small" onClick={addAllowance}>+ Ajouter</Button>}>

@@ -174,6 +174,12 @@ class EmployeePayrollSerializer(serializers.ModelSerializer):
             'payment_method_display',
             'transport_allowance',
             'meal_allowance',
+            'professional_category',
+            'coefficient',
+            'echelon',
+            'indice',
+            'collective_agreement',
+            'monthly_hours',
             'allowances',
             'created_at',
             'updated_at',
@@ -245,6 +251,7 @@ class PaySlipSerializer(serializers.ModelSerializer):
     status_display = serializers.SerializerMethodField()
     lines = PaySlipLineSerializer(many=True, read_only=True)
     ytd_totals = serializers.SerializerMethodField()
+    leave_info = serializers.SerializerMethodField()
 
     class Meta:
         model = PaySlip
@@ -280,6 +287,7 @@ class PaySlipSerializer(serializers.ModelSerializer):
             'notes',
             'lines',
             'ytd_totals',
+            'leave_info',
             'created_at',
             'updated_at',
         ]
@@ -318,6 +326,36 @@ class PaySlipSerializer(serializers.ModelSerializer):
             ytd_net=Sum('net_salary'),
         )
         return {k: float(v or 0) for k, v in agg.items()}
+
+    def get_leave_info(self, obj):
+        """Solde de conges pour l'employe (annee de la periode)."""
+        if not obj.payroll_run or not obj.payroll_run.period:
+            return None
+        year = obj.payroll_run.period.end_date.year
+        try:
+            from hr.models import LeaveAllocation
+
+            allocations = LeaveAllocation.objects.filter(
+                employee=obj.employee,
+                year=year,
+            ).select_related('leave_type')
+            if not allocations.exists():
+                return None
+            result = []
+            for alloc in allocations:
+                result.append(
+                    {
+                        'type': alloc.leave_type.name,
+                        'code': alloc.leave_type.code,
+                        'total': float(alloc.total_days + alloc.carried_days),
+                        'used': float(alloc.used_days),
+                        'pending': float(alloc.pending_days),
+                        'remaining': float(alloc.remaining_days),
+                    }
+                )
+            return result
+        except Exception:
+            return None
 
 
 class PayrollRunSerializer(serializers.ModelSerializer):

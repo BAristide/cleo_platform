@@ -476,6 +476,28 @@ const PaySlipDetail = () => {
           </Row>
         </Card>
       )}
+      {payslip.leave_info && payslip.leave_info.length > 0 && (
+        <Card title="Solde de conges" style={{ marginBottom: '20px' }}>
+          <Table
+            dataSource={payslip.leave_info}
+            rowKey="code"
+            columns={[
+              { title: 'Type', dataIndex: 'type', key: 'type' },
+              { title: 'Droit total', dataIndex: 'total', key: 'total', render: v => `${v} j` },
+              { title: 'Pris', dataIndex: 'used', key: 'used', render: v => `${v} j` },
+              { title: 'En attente', dataIndex: 'pending', key: 'pending', render: v => v > 0 ? `${v} j` : '-' },
+              {
+                title: 'Solde',
+                dataIndex: 'remaining',
+                key: 'remaining',
+                render: v => <span style={{ fontWeight: 'bold', color: v > 0 ? '#3f8600' : '#cf1322' }}>{v} j</span>,
+              },
+            ]}
+            pagination={false}
+            size="small"
+          />
+        </Card>
+      )}
     </div>
   );
 };

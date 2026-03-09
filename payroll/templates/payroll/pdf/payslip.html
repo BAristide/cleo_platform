@@ -59,6 +59,7 @@
     <!-- ══ HEADER ══ -->
     <div class="header clearfix">
         <div class="company-info">
+            {% if logo_base64 %}<img src="{{ logo_base64 }}" alt="Logo" style="max-height: 45px; max-width: 150px; margin-bottom: 4px; display: block;" />{% endif %}
             <h1>{{ company.name }}</h1>
             <p>{{ company.address }}</p>
             <p>{{ company.city }}{% if company.country %} - {{ company.country }}{% endif %}</p>

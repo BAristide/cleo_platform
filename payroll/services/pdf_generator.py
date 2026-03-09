@@ -1,4 +1,5 @@
 # payroll/services/pdf_generator.py
+import base64
 import os
 from decimal import Decimal
 
@@ -145,6 +146,29 @@ class PayrollPDFGenerator:
         except Exception:
             pass
 
+        # -- PAIE-12 : Logo entreprise --
+        logo_base64 = None
+        try:
+            from core.models import CompanySetup
+
+            setup = CompanySetup.objects.first()
+            if setup and setup.logo:
+                logo_path = setup.logo.path
+                if os.path.exists(logo_path):
+                    with open(logo_path, 'rb') as lf:
+                        logo_data = base64.b64encode(lf.read()).decode('utf-8')
+                    ext = os.path.splitext(logo_path)[1].lower().lstrip('.')
+                    mime = {
+                        'png': 'image/png',
+                        'jpg': 'image/jpeg',
+                        'jpeg': 'image/jpeg',
+                        'gif': 'image/gif',
+                        'svg': 'image/svg+xml',
+                    }.get(ext, 'image/png')
+                    logo_base64 = f'data:{mime};base64,{logo_data}'
+        except Exception:
+            pass
+
         # -- PAIE-07 : Solde de conges --
         leave_allocations = []
         try:
@@ -229,6 +253,7 @@ class PayrollPDFGenerator:
             'classification_visible': classification_visible,
             'seniority_display': seniority_display,
             'marital_status_display': marital_status_display,
+            'logo_base64': logo_base64,
         }
 
         html_string = render_to_string('payroll/pdf/payslip.html', context)

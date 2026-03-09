@@ -8,7 +8,7 @@ import {
 import {
   EditOutlined, DownloadOutlined, CalculatorOutlined,
   CheckCircleOutlined, DollarOutlined, EyeOutlined,
-  ArrowLeftOutlined, PlusOutlined, FilePdfOutlined
+  ArrowLeftOutlined, PlusOutlined, FilePdfOutlined, FileExcelOutlined
 } from '@ant-design/icons';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
@@ -241,6 +241,16 @@ const PayrollRunDetail = () => {
         }
       }
     });
+  };
+
+  const handleExportXlsx = async () => {
+    try {
+      window.open(`/api/payroll/payroll-runs/${id}/export_xlsx/`, '_blank');
+      message.success('Export XLSX lance');
+    } catch (error) {
+      console.error('Erreur export XLSX:', error);
+      message.error('Erreur lors de l\'export XLSX');
+    }
   };
 
   const handleGenerateSummaryPDF = async () => {
@@ -476,7 +486,18 @@ const PayrollRunDetail = () => {
               onClick={handleGenerateSummaryPDF}
               loading={pdfGenerating}
             >
-              Récapitulatif PDF
+              Recapitulatif PDF
+            </Button>
+          )}
+
+          {(payrollRun.status === 'calculated' || payrollRun.status === 'validated' || payrollRun.status === 'paid') && (
+            <Button
+              type="default"
+              icon={<FileExcelOutlined />}
+              onClick={handleExportXlsx}
+              style={{ color: '#217346' }}
+            >
+              Export XLSX
             </Button>
           )}
         </Space>

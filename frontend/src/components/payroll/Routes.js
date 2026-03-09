@@ -10,6 +10,7 @@ import PaySlipList from './PaySlipList';
 import PaySlipDetail from './PaySlipDetail';
 import EmployeePayrollList from './EmployeePayrollList';
 import AdvanceSalaryList from './AdvanceSalaryList';
+import PayrollSettings from './PayrollSettings';
 import {
   PayrollPeriodForm,
   PayrollRunForm,
@@ -24,7 +25,7 @@ const PayrollRoutes = () => {
         {/* Dashboard */}
         <Route path="/" element={<Dashboard />} />
 
-        {/* Périodes de paie */}
+        {/* Periodes de paie */}
         <Route path="/periods" element={<PayrollPeriodList />} />
         <Route path="/periods/new" element={<PayrollPeriodForm />} />
         <Route path="/periods/:id" element={<PayrollPeriodForm />} />
@@ -38,7 +39,7 @@ const PayrollRoutes = () => {
         <Route path="/payslips" element={<PaySlipList />} />
         <Route path="/payslips/:id" element={<PaySlipDetail />} />
 
-        {/* Données de paie des employés */}
+        {/* Donnees de paie des employes */}
         <Route path="/employee-payrolls" element={<EmployeePayrollList />} />
         <Route path="/employee-payrolls/new" element={<EmployeePayrollForm />} />
         <Route path="/employee-payrolls/:id" element={<EmployeePayrollForm />} />
@@ -48,7 +49,10 @@ const PayrollRoutes = () => {
         <Route path="/advances/new" element={<AdvanceSalaryForm />} />
         <Route path="/advances/:id" element={<AdvanceSalaryForm />} />
 
-        {/* Redirection par défaut */}
+        {/* Configuration (PAIE-22) */}
+        <Route path="/settings" element={<PayrollSettings />} />
+
+        {/* Redirection par defaut */}
         <Route path="*" element={<Navigate to="/payroll" replace />} />
       </Routes>
     </Layout>

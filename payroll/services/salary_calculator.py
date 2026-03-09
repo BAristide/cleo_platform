@@ -53,6 +53,11 @@ class SalaryCalculator:
         employee = payslip.employee
         payroll_info = EmployeePayroll.objects.get(employee=employee)
 
+        # Date de reference pour la resolution des taux (PAIE-23)
+        ref_date = None
+        if payslip.payroll_run and payslip.payroll_run.period:
+            ref_date = payslip.payroll_run.period.end_date
+
         # Supprimer les anciennes lignes si recalcul
         if recalculate:
             PaySlipLine.objects.filter(payslip=payslip).delete()
@@ -148,7 +153,9 @@ class SalaryCalculator:
         )
 
         for comp in cotisation_components:
-            rate = PayrollParameterResolver.get_optional(comp.rate_parameter_code)
+            rate = PayrollParameterResolver.get_optional(
+                comp.rate_parameter_code, reference_date=ref_date
+            )
             if rate is None or rate <= 0:
                 continue
 
@@ -156,7 +163,9 @@ class SalaryCalculator:
             if comp.base_rule == 'capped':
                 cap_code = comp.cap_parameter_code
                 if cap_code:
-                    cap = PayrollParameterResolver.get_required(cap_code)
+                    cap = PayrollParameterResolver.get_required(
+                        comp.cap_parameter_code, reference_date=ref_date
+                    )
                     base = min(cnss_base, cap)
                 else:
                     base = cnss_base

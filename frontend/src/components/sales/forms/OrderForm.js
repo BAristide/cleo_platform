@@ -13,7 +13,7 @@ import {
 } from '@ant-design/icons';
 import axios from '../../../utils/axiosConfig';
 import moment from 'moment';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -45,6 +45,7 @@ const OrderForm = () => {
   const [currentDescription, setCurrentDescription] = useState('');
   const [isExempt, setIsExempt] = useState(false);
   const [loadingQuoteItems, setLoadingQuoteItems] = useState(false);
+  const [itemsError, setItemsError] = useState(null);
 
   // États pour les calculs financiers
   const [subtotal, setSubtotal] = useState(0);
@@ -54,10 +55,13 @@ const OrderForm = () => {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    fetchInitialData();
-    if (isEditMode) {
-      fetchOrderDetails();
-    }
+    const init = async () => {
+      const initialData = await fetchInitialData();
+      if (isEditMode && initialData) {
+        await fetchOrderDetails(initialData);
+      }
+    };
+    init();
   }, [id]);
 
   const fetchInitialData = async () => {
@@ -100,13 +104,16 @@ const OrderForm = () => {
           });
         }
       }
+      return { companiesData, currenciesData, bankAccountsData, productsData, quotesData };
     } catch (error) {
       console.error("Erreur lors du chargement des données initiales:", error);
       message.error("Impossible de charger les données nécessaires");
+      return null;
     }
   };
 
-  const fetchOrderDetails = async () => {
+  const fetchOrderDetails = async (initialData = {}) => {
+    const { bankAccountsData: initialBankAccounts = [] } = initialData;
     setLoading(true);
     try {
       // Récupérer les détails de la commande
@@ -121,7 +128,7 @@ const OrderForm = () => {
 
       // Filtrer les comptes bancaires par devise
       if (orderData.currency) {
-        const filteredAccounts = bankAccounts.filter(ba => ba.currency === orderData.currency);
+        const filteredAccounts = initialBankAccounts.filter(ba => ba.currency === orderData.currency);
         setFilteredBankAccounts(filteredAccounts);
       }
 
@@ -416,8 +423,10 @@ const OrderForm = () => {
   };
 
   const onFinish = async (values) => {
-    if (orderItems.length === 0) {
-      message.error("Veuillez ajouter au moins un produit à la commande");
+    setItemsError(null);
+    const currentStatus = values.status || 'draft';
+    if (orderItems.length === 0 && currentStatus !== 'draft') {
+      setItemsError("Une commande avec le statut \"" + (currentStatus === 'confirmed' ? 'Confirmée' : currentStatus === 'in_progress' ? 'En cours' : currentStatus === 'delivered' ? 'Livrée' : 'Annulée') + "\" doit contenir au moins un produit.");
       return;
     }
 
@@ -469,7 +478,7 @@ const OrderForm = () => {
       navigate(`/sales/orders/${orderId}`);
     } catch (error) {
       console.error("Erreur lors de l'enregistrement de la commande:", error);
-      message.error("Impossible d'enregistrer la commande");
+      handleApiError(error, form, "Impossible d'enregistrer la commande");
     } finally {
       setSubmitting(false);
     }
@@ -567,6 +576,8 @@ const OrderForm = () => {
         form={form}
         layout="vertical"
         onFinish={onFinish}
+        scrollToFirstError
+        onFinishFailed={() => message.error('Veuillez corriger les erreurs indiquées dans le formulaire')}
         initialValues={{
           date: moment(),
           payment_terms: '30_days',
@@ -721,6 +732,16 @@ const OrderForm = () => {
         </Row>
 
         <Divider>Produits et services</Divider>
+        {itemsError && (
+          <Alert
+            message={itemsError}
+            type="error"
+            showIcon
+            closable
+            onClose={() => setItemsError(null)}
+            style={{ marginBottom: 16 }}
+          />
+        )}
 
         {selectedQuote && loadingQuoteItems && (
           <div style={{ textAlign: 'center', margin: '20px 0' }}>

@@ -10,7 +10,7 @@ import {
   CheckCircleOutlined, CloseCircleOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -170,7 +170,7 @@ const ProductList = () => {
       fetchProducts();
     } catch (error) {
       console.error("Erreur lors de l'enregistrement du produit:", error);
-      message.error("Impossible d'enregistrer le produit");
+      handleApiError(error, form, "Impossible d'enregistrer le produit");
     } finally {
       setActionLoading(false);
     }
@@ -255,7 +255,7 @@ const ProductList = () => {
       </Card>
 
       <Modal title={currentProduct ? 'Modifier le produit' : 'Nouveau produit'} open={editModalVisible} onCancel={() => setEditModalVisible(false)} footer={null} width={700}>
-        <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
+        <Form form={form} layout="vertical" onFinish={handleFormSubmit} scrollToFirstError onFinishFailed={() => message.error("Veuillez corriger les erreurs indiquees dans le formulaire")}>
           <Row gutter={16}>
             <Col span={12}><Form.Item name="name" label="Nom" rules={[{ required: true, message: 'Veuillez saisir le nom' }]}><Input /></Form.Item></Col>
             <Col span={12}><Form.Item name="reference" label="Reference" rules={[{ required: true, message: 'Veuillez saisir la reference' }]}><Input /></Form.Item></Col>

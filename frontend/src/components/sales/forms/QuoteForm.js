@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Form, Input, Button, Select, DatePicker, InputNumber, Card, Row, Col,
-  Typography, Spin, message, Divider, Space, Switch, Table, Popconfirm
+  Typography, Spin, message, Divider, Space, Switch, Table, Popconfirm, Alert
 } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, SaveOutlined, ArrowLeftOutlined,
@@ -12,7 +12,7 @@ import {
 } from '@ant-design/icons';
 import axios from '../../../utils/axiosConfig';
 import moment from 'moment';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -41,6 +41,7 @@ const QuoteForm = () => {
   const [currentQuantity, setCurrentQuantity] = useState(1);
   const [currentDescription, setCurrentDescription] = useState('');
   const [isExempt, setIsExempt] = useState(false);
+  const [itemsError, setItemsError] = useState(null);
 
   // États pour les calculs financiers
   const [subtotal, setSubtotal] = useState(0);
@@ -50,10 +51,13 @@ const QuoteForm = () => {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    fetchInitialData();
-    if (isEditMode) {
-      fetchQuoteDetails();
-    }
+    const init = async () => {
+      const initialData = await fetchInitialData();
+      if (isEditMode && initialData) {
+        await fetchQuoteDetails(initialData);
+      }
+    };
+    init();
   }, [id]);
 
   const fetchInitialData = async () => {
@@ -93,13 +97,16 @@ const QuoteForm = () => {
           });
         }
       }
+      return { companiesData, currenciesData, bankAccountsData, productsData };
     } catch (error) {
       console.error("Erreur lors du chargement des données initiales:", error);
       message.error("Impossible de charger les données nécessaires");
+      return null;
     }
   };
 
-  const fetchQuoteDetails = async () => {
+  const fetchQuoteDetails = async (initialData = {}) => {
+    const { bankAccountsData: initialBankAccounts = [] } = initialData;
     setLoading(true);
     try {
       // Récupérer les détails du devis
@@ -114,7 +121,7 @@ const QuoteForm = () => {
 
       // Filtrer les comptes bancaires par devise
       if (quoteData.currency) {
-        const filteredAccounts = bankAccounts.filter(ba => ba.currency === quoteData.currency);
+        const filteredAccounts = initialBankAccounts.filter(ba => ba.currency === quoteData.currency);
         setFilteredBankAccounts(filteredAccounts);
       }
 
@@ -341,8 +348,10 @@ const QuoteForm = () => {
   };
 
   const onFinish = async (values) => {
-    if (quoteItems.length === 0) {
-      message.error("Veuillez ajouter au moins un produit au devis");
+    setItemsError(null);
+    const currentStatus = values.status || 'draft';
+    if (quoteItems.length === 0 && currentStatus !== 'draft') {
+      setItemsError("Un devis avec le statut \"" + (currentStatus === 'sent' ? 'Envoyé' : currentStatus === 'accepted' ? 'Accepté' : currentStatus === 'rejected' ? 'Refusé' : 'Annulé') + "\" doit contenir au moins un produit.");
       return;
     }
 
@@ -393,15 +402,7 @@ const QuoteForm = () => {
       navigate(`/sales/quotes/${quoteId}`);
     } catch (error) {
       console.error("Erreur lors de l'enregistrement du devis:", error);
-      if (error.response && error.response.data) {
-        const errors = error.response.data;
-        const errorMessages = Object.entries(errors)
-          .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
-          .join(' | ');
-        message.error(`Erreur de validation : ${errorMessages}`);
-      } else {
-        message.error("Impossible d'enregistrer le devis");
-      }
+      handleApiError(error, form, "Impossible d'enregistrer le devis");
     } finally {
       setSubmitting(false);
     }
@@ -510,6 +511,8 @@ const QuoteForm = () => {
         form={form}
         layout="vertical"
         onFinish={onFinish}
+        scrollToFirstError
+        onFinishFailed={() => message.error('Veuillez corriger les erreurs indiquées dans le formulaire')}
         initialValues={{
           date: moment(),
           validity_period: 20,
@@ -636,6 +639,16 @@ const QuoteForm = () => {
         </Row>
 
         <Divider>Produits et services</Divider>
+        {itemsError && (
+          <Alert
+            message={itemsError}
+            type="error"
+            showIcon
+            closable
+            onClose={() => setItemsError(null)}
+            style={{ marginBottom: 16 }}
+          />
+        )}
 
         <div style={{ marginBottom: 16 }}>
           {newProductVisible ? (

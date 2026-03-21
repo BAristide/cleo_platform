@@ -13,7 +13,7 @@ import {
 } from '@ant-design/icons';
 import axios from '../../../utils/axiosConfig';
 import moment from 'moment';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -59,10 +59,13 @@ const InvoiceForm = () => {
   const [total, setTotal] = useState(0);
 
   useEffect(() => {
-    fetchInitialData();
-    if (isEditMode) {
-      fetchInvoiceDetails();
-    }
+    const init = async () => {
+      const initialData = await fetchInitialData();
+      if (isEditMode && initialData) {
+        await fetchInvoiceDetails(initialData);
+      }
+    };
+    init();
   }, [id]);
 
   const fetchInitialData = async () => {
@@ -111,13 +114,16 @@ const InvoiceForm = () => {
           handlePaymentTermsChange('30_days');
         }
       }
+      return { companiesData, currenciesData, bankAccountsData, productsData };
     } catch (error) {
       console.error("Erreur lors du chargement des données initiales:", error);
       message.error("Impossible de charger les données nécessaires");
+      return null;
     }
   };
 
-  const fetchInvoiceDetails = async () => {
+  const fetchInvoiceDetails = async (initialData = {}) => {
+    const { bankAccountsData: initialBankAccounts = [] } = initialData;
     setLoading(true);
     try {
       // Récupérer les détails de la facture
@@ -134,7 +140,7 @@ const InvoiceForm = () => {
 
       // Filtrer les comptes bancaires par devise
       if (invoiceData.currency) {
-        const filteredAccounts = bankAccounts.filter(ba => ba.currency === invoiceData.currency);
+        const filteredAccounts = initialBankAccounts.filter(ba => ba.currency === invoiceData.currency);
         setFilteredBankAccounts(filteredAccounts);
       }
 
@@ -483,7 +489,8 @@ const InvoiceForm = () => {
   };
 
   const onFinish = async (values) => {
-    if (invoiceItems.length === 0) {
+    const isDraft = !isEditMode;
+    if (invoiceItems.length === 0 && !isDraft) {
       message.error("Veuillez ajouter au moins un produit à la facture");
       return;
     }
@@ -536,7 +543,7 @@ const InvoiceForm = () => {
       navigate(`/sales/invoices/${invoiceId}`);
     } catch (error) {
       console.error("Erreur lors de l'enregistrement de la facture:", error);
-      message.error("Impossible d'enregistrer la facture");
+      handleApiError(error, form, "Impossible d'enregistrer la facture");
     } finally {
       setSubmitting(false);
     }
@@ -634,6 +641,8 @@ const InvoiceForm = () => {
         form={form}
         layout="vertical"
         onFinish={onFinish}
+        scrollToFirstError
+        onFinishFailed={() => message.error('Veuillez corriger les erreurs indiquées dans le formulaire')}
         initialValues={{
           date: moment(),
           payment_terms: '30_days',

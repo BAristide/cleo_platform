@@ -18,7 +18,7 @@ import {
 import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -181,7 +181,7 @@ const ContactForm = () => {
       navigate(`/crm/contacts/${id}`);
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
-      message.error("Impossible d'enregistrer le contact");
+      handleApiError(error, form, "Impossible d'enregistrer le contact");
     } finally {
       setSubmitting(false);
     }
@@ -207,6 +207,7 @@ const ContactForm = () => {
         layout="vertical"
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
+        scrollToFirstError
         initialValues={{
           is_active: true,
           source: 'website'

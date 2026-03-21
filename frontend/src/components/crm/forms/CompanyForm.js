@@ -19,7 +19,7 @@ import {
 import { PlusOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -187,7 +187,7 @@ const CompanyForm = () => {
       navigate(`/crm/companies/${id}`);
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
-      message.error("Impossible d'enregistrer l'entreprise");
+      handleApiError(error, form, "Impossible d'enregistrer l'entreprise");
     } finally {
       setSubmitting(false);
     }
@@ -213,6 +213,7 @@ const CompanyForm = () => {
         layout="vertical"
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
+        scrollToFirstError
         initialValues={{
           score: 0
         }}

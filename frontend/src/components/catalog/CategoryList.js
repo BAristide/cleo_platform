@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Table, Button, Typography, Card, Input, Space, message, Modal, Form, Select, Popconfirm } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -75,7 +75,7 @@ const CategoryList = () => {
       fetchCategories();
     } catch (error) {
       console.error('Erreur enregistrement:', error);
-      message.error("Impossible d'enregistrer la catégorie");
+      handleApiError(error, form, "Impossible d'enregistrer la catégorie");
     } finally {
       setActionLoading(false);
     }
@@ -119,7 +119,7 @@ const CategoryList = () => {
       </Card>
 
       <Modal title={currentCategory ? 'Modifier la catégorie' : 'Nouvelle catégorie'} open={editModalVisible} onCancel={() => setEditModalVisible(false)} footer={null}>
-        <Form form={form} layout="vertical" onFinish={handleFormSubmit}>
+        <Form form={form} layout="vertical" onFinish={handleFormSubmit} scrollToFirstError onFinishFailed={() => message.error("Veuillez corriger les erreurs indiquees dans le formulaire")}>
           <Form.Item name="code" label="Code" rules={[{ required: true, message: 'Requis' }]}><Input /></Form.Item>
           <Form.Item name="name" label="Nom" rules={[{ required: true, message: 'Requis' }]}><Input /></Form.Item>
           <Form.Item name="parent" label="Catégorie parente">

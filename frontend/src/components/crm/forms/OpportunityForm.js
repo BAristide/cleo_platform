@@ -18,7 +18,7 @@ import {
 } from 'antd';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 import moment from 'moment';
 import { useCurrency } from '../../../context/CurrencyContext';
 
@@ -226,7 +226,7 @@ const fetchContactsByCompany = async (companyId) => {
       navigate(`/crm/opportunities/${id}`);
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
-      message.error("Impossible d'enregistrer l'opportunité");
+      handleApiError(error, form, "Impossible d'enregistrer l'opportunité");
     } finally {
       setSubmitting(false);
     }
@@ -252,6 +252,7 @@ const fetchContactsByCompany = async (companyId) => {
         layout="vertical"
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
+        scrollToFirstError
         initialValues={{
           currency: currencyCode,
           probability: 10

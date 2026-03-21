@@ -39,7 +39,7 @@ const ContractTypeAdmin = () => {
       const values = await form.validateFields();
       if (editingId) {
         await axios.put(`/api/payroll/contract-types/${editingId}/`, values);
-        message.success('Type de contrat modifie');
+        message.success('Type de contrat modifié');
       } else {
         await axios.post('/api/payroll/contract-types/', values);
         message.success('Type de contrat cree');
@@ -54,7 +54,7 @@ const ContractTypeAdmin = () => {
   const handleDelete = async (id) => {
     try {
       await axios.delete(`/api/payroll/contract-types/${id}/`);
-      message.success('Type supprime');
+      message.success('Type supprimé');
       fetchData();
     } catch (err) { message.error('Impossible de supprimer (utilise par des employes)'); }
   };

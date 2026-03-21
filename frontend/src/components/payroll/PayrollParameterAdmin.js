@@ -67,7 +67,7 @@ const PayrollParameterAdmin = () => {
 
       if (editingRecord) {
         await axios.put(`/api/payroll/parameters/${editingRecord.id}/`, payload);
-        message.success('Parametre modifie');
+        message.success('Paramètre modifié');
       } else {
         // Si le code existe deja et qu'on cree une nouvelle version, fermer l'ancien
         const existing = parameters.filter(p => p.code === payload.code && p.is_active && !p.end_date);

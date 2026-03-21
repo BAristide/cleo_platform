@@ -339,7 +339,7 @@ export const EmployeePayrollForm = () => {
       }
       const epId = response.data.id || id;
       await saveAllowances(epId);
-      message.success(`Donnees de paie ${id ? 'modifiees' : 'creees'} avec succes`);
+      message.success(`Donnees de paie ${id ? 'modifiées' : 'créées'} avec succès`);
       navigate('/payroll/employee-payrolls');
     } catch (error) {
       console.error('Erreur:', error);

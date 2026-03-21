@@ -27,7 +27,7 @@ const AnnouncementForm = () => {
         setDepartments(extractResultsFromResponse(deptResp));
         setEmployees(extractResultsFromResponse(empResp));
       } catch {
-        message.error('Erreur lors du chargement des donnees de reference.');
+        message.error('Erreur lors du chargement des données de référence.');
       }
     };
     fetchRefs();

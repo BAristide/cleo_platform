@@ -63,7 +63,7 @@ const ComplaintManagement = () => {
         hr_notes: hrNotes,
         resolution_notes: resolutionNotes,
       });
-      message.success('Statut mis a jour.');
+      message.success('Statut mis à jour.');
       setStatusModal({ open: false, id: null, current: '' });
       setHrNotes(''); setResolutionNotes(''); setNewStatus('');
       fetchComplaints();

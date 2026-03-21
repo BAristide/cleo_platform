@@ -119,7 +119,7 @@ const CategoryList = () => {
       </Card>
 
       <Modal title={currentCategory ? 'Modifier la catégorie' : 'Nouvelle catégorie'} open={editModalVisible} onCancel={() => setEditModalVisible(false)} footer={null}>
-        <Form form={form} layout="vertical" onFinish={handleFormSubmit} scrollToFirstError onFinishFailed={() => message.error("Veuillez corriger les erreurs indiquees dans le formulaire")}>
+        <Form form={form} layout="vertical" onFinish={handleFormSubmit} scrollToFirstError onFinishFailed={() => message.error("Veuillez corriger les erreurs indiquées dans le formulaire")}>
           <Form.Item name="code" label="Code" rules={[{ required: true, message: 'Requis' }]}><Input /></Form.Item>
           <Form.Item name="name" label="Nom" rules={[{ required: true, message: 'Requis' }]}><Input /></Form.Item>
           <Form.Item name="parent" label="Catégorie parente">

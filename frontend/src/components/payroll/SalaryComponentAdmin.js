@@ -59,7 +59,7 @@ const SalaryComponentAdmin = () => {
       const values = await form.validateFields();
       if (editingId) {
         await axios.put(`/api/payroll/components/${editingId}/`, values);
-        message.success('Composant modifie');
+        message.success('Composant modifié');
       } else {
         await axios.post('/api/payroll/components/', values);
         message.success('Composant cree');
@@ -77,7 +77,7 @@ const SalaryComponentAdmin = () => {
   const handleDelete = async (id) => {
     try {
       await axios.delete(`/api/payroll/components/${id}/`);
-      message.success('Composant supprime');
+      message.success('Composant supprimé');
       fetchData();
     } catch (err) {
       message.error('Impossible de supprimer (utilise dans des bulletins)');

@@ -161,7 +161,7 @@ const ProductList = () => {
     try {
       if (currentProduct) {
         await axios.put(`/api/catalog/products/${currentProduct.id}/`, values);
-        message.success('Produit mis a jour avec succes');
+        message.success('Produit mis à jour avec succès');
       } else {
         await axios.post('/api/catalog/products/', values);
         message.success('Produit créé avec succès');
@@ -255,7 +255,7 @@ const ProductList = () => {
       </Card>
 
       <Modal title={currentProduct ? 'Modifier le produit' : 'Nouveau produit'} open={editModalVisible} onCancel={() => setEditModalVisible(false)} footer={null} width={700}>
-        <Form form={form} layout="vertical" onFinish={handleFormSubmit} scrollToFirstError onFinishFailed={() => message.error("Veuillez corriger les erreurs indiquees dans le formulaire")}>
+        <Form form={form} layout="vertical" onFinish={handleFormSubmit} scrollToFirstError onFinishFailed={() => message.error("Veuillez corriger les erreurs indiquées dans le formulaire")}>
           <Row gutter={16}>
             <Col span={12}><Form.Item name="name" label="Nom" rules={[{ required: true, message: 'Veuillez saisir le nom' }]}><Input /></Form.Item></Col>
             <Col span={12}><Form.Item name="reference" label="Reference" rules={[{ required: true, message: 'Veuillez saisir la reference' }]}><Input /></Form.Item></Col>

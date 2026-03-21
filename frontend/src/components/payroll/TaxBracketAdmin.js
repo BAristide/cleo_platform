@@ -54,7 +54,7 @@ const TaxBracketAdmin = () => {
         message.success('Tranche modifiee');
       } else {
         await axios.post('/api/payroll/tax-brackets/', payload);
-        message.success('Tranche creee');
+        message.success('Tranche créée');
       }
       setModalVisible(false);
       fetchData();

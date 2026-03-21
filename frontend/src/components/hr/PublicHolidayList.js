@@ -63,10 +63,10 @@ const PublicHolidayList = () => {
     try {
       if (editing) {
         await axios.patch(`/api/hr/public-holidays/${editing.id}/`, payload);
-        message.success('Jour ferie mis a jour.');
+        message.success('Jour férié mis à jour.');
       } else {
         await axios.post('/api/hr/public-holidays/', payload);
-        message.success('Jour ferie ajoute.');
+        message.success('Jour férié ajouté.');
       }
       setModalOpen(false);
       fetchHolidays();
@@ -80,7 +80,7 @@ const PublicHolidayList = () => {
   const handleDelete = async (id) => {
     try {
       await axios.delete(`/api/hr/public-holidays/${id}/`);
-      message.success('Jour ferie supprime.');
+      message.success('Jour férié supprimé.');
       fetchHolidays();
     } catch {
       message.error('Suppression impossible.');

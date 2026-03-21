@@ -132,7 +132,7 @@ const ProductDetail = () => {
     setActionLoading(true);
     try {
       await axios.put(`/api/catalog/products/${id}/`, values);
-      message.success('Produit mis a jour');
+      message.success('Produit mis à jour');
       setEditModalVisible(false);
       fetchProductDetails();
     } catch (error) {

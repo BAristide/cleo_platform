@@ -41,7 +41,7 @@ const NotificationPreferences = () => {
     try {
       const res = await axios.patch('/api/notifications/notification-preferences/', { [key]: checked });
       setPrefs(res.data);
-      message.success('Preference mise a jour');
+      message.success('Préférence mise à jour');
     } catch (err) {
       message.error('Erreur lors de la mise a jour');
     } finally {

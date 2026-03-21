@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, DatePicker, Select, Card, Row, Col, message, Spin, Space } from 'antd';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 import moment from 'moment';
 
 const { Option } = Select;
@@ -21,7 +21,7 @@ const AvailabilityForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [employees, setEmployees] = useState([]);
-  
+
   const isEditMode = !!id;
 
   useEffect(() => {
@@ -29,7 +29,7 @@ const AvailabilityForm = () => {
       setLoading(true);
       try {
         // Charger la liste des employés
-        const employeesResponse = await axios.get('/api/hr/employees/', { 
+        const employeesResponse = await axios.get('/api/hr/employees/', {
           params: { is_active: true }
         });
         setEmployees(extractResultsFromResponse(employeesResponse));
@@ -92,7 +92,7 @@ const AvailabilityForm = () => {
       }
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
-      message.error("Impossible d'enregistrer la disponibilité");
+      handleApiError(error, form, "Impossible d'enregistrer la disponibilité");
     } finally {
       setSubmitting(false);
     }
@@ -117,6 +117,7 @@ const AvailabilityForm = () => {
         form={form}
         layout="vertical"
         onFinish={onFinish}
+        scrollToFirstError
         onFinishFailed={onFinishFailed}
       >
         <Row gutter={16}>
@@ -162,13 +163,13 @@ const AvailabilityForm = () => {
         <Form.Item
           name="date_range"
           label="Période"
-          rules={[{ 
-            required: true, 
-            message: 'Veuillez sélectionner les dates de la disponibilité' 
+          rules={[{
+            required: true,
+            message: 'Veuillez sélectionner les dates de la disponibilité'
           }]}
         >
-          <RangePicker 
-            style={{ width: '100%' }} 
+          <RangePicker
+            style={{ width: '100%' }}
             format="DD/MM/YYYY"
           />
         </Form.Item>
@@ -178,8 +179,8 @@ const AvailabilityForm = () => {
           label="Motif"
           rules={[{ required: true, message: 'Veuillez saisir un motif' }]}
         >
-          <TextArea 
-            rows={4} 
+          <TextArea
+            rows={4}
             placeholder="Décrivez le motif de cette demande de disponibilité..."
           />
         </Form.Item>

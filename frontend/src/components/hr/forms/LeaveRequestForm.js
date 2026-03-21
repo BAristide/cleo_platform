@@ -7,6 +7,7 @@ import {
 import { UploadOutlined, SaveOutlined, SendOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
+import { handleApiError } from '../../../utils/apiUtils';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -76,10 +77,7 @@ const LeaveRequestForm = () => {
       }
       navigate('/hr/leaves');
     } catch (err) {
-      const detail = err.response?.data?.detail
-        || err.response?.data?.error
-        || 'Erreur lors de la création.';
-      message.error(detail);
+      handleApiError(err, form, 'Erreur lors de la création.');
     } finally {
       setLoading(false);
     }
@@ -99,7 +97,7 @@ const LeaveRequestForm = () => {
       )}
 
       <Card>
-        <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <Form form={form} layout="vertical" onFinish={handleSubmit} scrollToFirstError>
           <Form.Item
             label="Type de congé"
             name="leave_type"

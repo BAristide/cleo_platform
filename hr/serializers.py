@@ -183,6 +183,27 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
     job_title = JobTitleSerializer(read_only=True)
     manager = EmployeeListSerializer(read_only=True)
     second_manager = EmployeeListSerializer(read_only=True)
+    department_id = serializers.PrimaryKeyRelatedField(
+        queryset=Department.objects.all(),
+        source='department',
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+    job_title_id = serializers.PrimaryKeyRelatedField(
+        queryset=JobTitle.objects.all(),
+        source='job_title',
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source='user',
+        write_only=True,
+        required=False,
+        allow_null=True,
+    )
     manager_id = serializers.PrimaryKeyRelatedField(
         queryset=Employee.objects.all(),
         source='manager',
@@ -228,6 +249,9 @@ class EmployeeDetailSerializer(serializers.ModelSerializer):
             'probation_end_date',
             'marital_status',
             'dependent_children',
+            'department_id',
+            'job_title_id',
+            'user_id',
             'manager_id',
             'second_manager_id',
         ]

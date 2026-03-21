@@ -11,7 +11,7 @@ import {
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -84,7 +84,7 @@ const JobTitleList = () => {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      
+
       if (editingJobTitle) {
         // Mode édition
         await axios.put(`/api/hr/job-titles/${editingJobTitle.id}/`, values);
@@ -94,12 +94,12 @@ const JobTitleList = () => {
         await axios.post('/api/hr/job-titles/', values);
         message.success("Poste créé avec succès");
       }
-      
+
       setModalVisible(false);
       fetchJobTitles();
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
-      message.error("Impossible d'enregistrer le poste");
+      handleApiError(error, form, "Impossible d'enregistrer le poste");
     }
   };
 
@@ -107,8 +107,8 @@ const JobTitleList = () => {
     setSearchText(e.target.value);
   };
 
-  const filteredJobTitles = jobTitles.filter(jobTitle => 
-    (searchText === '' || 
+  const filteredJobTitles = jobTitles.filter(jobTitle =>
+    (searchText === '' ||
      jobTitle.name.toLowerCase().includes(searchText.toLowerCase()) ||
      (jobTitle.description && jobTitle.description.toLowerCase().includes(searchText.toLowerCase()))) &&
     (departmentFilter === null || jobTitle.department.id === departmentFilter)
@@ -211,7 +211,7 @@ const JobTitleList = () => {
       {/* Modal pour créer/modifier un poste */}
       <Modal
         title={editingJobTitle ? "Modifier le poste" : "Nouveau poste"}
-        visible={modalVisible}
+        open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={[
           <Button key="back" onClick={() => setModalVisible(false)}>

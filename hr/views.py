@@ -206,11 +206,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     ordering = ['last_name', 'first_name']
 
     def get_serializer_class(self):
-        if (
-            self.action == 'retrieve'
-            or self.action == 'update'
-            or self.action == 'partial_update'
-        ):
+        if self.action in ('retrieve', 'create', 'update', 'partial_update'):
             return EmployeeDetailSerializer
         return EmployeeListSerializer
 

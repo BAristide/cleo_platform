@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Select, Card, Row, Col, Typography, message, Spin, Space } from 'antd';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -20,7 +20,7 @@ const TrainingPlanForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [employees, setEmployees] = useState([]);
-  
+
   const isEditMode = !!id;
   const currentYear = new Date().getFullYear();
 
@@ -29,7 +29,7 @@ const TrainingPlanForm = () => {
       setLoading(true);
       try {
         // Charger la liste des employés
-        const employeesResponse = await axios.get('/api/hr/employees/', { 
+        const employeesResponse = await axios.get('/api/hr/employees/', {
           params: { is_active: true }
         });
         setEmployees(extractResultsFromResponse(employeesResponse));
@@ -84,7 +84,7 @@ const TrainingPlanForm = () => {
       }
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
-      message.error("Impossible d'enregistrer le plan de formation");
+      handleApiError(error, form, "Impossible d'enregistrer le plan de formation");
     } finally {
       setSubmitting(false);
     }
@@ -115,6 +115,7 @@ const TrainingPlanForm = () => {
         form={form}
         layout="vertical"
         onFinish={onFinish}
+        scrollToFirstError
         onFinishFailed={onFinishFailed}
       >
         <Row gutter={16}>
@@ -164,8 +165,8 @@ const TrainingPlanForm = () => {
           label="Objectifs"
           rules={[{ required: true, message: 'Veuillez saisir les objectifs du plan de formation' }]}
         >
-          <TextArea 
-            rows={6} 
+          <TextArea
+            rows={6}
             placeholder="Décrivez les objectifs de développement, les compétences à renforcer, etc."
           />
         </Form.Item>

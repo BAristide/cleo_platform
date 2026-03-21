@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Select, Input, DatePicker, Switch, Button, Card, Typography, message, Space } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title } = Typography;
@@ -24,7 +24,7 @@ const RewardForm = () => {
     ]).then(([empR, typeR]) => {
       setEmployees(extractResultsFromResponse(empR));
       setRewardTypes(extractResultsFromResponse(typeR));
-    }).catch(() => message.error('Erreur lors du chargement des donnees.'));
+    }).catch(() => message.error('Erreur lors du chargement des données.'));
   }, []);
 
   const handleSubmit = async (values) => {
@@ -36,8 +36,8 @@ const RewardForm = () => {
       });
       message.success('Récompense attribuée avec succès.');
       navigate('/hr/rewards');
-    } catch {
-      message.error("Erreur lors de l'attribution.");
+    } catch (error) {
+      handleApiError(error, form, "Erreur lors de l'attribution.");
     } finally {
       setSubmitting(false);
     }
@@ -48,6 +48,8 @@ const RewardForm = () => {
       <Title level={2}>Attribuer une récompense</Title>
       <Card style={{ maxWidth: 560 }}>
         <Form form={form} layout="vertical" onFinish={handleSubmit}
+          scrollToFirstError
+          onFinishFailed={() => message.error('Veuillez corriger les erreurs indiquées dans le formulaire')}
           initialValues={{ is_public: true, awarded_date: moment() }}>
           <Form.Item name="employee" label="Employé"
             rules={[{ required: true, message: 'Sélectionnez un employé.' }]}>

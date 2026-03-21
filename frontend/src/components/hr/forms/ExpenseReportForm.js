@@ -9,6 +9,7 @@ import { PlusOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons'
 import { useNavigate, useParams } from 'react-router-dom';
 import dayjs from 'dayjs';
 import axios from '../../../utils/axiosConfig';
+import { handleApiError } from '../../../utils/apiUtils';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -151,7 +152,7 @@ const ExpenseReportForm = () => {
 
       navigate('/hr/expenses');
     } catch (err) {
-      message.error(err.response?.data?.error || 'Erreur lors de la sauvegarde.');
+      handleApiError(err, form, 'Erreur lors de la sauvegarde.');
     } finally {
       setLoading(false);
     }

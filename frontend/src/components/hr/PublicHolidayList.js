@@ -6,7 +6,9 @@ import {
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import axios from 'axios';
+import axios from '../../utils/axiosConfig';
+
+import { handleApiError } from '../../utils/apiUtils';
 
 const { Option } = Select;
 
@@ -23,7 +25,7 @@ const PublicHolidayList = () => {
     setLoading(true);
     axios.get('/api/hr/public-holidays/')
       .then(r => setHolidays(r.data.results ?? r.data))
-      .catch(() => message.error('Impossible de charger les jours feries.'))
+      .catch(() => message.error('Impossible de charger les jours fériés.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -70,8 +72,8 @@ const PublicHolidayList = () => {
       }
       setModalOpen(false);
       fetchHolidays();
-    } catch {
-      message.error('Une erreur est survenue.');
+    } catch (error) {
+      handleApiError(error, form, 'Une erreur est survenue.');
     } finally {
       setSaving(false);
     }
@@ -134,7 +136,7 @@ const PublicHolidayList = () => {
             Modifier
           </Button>
           <Popconfirm
-            title="Supprimer ce jour ferie ?"
+            title="Supprimer ce jour férié ?"
             onConfirm={() => handleDelete(record.id)}
             okText="Supprimer"
             cancelText="Annuler"
@@ -152,9 +154,9 @@ const PublicHolidayList = () => {
   return (
     <div style={{ padding: 24 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <h2 style={{ margin: 0 }}>Jours feries</h2>
+        <h2 style={{ margin: 0 }}>Jours fériés</h2>
         <Button type="primary" icon={<PlusOutlined />} onClick={openCreate}>
-          Ajouter un jour ferie
+          Ajouter un jour férié
         </Button>
       </div>
 
@@ -164,7 +166,7 @@ const PublicHolidayList = () => {
           onChange={setFilterRecurring}
           style={{ width: 200 }}
         >
-          <Option value="all">Tous les jours feries</Option>
+          <Option value="all">Tous les jours fériés</Option>
           <Option value="recurring">Annuels uniquement</Option>
           <Option value="punctual">Ponctuels uniquement</Option>
         </Select>
@@ -176,11 +178,11 @@ const PublicHolidayList = () => {
         rowKey="id"
         loading={loading}
         pagination={{ pageSize: 20, showSizeChanger: false }}
-        locale={{ emptyText: 'Aucun jour ferie enregistre.' }}
+        locale={{ emptyText: 'Aucun jour férié enregistré.' }}
       />
 
       <Modal
-        title={editing ? 'Modifier le jour ferie' : 'Ajouter un jour ferie'}
+        title={editing ? 'Modifier le jour férié' : 'Ajouter un jour férié'}
         open={modalOpen}
         onOk={handleSave}
         onCancel={() => setModalOpen(false)}
@@ -192,10 +194,10 @@ const PublicHolidayList = () => {
         <Form form={form} layout="vertical" style={{ marginTop: 16 }}>
           <Form.Item
             name="name"
-            label="Nom du jour ferie"
+            label="Nom du jour férié"
             rules={[{ required: true, message: 'Le nom est obligatoire.' }]}
           >
-            <Input placeholder="Ex : Fete du Travail" maxLength={100} />
+            <Input placeholder="Ex : Fête du Travail" maxLength={100} />
           </Form.Item>
 
           <Form.Item
@@ -208,7 +210,7 @@ const PublicHolidayList = () => {
 
           <Form.Item
             name="is_recurring"
-            label="Recurrent annuellement"
+            label="Récurrent annuellement"
             valuePropName="checked"
           >
             <Switch

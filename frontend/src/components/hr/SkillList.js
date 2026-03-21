@@ -10,7 +10,7 @@ import {
   CloseOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -70,7 +70,7 @@ const SkillList = () => {
   const handleSave = async () => {
     try {
       const values = await form.validateFields();
-      
+
       if (editingSkill) {
         // Mode édition
         await axios.put(`/api/hr/skills/${editingSkill.id}/`, values);
@@ -80,12 +80,12 @@ const SkillList = () => {
         await axios.post('/api/hr/skills/', values);
         message.success("Compétence créée avec succès");
       }
-      
+
       setModalVisible(false);
       fetchSkills();
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
-      message.error("Impossible d'enregistrer la compétence");
+      handleApiError(error, form, "Impossible d'enregistrer la compétence");
     }
   };
 
@@ -113,8 +113,8 @@ const SkillList = () => {
     setSearchText(e.target.value);
   };
 
-  const filteredSkills = skills.filter(skill => 
-    (searchText === '' || 
+  const filteredSkills = skills.filter(skill =>
+    (searchText === '' ||
      skill.name.toLowerCase().includes(searchText.toLowerCase()) ||
      (skill.description && skill.description.toLowerCase().includes(searchText.toLowerCase()))) &&
     (categoryFilter === null || skill.category === categoryFilter)
@@ -214,7 +214,7 @@ const SkillList = () => {
       {/* Modal pour créer/modifier une compétence */}
       <Modal
         title={editingSkill ? "Modifier la compétence" : "Nouvelle compétence"}
-        visible={modalVisible}
+        open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={[
           <Button key="back" onClick={() => setModalVisible(false)}>

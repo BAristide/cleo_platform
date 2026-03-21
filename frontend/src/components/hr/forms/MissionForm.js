@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, DatePicker, Select, Card, Row, Col, Typography, message, Spin, Space } from 'antd';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title } = Typography;
@@ -22,7 +22,7 @@ const MissionForm = () => {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [employees, setEmployees] = useState([]);
-  
+
   const isEditMode = !!id;
 
   useEffect(() => {
@@ -30,7 +30,7 @@ const MissionForm = () => {
       setLoading(true);
       try {
         // Charger la liste des employés
-        const employeesResponse = await axios.get('/api/hr/employees/', { 
+        const employeesResponse = await axios.get('/api/hr/employees/', {
           params: { is_active: true }
         });
         setEmployees(extractResultsFromResponse(employeesResponse));
@@ -95,7 +95,7 @@ const MissionForm = () => {
       }
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
-      message.error("Impossible d'enregistrer la mission");
+      handleApiError(error, form, "Impossible d'enregistrer la mission");
     } finally {
       setSubmitting(false);
     }
@@ -125,6 +125,7 @@ const MissionForm = () => {
         form={form}
         layout="vertical"
         onFinish={onFinish}
+        scrollToFirstError
         onFinishFailed={onFinishFailed}
       >
         <Row gutter={16}>
@@ -175,13 +176,13 @@ const MissionForm = () => {
             <Form.Item
               name="date_range"
               label="Période"
-              rules={[{ 
-                required: true, 
-                message: 'Veuillez sélectionner les dates de la mission' 
+              rules={[{
+                required: true,
+                message: 'Veuillez sélectionner les dates de la mission'
               }]}
             >
-              <RangePicker 
-                style={{ width: '100%' }} 
+              <RangePicker
+                style={{ width: '100%' }}
                 format="DD/MM/YYYY"
                 disabledDate={isEditMode ? null : disabledDate}
               />
@@ -194,8 +195,8 @@ const MissionForm = () => {
           label="Description"
           rules={[{ required: true, message: 'Veuillez saisir une description' }]}
         >
-          <TextArea 
-            rows={6} 
+          <TextArea
+            rows={6}
             placeholder="Décrivez l'objectif, le contexte et les détails de la mission..."
           />
         </Form.Item>

@@ -6,7 +6,7 @@ import {
 } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 import dayjs from 'dayjs';
 
 const { Title } = Typography;
@@ -142,11 +142,7 @@ const EmployeeForm = () => {
       }
     } catch (error) {
       console.error("Erreur lors de l'enregistrement:", error);
-      const detail = error.response?.data;
-      const msg = typeof detail === 'object'
-        ? Object.entries(detail).map(([k, v]) => `${k}: ${v}`).join(' | ')
-        : "Impossible d'enregistrer l'employé";
-      message.error(msg);
+      handleApiError(error, form, "Impossible d'enregistrer l'employé");
     } finally {
       setSubmitting(false);
     }
@@ -166,6 +162,8 @@ const EmployeeForm = () => {
         form={form}
         layout="vertical"
         onFinish={onFinish}
+        scrollToFirstError
+        onFinishFailed={() => message.error('Veuillez corriger les erreurs indiquées dans le formulaire')}
         initialValues={{ is_active: true, is_hr: false, is_finance: false, marital_status: 'single', dependent_children: 0 }}
       >
         <Title level={4}>Informations personnelles</Title>

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Form, Select, Input, Switch, Button, Card, Typography, message, Space, Alert } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
+import { handleApiError } from '../../utils/apiUtils';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -18,10 +19,10 @@ const ComplaintForm = () => {
     setSubmitting(true);
     try {
       await axios.post('/api/hr/complaints/', values);
-      message.success('Votre doleance a ete soumise avec succes.');
+      message.success('Votre doléance a été soumise avec succès.');
       navigate('/hr/complaints');
-    } catch {
-      message.error('Erreur lors de la soumission de la doleance.');
+    } catch (error) {
+      handleApiError(error, form, 'Erreur lors de la soumission de la doléance.');
     } finally {
       setSubmitting(false);
     }
@@ -29,16 +30,18 @@ const ComplaintForm = () => {
 
   return (
     <div>
-      <Title level={2}>Soumettre une doleance</Title>
+      <Title level={2}>Soumettre une doléance</Title>
       <Card style={{ maxWidth: 680 }}>
         <Alert
           type="info"
           showIcon
           style={{ marginBottom: 24 }}
           message="Confidentialité"
-          description="Votre doleance sera traitée en toute confidentialité par le service RH. Vous pouvez choisir de rester anonyme.."
+          description="Votre doléance sera traitée en toute confidentialité par le service RH. Vous pouvez choisir de rester anonyme."
         />
         <Form form={form} layout="vertical" onFinish={handleSubmit}
+          scrollToFirstError
+          onFinishFailed={() => message.error('Veuillez corriger les erreurs indiquées dans le formulaire')}
           initialValues={{ is_anonymous: false, category: 'other' }}>
           <Form.Item name="category" label="Catégorie"
             rules={[{ required: true, message: 'Veuillez sélectionner une catégorie.' }]}>
@@ -46,15 +49,15 @@ const ComplaintForm = () => {
               <Option value="harassment">Harcèlement</Option>
               <Option value="discrimination">Discrimination</Option>
               <Option value="workload">Charge de travail</Option>
-              <Option value="management">Comportement managerial</Option>
+              <Option value="management">Comportement managérial</Option>
               <Option value="other">Autre</Option>
             </Select>
           </Form.Item>
 
           <Form.Item name="description" label="Description"
-            rules={[{ required: true, message: 'Veuillez decrire la situation.' }]}>
+            rules={[{ required: true, message: 'Veuillez décrire la situation.' }]}>
             <TextArea rows={6}
-              placeholder="Decrivez la situation en detail..." />
+              placeholder="Décrivez la situation en détail..." />
           </Form.Item>
 
           <Form.Item name="is_anonymous" label="Soumettre de manière anonyme"
@@ -64,7 +67,7 @@ const ComplaintForm = () => {
 
           {isAnonymous && (
             <Alert type="warning" showIcon style={{ marginBottom: 16 }}
-              message="Votre identite ne sera pas communiquee, mais le RH assigne pourra voir votre nom dans certains cas (administration uniquement)." />
+              message="Votre identité ne sera pas communiquée, mais le RH assigné pourra voir votre nom dans certains cas (administration uniquement)." />
           )}
 
           <Space>

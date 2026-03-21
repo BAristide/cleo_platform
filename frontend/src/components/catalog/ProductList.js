@@ -149,10 +149,16 @@ const ProductList = () => {
     setEditModalVisible(true);
   };
 
-  const showCreateModal = () => {
+  const showCreateModal = async () => {
     setCurrentProduct(null);
     form.resetFields();
     form.setFieldsValue({ is_active: true, tax_rate: 18, product_type: 'stockable' });
+    try {
+      const res = await axios.get('/api/catalog/products/generate_reference/');
+      form.setFieldsValue({ reference: res.data.reference });
+    } catch {
+      // Silencieux — l'utilisateur peut saisir manuellement
+    }
     setEditModalVisible(true);
   };
 
@@ -178,7 +184,7 @@ const ProductList = () => {
 
   const columns = [
     {
-      title: 'Reference',
+      title: 'Référence',
       dataIndex: 'reference',
       key: 'reference',
       render: (text, record) => <Link to={`/catalog/products/${record.id}`}>{text}</Link>,
@@ -216,7 +222,7 @@ const ProductList = () => {
         <Space size="small">
           <Button size="small" icon={<EditOutlined />} onClick={() => showEditModal(record)} />
           <Switch checked={record.is_active} onChange={() => handleToggleActive(record.id, record.is_active)} loading={actionLoading} />
-          <Popconfirm title="Supprimer ce produit?" description="Cette action ne peut pas etre annulee." onConfirm={() => handleDeleteProduct(record.id)} okText="Oui" cancelText="Non">
+          <Popconfirm title="Supprimer ce produit?" description="Cette action est irréversible." onConfirm={() => handleDeleteProduct(record.id)} okText="Oui" cancelText="Non">
             <Button size="small" danger icon={<DeleteOutlined />} loading={actionLoading} />
           </Popconfirm>
         </Space>
@@ -235,7 +241,7 @@ const ProductList = () => {
         <div style={{ marginBottom: 16 }}>
           <Row gutter={16}>
             <Col span={16}>
-              <Input placeholder="Rechercher par reference, nom ou description" value={searchText} onChange={e => setSearchText(e.target.value)} onPressEnter={handleSearch} prefix={<SearchOutlined />} />
+              <Input placeholder="Rechercher par référence, nom ou description" value={searchText} onChange={e => setSearchText(e.target.value)} onPressEnter={handleSearch} prefix={<SearchOutlined />} />
             </Col>
             <Col span={8}>
               <Space>
@@ -245,20 +251,20 @@ const ProductList = () => {
                   <Option value="inactive">Inactifs</Option>
                 </Select>
                 <Button onClick={handleSearch} type="primary">Rechercher</Button>
-                {(searchText || statusFilter !== 'all') && <Button onClick={resetFilters}>Reinitialiser</Button>}
+                {(searchText || statusFilter !== 'all') && <Button onClick={resetFilters}>Réinitialiser</Button>}
               </Space>
             </Col>
           </Row>
         </div>
 
-        <Table columns={columns} dataSource={products} rowKey="id" loading={loading} pagination={pagination} onChange={handleTableChange} locale={{ emptyText: 'Aucun produit trouve' }} />
+        <Table columns={columns} dataSource={products} rowKey="id" loading={loading} pagination={pagination} onChange={handleTableChange} locale={{ emptyText: 'Aucun produit trouvé' }} />
       </Card>
 
       <Modal title={currentProduct ? 'Modifier le produit' : 'Nouveau produit'} open={editModalVisible} onCancel={() => setEditModalVisible(false)} footer={null} width={700}>
         <Form form={form} layout="vertical" onFinish={handleFormSubmit} scrollToFirstError onFinishFailed={() => message.error("Veuillez corriger les erreurs indiquées dans le formulaire")}>
           <Row gutter={16}>
             <Col span={12}><Form.Item name="name" label="Nom" rules={[{ required: true, message: 'Veuillez saisir le nom' }]}><Input /></Form.Item></Col>
-            <Col span={12}><Form.Item name="reference" label="Reference" rules={[{ required: true, message: 'Veuillez saisir la reference' }]}><Input /></Form.Item></Col>
+            <Col span={12}><Form.Item name="reference" label="Référence" rules={[{ required: true, message: 'Veuillez saisir la référence' }]}><Input /></Form.Item></Col>
           </Row>
           <Row gutter={16}>
             <Col span={12}>
@@ -285,7 +291,7 @@ const ProductList = () => {
             <Col span={8}><Form.Item name="tax_rate" label="TVA (%)" rules={[{ required: true, message: 'Requis' }, { type: 'number', min: 0, max: 100, message: '0-100' }]}><InputNumber style={{ width: '100%' }} step={0.1} precision={2} /></Form.Item></Col>
           </Row>
           <Row gutter={16}>
-            <Col span={8}><Form.Item name="unit_of_measure" label="Unite de mesure"><Input placeholder="unite" /></Form.Item></Col>
+            <Col span={8}><Form.Item name="unit_of_measure" label="Unité de mesure"><Input placeholder="unité" /></Form.Item></Col>
             <Col span={8}><Form.Item name="stock_alert_threshold" label="Seuil alerte stock" rules={[{ type: 'number', min: 0 }]}><InputNumber style={{ width: '100%' }} step={1} precision={0} /></Form.Item></Col>
             <Col span={8}><Form.Item name="weight" label="Poids (kg)" rules={[{ type: 'number', min: 0 }]}><InputNumber style={{ width: '100%' }} step={0.1} precision={3} /></Form.Item></Col>
           </Row>
@@ -294,7 +300,7 @@ const ProductList = () => {
           <Form.Item>
             <div style={{ textAlign: 'right' }}>
               <Button onClick={() => setEditModalVisible(false)} style={{ marginRight: 8 }}>Annuler</Button>
-              <Button type="primary" htmlType="submit" loading={actionLoading}>{currentProduct ? 'Mettre a jour' : 'Creer'}</Button>
+              <Button type="primary" htmlType="submit" loading={actionLoading}>{currentProduct ? 'Mettre à jour' : 'Créer'}</Button>
             </div>
           </Form.Item>
         </Form>

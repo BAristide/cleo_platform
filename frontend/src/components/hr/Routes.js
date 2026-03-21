@@ -12,6 +12,7 @@ import EmployeeForm from './forms/EmployeeForm';
 // Départements et postes
 import DepartmentList from './DepartmentList';
 import DepartmentDetail from './DepartmentDetail';
+import DepartmentForm from './DepartmentForm';
 import JobTitleList from './JobTitleList';
 import JobTitleDetail from './JobTitleDetail';
 
@@ -69,7 +70,7 @@ const HRRoutes = () => {
 
         {/* Départements */}
         <Route path="/departments" element={<DepartmentList />} />
-        <Route path="/departments/new" element={<DepartmentDetail />} />
+        <Route path="/departments/new" element={<DepartmentForm />} />
         <Route path="/departments/:id" element={<DepartmentDetail />} />
 
         {/* Postes */}

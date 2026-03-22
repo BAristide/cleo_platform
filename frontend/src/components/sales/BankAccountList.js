@@ -10,7 +10,7 @@ import {
   BankOutlined, DollarOutlined, CheckCircleOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -127,8 +127,7 @@ const BankAccountList = () => {
       message.success('Compte bancaire supprimé avec succès');
       fetchBankAccounts();
     } catch (error) {
-      console.error("Erreur lors de la suppression du compte bancaire:", error);
-      message.error("Impossible de supprimer le compte bancaire. Ce compte est peut-être utilisé dans des documents de vente.");
+      handleApiError(error, null, "Impossible de supprimer le compte bancaire.");
     } finally {
       setActionLoading(false);
     }
@@ -141,8 +140,7 @@ const BankAccountList = () => {
       message.success('Compte bancaire défini comme compte par défaut');
       fetchBankAccounts();
     } catch (error) {
-      console.error("Erreur lors de la définition du compte par défaut:", error);
-      message.error("Impossible de définir ce compte comme compte par défaut");
+      handleApiError(error, null, "Impossible de définir ce compte comme compte par défaut.");
     } finally {
       setActionLoading(false);
     }
@@ -180,8 +178,7 @@ const BankAccountList = () => {
       setEditModalVisible(false);
       fetchBankAccounts();
     } catch (error) {
-      console.error("Erreur lors de l'enregistrement du compte bancaire:", error);
-      message.error("Impossible d'enregistrer le compte bancaire");
+      handleApiError(error, null, "Impossible d'enregistrer le compte bancaire.");
     } finally {
       setActionLoading(false);
     }
@@ -342,7 +339,7 @@ const BankAccountList = () => {
       {/* Modal pour créer/éditer un compte bancaire */}
       <Modal
         title={currentAccount ? 'Modifier le compte bancaire' : 'Nouveau compte bancaire'}
-        visible={editModalVisible}
+        open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
         footer={null}
       >

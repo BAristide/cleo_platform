@@ -47,7 +47,7 @@ import {
   CloseOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title, Text, Paragraph } = Typography;
@@ -148,8 +148,7 @@ const InvoiceDetail = () => {
       message.success('Facture supprimée avec succès');
       navigate('/sales/invoices');
     } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-      message.error("Impossible de supprimer la facture");
+      handleApiError(error, null, "Impossible de supprimer la facture.");
     } finally {
       setLoadingAction(false);
     }
@@ -162,8 +161,7 @@ const InvoiceDetail = () => {
       message.success('Facture marquée comme payée');
       fetchInvoiceDetails();
     } catch (error) {
-      console.error("Erreur lors du marquage comme payée:", error);
-      message.error("Impossible de marquer la facture comme payée");
+      handleApiError(error, null, "Impossible de marquer la facture comme payée.");
     } finally {
       setLoadingAction(false);
     }
@@ -176,8 +174,7 @@ const InvoiceDetail = () => {
       message.success('Facture annulée avec succès');
       fetchInvoiceDetails();
     } catch (error) {
-      console.error("Erreur lors de l'annulation de la facture:", error);
-      message.error("Impossible d'annuler la facture");
+      handleApiError(error, null, "Impossible d'annuler la facture.");
     } finally {
       setLoadingAction(false);
     }
@@ -192,8 +189,7 @@ const InvoiceDetail = () => {
       window.open(`/api/sales/invoices/${id}/download_pdf/`, '_blank');
       fetchInvoiceDetails();
     } catch (error) {
-      console.error("Erreur lors de la génération du PDF:", error);
-      message.error("Impossible de générer le PDF");
+      handleApiError(error, null, "Impossible de générer le PDF.");
     } finally {
       setLoadingAction(false);
     }
@@ -221,8 +217,7 @@ const InvoiceDetail = () => {
       setSendEmailModal(false);
       fetchInvoiceDetails();
     } catch (error) {
-      console.error("Erreur lors de l'envoi de l'email:", error);
-      message.error("Impossible d'envoyer l'email");
+      handleApiError(error, null, "Impossible d'envoyer l'email.");
     } finally {
       setLoadingAction(false);
     }
@@ -251,8 +246,7 @@ const InvoiceDetail = () => {
       setAddPaymentModal(false);
       fetchInvoiceDetails();
     } catch (error) {
-      console.error("Erreur lors de l'ajout du paiement:", error);
-      message.error("Impossible d'ajouter le paiement");
+      handleApiError(error, null, "Impossible d'ajouter le paiement.");
     } finally {
       setLoadingAction(false);
     }
@@ -303,8 +297,7 @@ const InvoiceDetail = () => {
       setCreditNoteMode('proportional');
       fetchInvoiceDetails();
     } catch (error) {
-      console.error("Erreur lors de la création de l'avoir:", error);
-      message.error(error.response?.data?.error || "Impossible de créer l'avoir");
+      handleApiError(error, null, "Impossible de créer l'avoir.");
     } finally {
       setLoadingAction(false);
     }
@@ -1072,7 +1065,7 @@ const InvoiceDetail = () => {
             {/* Modal pour l'envoi d'email */}
       <Modal
         title="Envoyer la facture par email"
-        visible={sendEmailModal}
+        open={sendEmailModal}
         onCancel={() => setSendEmailModal(false)}
         footer={null}
       >
@@ -1122,7 +1115,7 @@ const InvoiceDetail = () => {
       {/* Modal pour l'ajout d'un paiement */}
       <Modal
         title="Ajouter un paiement"
-        visible={addPaymentModal}
+        open={addPaymentModal}
         onCancel={() => setAddPaymentModal(false)}
         footer={null}
       >
@@ -1208,7 +1201,7 @@ const InvoiceDetail = () => {
       {/* Modal pour la création d'un avoir */}
       <Modal
         title="Créer un avoir"
-        visible={createCreditNoteModal}
+        open={createCreditNoteModal}
         onCancel={() => setCreateCreditNoteModal(false)}
         footer={null}
       >

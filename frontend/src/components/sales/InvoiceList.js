@@ -11,7 +11,7 @@ import {
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -150,8 +150,7 @@ const InvoiceList = () => {
       message.success('Facture supprimée avec succès');
       fetchInvoices();
     } catch (error) {
-      console.error("Erreur lors de la suppression de la facture:", error);
-      message.error("Impossible de supprimer la facture");
+      handleApiError(error, null, "Impossible de supprimer la facture.");
     } finally {
       setActionLoading(false);
     }
@@ -164,8 +163,7 @@ const InvoiceList = () => {
       message.success('Facture marquée comme payée avec succès');
       fetchInvoices();
     } catch (error) {
-      console.error("Erreur lors du marquage de la facture comme payée:", error);
-      message.error("Impossible de marquer la facture comme payée");
+      handleApiError(error, null, "Impossible de marquer la facture comme payée.");
     } finally {
       setActionLoading(false);
     }
@@ -180,8 +178,7 @@ const InvoiceList = () => {
       window.open(`/api/sales/invoices/${id}/download_pdf/`, '_blank');
       fetchInvoices();
     } catch (error) {
-      console.error("Erreur lors de la génération du PDF:", error);
-      message.error("Impossible de générer le PDF");
+      handleApiError(error, null, "Impossible de générer le PDF.");
     } finally {
       setActionLoading(false);
     }
@@ -194,8 +191,7 @@ const InvoiceList = () => {
       message.success('Facture envoyée par email avec succès');
       fetchInvoices();
     } catch (error) {
-      console.error("Erreur lors de l'envoi de la facture par email:", error);
-      message.error("Impossible d'envoyer la facture par email");
+      handleApiError(error, null, "Impossible d'envoyer la facture par email.");
       // Rediriger vers la page de détail pour l'envoi manuel
       navigate(`/sales/invoices/${id}`);
     } finally {

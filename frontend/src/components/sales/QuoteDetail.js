@@ -42,7 +42,7 @@ import {
   PhoneOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title, Text, Paragraph } = Typography;
@@ -52,7 +52,7 @@ const { TextArea } = Input;
 const QuoteDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
   const [quote, setQuote] = useState(null);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
@@ -133,8 +133,7 @@ const QuoteDetail = () => {
       message.success('Devis supprimé avec succès');
       navigate('/sales/quotes');
     } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-      message.error("Impossible de supprimer le devis");
+      handleApiError(error, null, "Impossible de supprimer le devis.");
     } finally {
       setLoadingAction(false);
     }
@@ -147,8 +146,7 @@ const QuoteDetail = () => {
       message.success('Devis marqué comme accepté');
       fetchQuoteDetails();
     } catch (error) {
-      console.error("Erreur lors de l'acceptation du devis:", error);
-      message.error("Impossible de marquer le devis comme accepté");
+      handleApiError(error, null, "Impossible de marquer le devis comme accepté.");
     } finally {
       setLoadingAction(false);
     }
@@ -161,8 +159,7 @@ const QuoteDetail = () => {
       message.success('Devis marqué comme refusé');
       fetchQuoteDetails();
     } catch (error) {
-      console.error("Erreur lors du refus du devis:", error);
-      message.error("Impossible de marquer le devis comme refusé");
+      handleApiError(error, null, "Impossible de marquer le devis comme refusé.");
     } finally {
       setLoadingAction(false);
     }
@@ -180,8 +177,7 @@ const QuoteDetail = () => {
         fetchQuoteDetails();
       }
     } catch (error) {
-      console.error("Erreur lors de la conversion du devis:", error);
-      message.error("Impossible de convertir le devis en commande");
+      handleApiError(error, null, "Impossible de convertir le devis en commande.");
       setLoadingAction(false);
     }
   };
@@ -195,8 +191,7 @@ const QuoteDetail = () => {
       window.open(`/api/sales/quotes/${id}/download_pdf/`, '_blank');
       fetchQuoteDetails();
     } catch (error) {
-      console.error("Erreur lors de la génération du PDF:", error);
-      message.error("Impossible de générer le PDF");
+      handleApiError(error, null, "Impossible de générer le PDF.");
     } finally {
       setLoadingAction(false);
     }
@@ -224,8 +219,7 @@ const QuoteDetail = () => {
       setSendEmailModal(false);
       fetchQuoteDetails();
     } catch (error) {
-      console.error("Erreur lors de l'envoi de l'email:", error);
-      message.error("Impossible d'envoyer l'email");
+      handleApiError(error, null, "Impossible d'envoyer l'email.");
     } finally {
       setLoadingAction(false);
     }
@@ -240,7 +234,7 @@ const QuoteDetail = () => {
       'cancelled': { color: 'default', text: 'Annulé' },
       'expired': { color: 'orange', text: 'Expiré' }
     };
-    
+
     return (
       <Tag color={statusConfig[status]?.color || 'default'}>
         {statusConfig[status]?.text || status}
@@ -318,22 +312,22 @@ const QuoteDetail = () => {
           <Button type="primary" icon={<EditOutlined />}>
             <Link to={`/sales/quotes/${id}/edit`}>Modifier</Link>
           </Button>
-          
+
           {/* Actions spécifiques selon le statut du devis */}
           {quote.status === 'sent' && (
             <>
-              <Button 
-                type="primary" 
-                icon={<CheckOutlined />} 
+              <Button
+                type="primary"
+                icon={<CheckOutlined />}
                 onClick={handleAccept}
                 loading={loadingAction}
                 style={{ backgroundColor: 'green', borderColor: 'green' }}
               >
                 Accepter
               </Button>
-              <Button 
-                danger 
-                icon={<CloseOutlined />} 
+              <Button
+                danger
+                icon={<CloseOutlined />}
                 onClick={handleReject}
                 loading={loadingAction}
               >
@@ -341,34 +335,34 @@ const QuoteDetail = () => {
               </Button>
             </>
           )}
-          
+
           {quote.status === 'accepted' && !quote.converted_to_order && (
-            <Button 
-              type="primary" 
-              icon={<ShoppingCartOutlined />} 
+            <Button
+              type="primary"
+              icon={<ShoppingCartOutlined />}
               onClick={handleConvertToOrder}
               loading={loadingAction}
             >
               Convertir en commande
             </Button>
           )}
-          
-          <Button 
-            icon={<FileOutlined />} 
+
+          <Button
+            icon={<FileOutlined />}
             onClick={handleGeneratePdf}
             loading={loadingAction}
           >
             Générer PDF
           </Button>
-          
-          <Button 
-            icon={<MailOutlined />} 
+
+          <Button
+            icon={<MailOutlined />}
             onClick={showSendEmailModal}
             loading={loadingAction}
           >
             Envoyer par email
           </Button>
-          
+
           {(quote.status === 'draft' || quote.status === 'sent') && (
             <Popconfirm
               title="Êtes-vous sûr de vouloir supprimer ce devis ?"
@@ -384,18 +378,18 @@ const QuoteDetail = () => {
         </Space>
 
         <Title level={2}>Devis {quote.number}</Title>
-        
+
         <Space style={{ marginBottom: 16 }}>
           {formatStatusTag(quote.status)}
-          
+
           {quote.converted_to_order && (
             <Badge status="success" text="Converti en commande" />
           )}
-          
+
           {quote.converted_to_invoice && (
             <Badge status="success" text="Converti en facture" />
           )}
-          
+
           {quote.is_expired && (
             <Badge status="error" text="Expiré" />
           )}
@@ -457,7 +451,7 @@ const QuoteDetail = () => {
                     precision={2}
                     suffix={quote.currency_code}
                   />
-                  
+
                   {quote.discount_percentage > 0 && (
                     <>
                       <Statistic
@@ -476,7 +470,7 @@ const QuoteDetail = () => {
                       />
                     </>
                   )}
-                  
+
                   {!quote.is_tax_exempt && (
                     <Statistic
                       title="TVA"
@@ -486,7 +480,7 @@ const QuoteDetail = () => {
                       style={{ marginTop: 16 }}
                     />
                   )}
-                  
+
                   <Statistic
                     title={`Total${!quote.is_tax_exempt ? ' TTC' : ''}`}
                     value={quote.total}
@@ -515,7 +509,7 @@ const QuoteDetail = () => {
                         <strong>{quote.subtotal} {quote.currency_code}</strong>
                       </Table.Summary.Cell>
                     </Table.Summary.Row>
-                    
+
                     {quote.discount_percentage > 0 && (
                       <>
                         <Table.Summary.Row>
@@ -536,7 +530,7 @@ const QuoteDetail = () => {
                         </Table.Summary.Row>
                       </>
                     )}
-                    
+
                     {!quote.is_tax_exempt && (
                       <Table.Summary.Row>
                         <Table.Summary.Cell index={0} colSpan={6} align="right">
@@ -547,7 +541,7 @@ const QuoteDetail = () => {
                         </Table.Summary.Cell>
                       </Table.Summary.Row>
                     )}
-                    
+
                     <Table.Summary.Row>
                       <Table.Summary.Cell index={0} colSpan={6} align="right">
                         <strong>Total{!quote.is_tax_exempt ? ' TTC' : ''}:</strong>
@@ -597,26 +591,26 @@ const QuoteDetail = () => {
                 <p><strong>Création du devis</strong></p>
                 <p>Statut initial: Brouillon</p>
               </Timeline.Item>
-              
+
               {quote.email_sent && quote.email_sent_date && (
                 <Timeline.Item color="blue" label={quote.email_sent_date}>
                   <p><strong>Envoi par email</strong></p>
                   <p>Le devis a été envoyé au client</p>
                 </Timeline.Item>
               )}
-              
+
               {quote.status === 'accepted' && (
                 <Timeline.Item color="green">
                   <p><strong>Devis accepté</strong></p>
                 </Timeline.Item>
               )}
-              
+
               {quote.status === 'rejected' && (
                 <Timeline.Item color="red">
                   <p><strong>Devis refusé</strong></p>
                 </Timeline.Item>
               )}
-              
+
               {quote.converted_to_order && (
                 <Timeline.Item color="green">
                   <p><strong>Converti en commande</strong></p>
@@ -653,9 +647,9 @@ const QuoteDetail = () => {
               ) : (
                 <div style={{ textAlign: 'center', marginTop: 20 }}>
                   <p>Aucun document lié à ce devis pour le moment</p>
-                  <Button 
-                    type="primary" 
-                    icon={<ShoppingCartOutlined />} 
+                  <Button
+                    type="primary"
+                    icon={<ShoppingCartOutlined />}
                     onClick={handleConvertToOrder}
                     loading={loadingAction}
                     style={{ marginTop: 10 }}
@@ -693,7 +687,7 @@ const QuoteDetail = () => {
       {/* Modal pour l'envoi d'email */}
       <Modal
         title="Envoyer le devis par email"
-        visible={sendEmailModal}
+        open={sendEmailModal}
         onCancel={() => setSendEmailModal(false)}
         footer={null}
       >
@@ -712,21 +706,21 @@ const QuoteDetail = () => {
           >
             <Input placeholder="exemple@domaine.com" />
           </Form.Item>
-          
+
           <Form.Item
             name="subject"
             label="Objet"
           >
             <Input placeholder={`Devis ${quote.number} - ECINTELLIGENCE`} />
           </Form.Item>
-          
+
           <Form.Item
             name="message"
             label="Message additionnel"
           >
             <TextArea rows={4} placeholder="Votre message personnalisé (optionnel)" />
           </Form.Item>
-          
+
           <Form.Item>
             <div style={{ textAlign: 'right' }}>
               <Button onClick={() => setSendEmailModal(false)} style={{ marginRight: 8 }}>

@@ -10,6 +10,7 @@ import {
   ArrowLeftOutlined, EyeOutlined
 } from '@ant-design/icons';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -102,8 +103,7 @@ const PaySlipDetail = () => {
         fetchData();
       }
     } catch (error) {
-      console.error('Erreur lors du calcul du bulletin:', error);
-      message.error('Erreur lors du calcul du bulletin');
+      handleApiError(error, null, 'Erreur lors du calcul du bulletin.');
     } finally {
       setCalculating(false);
     }

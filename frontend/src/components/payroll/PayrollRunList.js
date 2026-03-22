@@ -9,6 +9,7 @@ import {
   CheckCircleOutlined, DollarOutlined, SearchOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -210,8 +211,7 @@ const PayrollRunList = () => {
       message.success('Lancement supprimé avec succès');
       fetchData(pagination.current, pagination.pageSize, filters);
     } catch (error) {
-      console.error('Erreur lors de la suppression du lancement:', error);
-      message.error('Erreur lors de la suppression du lancement');
+      handleApiError(error, null, 'Erreur lors de la suppression du lancement.');
     }
   };
 
@@ -221,8 +221,7 @@ const PayrollRunList = () => {
       message.success('Calcul des bulletins lancé avec succès');
       fetchData(pagination.current, pagination.pageSize, filters);
     } catch (error) {
-      console.error('Erreur lors du calcul des bulletins:', error);
-      message.error('Erreur lors du calcul des bulletins');
+      handleApiError(error, null, 'Erreur lors du calcul des bulletins.');
     }
   };
 
@@ -232,8 +231,7 @@ const PayrollRunList = () => {
       message.success('Lancement validé avec succès');
       fetchData(pagination.current, pagination.pageSize, filters);
     } catch (error) {
-      console.error('Erreur lors de la validation du lancement:', error);
-      message.error('Erreur lors de la validation du lancement');
+      handleApiError(error, null, 'Erreur lors de la validation du lancement.');
     }
   };
 
@@ -243,8 +241,7 @@ const PayrollRunList = () => {
       message.success('Lancement marqué comme payé avec succès');
       fetchData(pagination.current, pagination.pageSize, filters);
     } catch (error) {
-      console.error('Erreur lors du paiement du lancement:', error);
-      message.error('Erreur lors du paiement du lancement');
+      handleApiError(error, null, 'Erreur lors du paiement du lancement.');
     }
   };
 

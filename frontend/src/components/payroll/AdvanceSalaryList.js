@@ -9,6 +9,7 @@ import {
   CheckCircleOutlined, CloseCircleOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -224,8 +225,7 @@ const AdvanceSalaryList = () => {
       message.success('Acompte supprimé avec succès');
       fetchData(pagination.current, pagination.pageSize, filters);
     } catch (error) {
-      console.error('Erreur lors de la suppression de l\'acompte:', error);
-      message.error('Erreur lors de la suppression de l\'acompte');
+      handleApiError(error, null, "Erreur lors de la suppression de l'acompte.");
     }
   };
 
@@ -235,8 +235,7 @@ const AdvanceSalaryList = () => {
       message.success('Acompte marqué comme payé avec succès');
       fetchData(pagination.current, pagination.pageSize, filters);
     } catch (error) {
-      console.error('Erreur lors du paiement de l\'acompte:', error);
-      message.error('Erreur lors du paiement de l\'acompte');
+      handleApiError(error, null, "Erreur lors du paiement de l'acompte.");
     }
   };
 

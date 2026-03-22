@@ -11,6 +11,7 @@ import {
   ArrowLeftOutlined, PlusOutlined, FilePdfOutlined, FileExcelOutlined
 } from '@ant-design/icons';
 import { Link, useParams, useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -192,8 +193,7 @@ const PayrollRunDetail = () => {
       message.success('Génération des bulletins lancée avec succès');
       fetchData();
     } catch (error) {
-      console.error('Erreur lors de la génération des bulletins:', error);
-      message.error('Erreur lors de la génération des bulletins');
+      handleApiError(error, null, 'Erreur lors de la génération des bulletins.');
     }
   };
 
@@ -203,8 +203,7 @@ const PayrollRunDetail = () => {
       message.success('Calcul des bulletins lancé avec succès');
       fetchData();
     } catch (error) {
-      console.error('Erreur lors du calcul des bulletins:', error);
-      message.error('Erreur lors du calcul des bulletins');
+      handleApiError(error, null, 'Erreur lors du calcul des bulletins.');
     }
   };
 
@@ -214,8 +213,7 @@ const PayrollRunDetail = () => {
       message.success('Lancement validé avec succès');
       fetchData();
     } catch (error) {
-      console.error('Erreur lors de la validation du lancement:', error);
-      message.error('Erreur lors de la validation du lancement');
+      handleApiError(error, null, 'Erreur lors de la validation du lancement.');
     }
   };
 
@@ -236,8 +234,7 @@ const PayrollRunDetail = () => {
           message.success('Lancement marqué comme payé avec succès');
           fetchData();
         } catch (error) {
-          console.error('Erreur lors du paiement du lancement:', error);
-          message.error('Erreur lors du paiement du lancement');
+          handleApiError(error, null, 'Erreur lors du paiement du lancement.');
         }
       }
     });
@@ -264,8 +261,7 @@ const PayrollRunDetail = () => {
         message.error('Erreur lors de la génération du PDF');
       }
     } catch (error) {
-      console.error('Erreur lors de la génération du PDF:', error);
-      message.error('Erreur lors de la génération du PDF');
+      handleApiError(error, null, 'Erreur lors de la génération du PDF.');
     } finally {
       setPdfGenerating(false);
     }
@@ -277,8 +273,7 @@ const PayrollRunDetail = () => {
       message.success('Bulletin calculé avec succès');
       fetchPayslips(pagination.current, pagination.pageSize);
     } catch (error) {
-      console.error('Erreur lors du calcul du bulletin:', error);
-      message.error('Erreur lors du calcul du bulletin');
+      handleApiError(error, null, 'Erreur lors du calcul du bulletin.');
     }
   };
 

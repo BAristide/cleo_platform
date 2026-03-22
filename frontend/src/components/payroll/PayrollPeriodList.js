@@ -1,14 +1,15 @@
 // src/components/payroll/PayrollPeriodList.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Table, Card, Button, Space, Tag, Typography, 
-  message, Popconfirm, Spin, Input, DatePicker 
+import {
+  Table, Card, Button, Space, Tag, Typography,
+  message, Popconfirm, Spin, Input, DatePicker
 } from 'antd';
-import { 
-  PlusOutlined, EditOutlined, DeleteOutlined, 
-  CheckCircleOutlined, CloseCircleOutlined, SearchOutlined 
+import {
+  PlusOutlined, EditOutlined, DeleteOutlined,
+  CheckCircleOutlined, CloseCircleOutlined, SearchOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 
@@ -33,18 +34,18 @@ const PayrollPeriodList = () => {
     setLoading(true);
     try {
       let url = `/api/payroll/periods/?page=${page}&page_size=${pageSize}`;
-      
+
       if (filters.search) {
         url += `&search=${filters.search}`;
       }
-      
+
       if (filters.date_range && filters.date_range[0] && filters.date_range[1]) {
         url += `&start_date_after=${filters.date_range[0].format('YYYY-MM-DD')}`;
         url += `&end_date_before=${filters.date_range[1].format('YYYY-MM-DD')}`;
       }
-      
+
       const response = await axios.get(url);
-      
+
       if (response.data.results) {
         setPeriods(response.data.results);
         setPagination({
@@ -126,8 +127,7 @@ const PayrollPeriodList = () => {
       message.success('Période supprimée avec succès');
       fetchData(pagination.current, pagination.pageSize, filters);
     } catch (error) {
-      console.error('Erreur lors de la suppression de la période:', error);
-      message.error('Erreur lors de la suppression de la période');
+      handleApiError(error, null, 'Erreur lors de la suppression de la période.');
     }
   };
 
@@ -137,8 +137,7 @@ const PayrollPeriodList = () => {
       message.success('Période clôturée avec succès');
       fetchData(pagination.current, pagination.pageSize, filters);
     } catch (error) {
-      console.error('Erreur lors de la clôture de la période:', error);
-      message.error('Erreur lors de la clôture de la période');
+      handleApiError(error, null, 'Erreur lors de la clôture de la période.');
     }
   };
 
@@ -191,9 +190,9 @@ const PayrollPeriodList = () => {
       key: 'actions',
       render: (_, record) => (
         <Space size="small">
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
             size="small"
             onClick={() => navigate(`/payroll/periods/${record.id}`)}
           />
@@ -204,9 +203,9 @@ const PayrollPeriodList = () => {
               okText="Oui"
               cancelText="Non"
             >
-              <Button 
-                type="default" 
-                icon={<CheckCircleOutlined />} 
+              <Button
+                type="default"
+                icon={<CheckCircleOutlined />}
                 size="small"
                 title="Clôturer"
               />
@@ -218,9 +217,9 @@ const PayrollPeriodList = () => {
             okText="Oui"
             cancelText="Non"
           >
-            <Button 
-              type="danger" 
-              icon={<DeleteOutlined />} 
+            <Button
+              type="danger"
+              icon={<DeleteOutlined />}
               size="small"
               disabled={record.is_closed}
             />
@@ -242,14 +241,14 @@ const PayrollPeriodList = () => {
       {/* Filtres */}
       <Card style={{ marginBottom: '20px' }}>
         <div style={{ display: 'flex', gap: '16px' }}>
-          <Input 
-            placeholder="Rechercher..." 
+          <Input
+            placeholder="Rechercher..."
             value={filters.search}
             onChange={e => handleSearch(e.target.value)}
             prefix={<SearchOutlined />}
             style={{ width: 250 }}
           />
-          <RangePicker 
+          <RangePicker
             format="DD/MM/YYYY"
             onChange={handleDateRangeChange}
             placeholder={['Date début', 'Date fin']}
@@ -260,10 +259,10 @@ const PayrollPeriodList = () => {
       {/* Table des périodes */}
       <Card>
         <Spin spinning={loading}>
-          <Table 
-            columns={columns} 
-            dataSource={periods} 
-            rowKey="id" 
+          <Table
+            columns={columns}
+            dataSource={periods}
+            rowKey="id"
             pagination={pagination}
             onChange={handleTableChange}
           />

@@ -33,7 +33,7 @@ import {
   FileTextOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title, Text, Paragraph } = Typography;
@@ -95,7 +95,7 @@ const ProductDetail = () => {
       });
       const quoteItems = extractResultsFromResponse(quoteItemsResponse);
       const quoteIds = [...new Set(quoteItems.map(item => item.quote))];
-      
+
       const quotesData = [];
       for (const quoteId of quoteIds) {
         const quoteResponse = await axios.get(`/api/sales/quotes/${quoteId}/`);
@@ -108,7 +108,7 @@ const ProductDetail = () => {
       });
       const orderItems = extractResultsFromResponse(orderItemsResponse);
       const orderIds = [...new Set(orderItems.map(item => item.order))];
-      
+
       const ordersData = [];
       for (const orderId of orderIds) {
         const orderResponse = await axios.get(`/api/sales/orders/${orderId}/`);
@@ -121,7 +121,7 @@ const ProductDetail = () => {
       });
       const invoiceItems = extractResultsFromResponse(invoiceItemsResponse);
       const invoiceIds = [...new Set(invoiceItems.map(item => item.invoice))];
-      
+
       const invoicesData = [];
       for (const invoiceId of invoiceIds) {
         const invoiceResponse = await axios.get(`/api/sales/invoices/${invoiceId}/`);
@@ -146,8 +146,7 @@ const ProductDetail = () => {
       message.success('Produit supprimé avec succès');
       navigate('/sales/products');
     } catch (error) {
-      console.error("Erreur lors de la suppression du produit:", error);
-      message.error("Impossible de supprimer le produit. Ce produit est peut-être utilisé dans des documents de vente.");
+      handleApiError(error, null, "Impossible de supprimer le produit.");
     } finally {
       setActionLoading(false);
     }
@@ -162,8 +161,7 @@ const ProductDetail = () => {
       message.success(product.is_active ? 'Produit désactivé avec succès' : 'Produit activé avec succès');
       fetchProductDetails();
     } catch (error) {
-      console.error("Erreur lors de la modification du statut:", error);
-      message.error("Impossible de modifier le statut du produit");
+      handleApiError(error, null, "Impossible de modifier le statut du produit.");
     } finally {
       setActionLoading(false);
     }
@@ -186,8 +184,7 @@ const ProductDetail = () => {
       setEditModalVisible(false);
       fetchProductDetails();
     } catch (error) {
-      console.error("Erreur lors de la mise à jour du produit:", error);
-      message.error("Impossible de mettre à jour le produit");
+      handleApiError(error, form, "Impossible de mettre à jour le produit.");
     } finally {
       setActionLoading(false);
     }
@@ -217,9 +214,9 @@ const ProductDetail = () => {
           <Button icon={<ArrowLeftOutlined />}>
             <Link to="/sales/products">Retour à la liste</Link>
           </Button>
-          <Button 
-            type="primary" 
-            icon={<EditOutlined />} 
+          <Button
+            type="primary"
+            icon={<EditOutlined />}
             onClick={showEditModal}
           >
             Modifier
@@ -239,9 +236,9 @@ const ProductDetail = () => {
             okText="Oui"
             cancelText="Non"
           >
-            <Button 
-              danger 
-              icon={<DeleteOutlined />} 
+            <Button
+              danger
+              icon={<DeleteOutlined />}
               loading={actionLoading}
             >
               Supprimer
@@ -431,7 +428,7 @@ const ProductDetail = () => {
       {/* Modal pour modifier le produit */}
       <Modal
         title="Modifier le produit"
-        visible={editModalVisible}
+        open={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
         footer={null}
       >

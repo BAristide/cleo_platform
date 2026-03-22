@@ -17,7 +17,7 @@ import {
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -145,8 +145,7 @@ const OrderList = () => {
       message.success('Commande confirmée avec succès');
       fetchOrders();
     } catch (error) {
-      console.error("Erreur lors de la confirmation de la commande:", error);
-      message.error("Impossible de confirmer la commande");
+      handleApiError(error, null, "Impossible de confirmer la commande.");
     } finally {
       setActionLoading(false);
     }
@@ -159,8 +158,7 @@ const OrderList = () => {
       message.success('Commande annulée avec succès');
       fetchOrders();
     } catch (error) {
-      console.error("Erreur lors de l'annulation de la commande:", error);
-      message.error("Impossible d'annuler la commande");
+      handleApiError(error, null, "Impossible d'annuler la commande.");
     } finally {
       setActionLoading(false);
     }
@@ -184,8 +182,7 @@ const OrderList = () => {
         fetchOrders();
       }
     } catch (error) {
-      console.error("Erreur lors de la création de la facture d'acompte:", error);
-      message.error("Impossible de créer la facture d'acompte");
+      handleApiError(error, null, "Impossible de créer la facture d'acompte.");
     } finally {
       setActionLoading(false);
     }
@@ -210,8 +207,7 @@ const OrderList = () => {
         fetchOrders();
       }
     } catch (error) {
-      console.error("Erreur lors de la conversion de la commande:", error);
-      message.error("Impossible de convertir la commande en facture");
+      handleApiError(error, null, "Impossible de convertir la commande en facture.");
       setActionLoading(false);
     }
   };
@@ -225,8 +221,7 @@ const OrderList = () => {
       window.open(`/api/sales/orders/${id}/download_pdf/`, '_blank');
       fetchOrders();
     } catch (error) {
-      console.error("Erreur lors de la génération du PDF:", error);
-      message.error("Impossible de générer le PDF");
+      handleApiError(error, null, "Impossible de générer le PDF.");
     } finally {
       setActionLoading(false);
     }
@@ -241,8 +236,8 @@ const OrderList = () => {
       message.success('Commande envoyée par email avec succès');
       fetchOrders();
     } catch (error) {
-      console.error("Erreur lors de l'envoi de la commande par email:", error);
-      message.error("Impossible d'envoyer la commande par email");
+      handleApiError(error, null, "Impossible d'envoyer la commande par email.");
+      navigate(`/sales/orders/${id}`);
       navigate(`/sales/orders/${id}`); // Rediriger vers la page de détail pour l'envoi manuel
     } finally {
       setActionLoading(false);
@@ -510,7 +505,7 @@ const OrderList = () => {
       {/* Modal pour la création de facture d'acompte */}
       <Modal
         title="Créer une facture d'acompte"
-        visible={createDepositModal}
+        open={createDepositModal}
         onCancel={() => setCreateDepositModal(false)}
         onOk={handleCreateDepositInvoice}
         confirmLoading={actionLoading}

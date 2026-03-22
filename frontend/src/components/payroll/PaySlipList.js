@@ -9,6 +9,7 @@ import {
   CalculatorOutlined, CheckCircleOutlined, DollarOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -243,8 +244,7 @@ const PaySlipList = () => {
       message.success('Bulletin calculé avec succès');
       fetchData(pagination.current, pagination.pageSize, filters);
     } catch (error) {
-      console.error('Erreur lors du calcul du bulletin:', error);
-      message.error('Erreur lors du calcul du bulletin');
+      handleApiError(error, null, 'Erreur lors du calcul du bulletin.');
     }
   };
 

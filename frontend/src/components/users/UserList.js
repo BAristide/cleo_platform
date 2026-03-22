@@ -12,6 +12,7 @@ import {
   ArrowLeftOutlined,
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import UserMenu from '../common/UserMenu';
 import UserForm from './UserForm';
@@ -77,7 +78,7 @@ const UserList = () => {
       message.success(`Utilisateur ${!user.is_active ? 'activé' : 'désactivé'} avec succès.`);
       fetchUsers(searchText);
     } catch (error) {
-      message.error("Erreur lors de la modification du statut.");
+      handleApiError(error, null, "Erreur lors de la modification du statut.");
     }
   };
 
@@ -91,9 +92,7 @@ const UserList = () => {
       setResetPasswordModal({ visible: false, user: null });
       resetForm.resetFields();
     } catch (error) {
-      if (error.response?.data) {
-        message.error('Erreur lors de la réinitialisation du mot de passe.');
-      }
+      handleApiError(error, null, 'Erreur lors de la réinitialisation du mot de passe.');
     }
   };
 

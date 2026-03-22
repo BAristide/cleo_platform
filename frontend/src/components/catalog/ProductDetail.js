@@ -10,7 +10,7 @@ import {
   CloseCircleOutlined, ShoppingOutlined,
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title, Text } = Typography;
@@ -100,8 +100,7 @@ const ProductDetail = () => {
       message.success('Produit supprimé');
       navigate('/catalog/products');
     } catch (error) {
-      console.error('Erreur suppression:', error);
-      message.error('Impossible de supprimer le produit');
+      handleApiError(error, null, 'Impossible de supprimer le produit.');
     } finally {
       setActionLoading(false);
     }
@@ -115,8 +114,7 @@ const ProductDetail = () => {
       message.success(product.is_active ? 'Produit désactivé' : 'Produit activé');
       fetchProductDetails();
     } catch (error) {
-      console.error('Erreur statut:', error);
-      message.error('Impossible de modifier le statut');
+      handleApiError(error, null, 'Impossible de modifier le statut.');
     } finally {
       setActionLoading(false);
     }
@@ -136,8 +134,7 @@ const ProductDetail = () => {
       setEditModalVisible(false);
       fetchProductDetails();
     } catch (error) {
-      console.error('Erreur mise a jour:', error);
-      message.error('Impossible de mettre a jour le produit');
+      handleApiError(error, form, 'Impossible de mettre à jour le produit.');
     } finally {
       setActionLoading(false);
     }

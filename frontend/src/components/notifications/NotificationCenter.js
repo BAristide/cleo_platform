@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Layout, Table, Tag, Button, Space, Typography, Select, Card, message } from 'antd';
 import { CheckOutlined, DeleteOutlined, HomeOutlined, BellOutlined, SettingOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import UserMenu from '../common/UserMenu';
 import NotificationBell from './NotificationBell';
@@ -41,14 +42,22 @@ const NotificationCenter = () => {
   useEffect(() => { fetchNotifications(); }, [filters]);
 
   const markRead = async (id) => {
-    await axios.post(`/api/notifications/notifications/${id}/mark_read/`);
-    fetchNotifications(pagination.current);
+    try {
+      await axios.post(`/api/notifications/notifications/${id}/mark_read/`);
+      fetchNotifications(pagination.current);
+    } catch (err) {
+      handleApiError(err, null, 'Erreur lors du marquage.');
+    }
   };
 
   const markAllRead = async () => {
-    const res = await axios.post('/api/notifications/notifications/mark_all_read/');
-    message.success(`${res.data.marked} notification(s) marquée(s) comme lue(s)`);
-    fetchNotifications(pagination.current);
+    try {
+      const res = await axios.post('/api/notifications/notifications/mark_all_read/');
+      message.success(`${res.data.marked} notification(s) marquée(s) comme lue(s)`);
+      fetchNotifications(pagination.current);
+    } catch (err) {
+      handleApiError(err, null, 'Erreur lors du marquage.');
+    }
   };
 
   const columns = [

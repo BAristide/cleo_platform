@@ -44,7 +44,7 @@ import {
   BankOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title, Text, Paragraph } = Typography;
@@ -54,7 +54,7 @@ const { TextArea } = Input;
 const OrderDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  
+
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState([]);
@@ -126,8 +126,7 @@ const OrderDetail = () => {
       message.success('Commande confirmée avec succès');
       fetchOrderDetails();
     } catch (error) {
-      console.error("Erreur lors de la confirmation de la commande:", error);
-      message.error("Impossible de confirmer la commande");
+      handleApiError(error, null, "Impossible de confirmer la commande.");
     } finally {
       setLoadingAction(false);
     }
@@ -140,8 +139,7 @@ const OrderDetail = () => {
       message.success('Commande annulée avec succès');
       fetchOrderDetails();
     } catch (error) {
-      console.error("Erreur lors de l'annulation de la commande:", error);
-      message.error("Impossible d'annuler la commande");
+      handleApiError(error, null, "Impossible d'annuler la commande.");
     } finally {
       setLoadingAction(false);
     }
@@ -155,7 +153,7 @@ const OrderDetail = () => {
       });
       message.success(`Facture d'acompte créée avec succès (${depositPercentage}%)`);
       setCreateDepositInvoiceModal(false);
-      
+
       // Si la réponse contient l'ID de la facture, naviguer vers la page de détail
       if (response.data && response.data.invoice && response.data.invoice.id) {
         navigate(`/sales/invoices/${response.data.invoice.id}`);
@@ -163,8 +161,7 @@ const OrderDetail = () => {
         fetchOrderDetails();
       }
     } catch (error) {
-      console.error("Erreur lors de la création de la facture d'acompte:", error);
-      message.error("Impossible de créer la facture d'acompte");
+      handleApiError(error, null, "Impossible de créer la facture d'acompte.");
       setLoadingAction(false);
     }
   };
@@ -174,7 +171,7 @@ const OrderDetail = () => {
     try {
       const response = await axios.post(`/api/sales/orders/${id}/convert_to_invoice/`);
       message.success('Commande convertie en facture avec succès');
-      
+
       // Si la réponse contient l'ID de la facture, naviguer vers la page de détail
       if (response.data && response.data.invoice && response.data.invoice.id) {
         navigate(`/sales/invoices/${response.data.invoice.id}`);
@@ -182,8 +179,7 @@ const OrderDetail = () => {
         fetchOrderDetails();
       }
     } catch (error) {
-      console.error("Erreur lors de la conversion de la commande:", error);
-      message.error("Impossible de convertir la commande en facture");
+      handleApiError(error, null, "Impossible de convertir la commande en facture.");
       setLoadingAction(false);
     }
   };
@@ -197,8 +193,7 @@ const OrderDetail = () => {
       window.open(`/api/sales/orders/${id}/download_pdf/`, '_blank');
       fetchOrderDetails();
     } catch (error) {
-      console.error("Erreur lors de la génération du PDF:", error);
-      message.error("Impossible de générer le PDF");
+      handleApiError(error, null, "Impossible de générer le PDF.");
     } finally {
       setLoadingAction(false);
     }
@@ -226,8 +221,7 @@ const OrderDetail = () => {
       setSendEmailModal(false);
       fetchOrderDetails();
     } catch (error) {
-      console.error("Erreur lors de l'envoi de l'email:", error);
-      message.error("Impossible d'envoyer l'email");
+      handleApiError(error, null, "Impossible d'envoyer l'email.");
     } finally {
       setLoadingAction(false);
     }
@@ -241,7 +235,7 @@ const OrderDetail = () => {
       'delivered': { color: 'green', text: 'Livrée' },
       'cancelled': { color: 'red', text: 'Annulée' }
     };
-    
+
     return (
       <Tag color={statusConfig[status]?.color || 'default'}>
         {statusConfig[status]?.text || status}
@@ -320,47 +314,47 @@ const OrderDetail = () => {
           <Button icon={<ArrowLeftOutlined />}>
             <Link to="/sales/orders">Retour à la liste</Link>
           </Button>
-          
+
           {/* Actions spécifiques selon le statut de la commande */}
           {order.status === 'draft' && (
-            <Button 
-              type="primary" 
-              icon={<CheckOutlined />} 
+            <Button
+              type="primary"
+              icon={<CheckOutlined />}
               onClick={handleConfirmOrder}
               loading={loadingAction}
             >
               Confirmer la commande
             </Button>
           )}
-          
+
           {['draft', 'confirmed', 'in_progress'].includes(order.status) && !order.has_final_invoice && (
-            <Button 
-              danger 
-              icon={<CloseOutlined />} 
+            <Button
+              danger
+              icon={<CloseOutlined />}
               onClick={handleCancelOrder}
               loading={loadingAction}
             >
               Annuler
             </Button>
           )}
-          
+
           {order.status === 'confirmed' && (
             <>
               {order.can_create_deposit_invoice && (
-                <Button 
-                  type="primary" 
-                  icon={<BankOutlined />} 
+                <Button
+                  type="primary"
+                  icon={<BankOutlined />}
                   onClick={() => setCreateDepositInvoiceModal(true)}
                   loading={loadingAction}
                 >
                   Créer facture d'acompte
                 </Button>
               )}
-              
+
               {order.can_create_final_invoice && (
-                <Button 
-                  type="primary" 
-                  icon={<ShopOutlined />} 
+                <Button
+                  type="primary"
+                  icon={<ShopOutlined />}
                   onClick={handleConvertToInvoice}
                   loading={loadingAction}
                 >
@@ -369,17 +363,17 @@ const OrderDetail = () => {
               )}
             </>
           )}
-          
-          <Button 
-            icon={<FileOutlined />} 
+
+          <Button
+            icon={<FileOutlined />}
             onClick={handleGeneratePdf}
             loading={loadingAction}
           >
             Générer PDF
           </Button>
-          
-          <Button 
-            icon={<MailOutlined />} 
+
+          <Button
+            icon={<MailOutlined />}
             onClick={showSendEmailModal}
             loading={loadingAction}
           >
@@ -388,14 +382,14 @@ const OrderDetail = () => {
         </Space>
 
         <Title level={2}>Commande {order.number}</Title>
-        
+
         <Space style={{ marginBottom: 16 }}>
           {formatStatusTag(order.status)}
-          
+
           {order.has_deposit_invoice && (
             <Badge status="processing" text="Acompte facturé" />
           )}
-          
+
           {order.has_final_invoice && (
             <Badge status="success" text="Facturée" />
           )}
@@ -462,7 +456,7 @@ const OrderDetail = () => {
                     precision={2}
                     suffix={order.currency_code}
                   />
-                  
+
                   {order.discount_percentage > 0 && (
                     <>
                       <Statistic
@@ -481,7 +475,7 @@ const OrderDetail = () => {
                       />
                     </>
                   )}
-                  
+
                   {!order.is_tax_exempt && (
                     <Statistic
                       title="TVA"
@@ -491,7 +485,7 @@ const OrderDetail = () => {
                       style={{ marginTop: 16 }}
                     />
                   )}
-                  
+
                   <Statistic
                     title={`Total${!order.is_tax_exempt ? ' TTC' : ''}`}
                     value={order.total}
@@ -500,7 +494,7 @@ const OrderDetail = () => {
                     style={{ marginTop: 16 }}
                     valueStyle={{ color: '#3f8600', fontWeight: 'bold' }}
                   />
-                  
+
                   {depositInvoices.length > 0 && (
                     <>
                       <Divider />
@@ -541,7 +535,7 @@ const OrderDetail = () => {
                         <strong>{order.subtotal} {order.currency_code}</strong>
                       </Table.Summary.Cell>
                     </Table.Summary.Row>
-                    
+
                     {order.discount_percentage > 0 && (
                       <>
                         <Table.Summary.Row>
@@ -562,7 +556,7 @@ const OrderDetail = () => {
                         </Table.Summary.Row>
                       </>
                     )}
-                    
+
                     {!order.is_tax_exempt && (
                       <Table.Summary.Row>
                         <Table.Summary.Cell index={0} colSpan={6} align="right">
@@ -573,7 +567,7 @@ const OrderDetail = () => {
                         </Table.Summary.Cell>
                       </Table.Summary.Row>
                     )}
-                    
+
                     <Table.Summary.Row>
                       <Table.Summary.Cell index={0} colSpan={6} align="right">
                         <strong>Total{!order.is_tax_exempt ? ' TTC' : ''}:</strong>
@@ -623,42 +617,42 @@ const OrderDetail = () => {
                 <p><strong>Création de la commande</strong></p>
                 <p>Statut initial: Brouillon</p>
               </Timeline.Item>
-              
+
               {order.status === 'confirmed' && (
                 <Timeline.Item color="blue">
                   <p><strong>Commande confirmée</strong></p>
                 </Timeline.Item>
               )}
-              
+
               {order.status === 'in_progress' && (
                 <Timeline.Item color="blue">
                   <p><strong>Commande en cours de traitement</strong></p>
                 </Timeline.Item>
               )}
-              
+
               {order.status === 'delivered' && (
                 <Timeline.Item color="green">
                   <p><strong>Commande livrée</strong></p>
                 </Timeline.Item>
               )}
-              
+
               {order.status === 'cancelled' && (
                 <Timeline.Item color="red">
                   <p><strong>Commande annulée</strong></p>
                 </Timeline.Item>
               )}
-              
+
               {order.email_sent && order.email_sent_date && (
                 <Timeline.Item color="blue" label={order.email_sent_date}>
                   <p><strong>Envoi par email</strong></p>
                   <p>La commande a été envoyée au client</p>
                 </Timeline.Item>
               )}
-              
+
               {depositInvoices.map(invoice => (
-                <Timeline.Item 
-                  key={invoice.id} 
-                  color="blue" 
+                <Timeline.Item
+                  key={invoice.id}
+                  color="blue"
                   label={invoice.date}
                 >
                   <p>
@@ -668,11 +662,11 @@ const OrderDetail = () => {
                   <p>Montant: {invoice.total} {invoice.currency_code}</p>
                 </Timeline.Item>
               ))}
-              
+
               {finalInvoices.map(invoice => (
-                <Timeline.Item 
-                  key={invoice.id} 
-                  color="green" 
+                <Timeline.Item
+                  key={invoice.id}
+                  color="green"
                   label={invoice.date}
                 >
                   <p>
@@ -759,23 +753,23 @@ const OrderDetail = () => {
             {depositInvoices.length === 0 && finalInvoices.length === 0 && (
               <div style={{ textAlign: 'center', marginTop: 20 }}>
                 <p>Aucune facture associée à cette commande pour le moment</p>
-                
+
                 {order.status === 'confirmed' && (
                   <Space direction="vertical" style={{ marginTop: 10 }}>
                     {order.can_create_deposit_invoice && (
-                      <Button 
-                        type="primary" 
-                        icon={<BankOutlined />} 
+                      <Button
+                        type="primary"
+                        icon={<BankOutlined />}
                         onClick={() => setCreateDepositInvoiceModal(true)}
                       >
                         Créer facture d'acompte
                       </Button>
                     )}
-                    
+
                     {order.can_create_final_invoice && (
-                      <Button 
-                        type="primary" 
-                        icon={<ShopOutlined />} 
+                      <Button
+                        type="primary"
+                        icon={<ShopOutlined />}
                         onClick={handleConvertToInvoice}
                       >
                         Convertir en facture
@@ -785,7 +779,7 @@ const OrderDetail = () => {
                 )}
               </div>
             )}
-            
+
             {order.status === 'confirmed' && order.deposit_total > 0 && order.can_create_final_invoice && (
               <Alert
                 message="Facture finale"
@@ -793,9 +787,9 @@ const OrderDetail = () => {
                   <>
                     <p>Un acompte de {order.deposit_total} {order.currency_code} a déjà été facturé.</p>
                     <p>Vous pouvez maintenant créer une facture finale pour le montant restant de {order.remaining_amount} {order.currency_code}.</p>
-                    <Button 
-                      type="primary" 
-                      icon={<ShopOutlined />} 
+                    <Button
+                      type="primary"
+                      icon={<ShopOutlined />}
                       onClick={handleConvertToInvoice}
                       style={{ marginTop: 10 }}
                     >
@@ -815,7 +809,7 @@ const OrderDetail = () => {
       {/* Modal pour l'envoi d'email */}
       <Modal
         title="Envoyer la commande par email"
-        visible={sendEmailModal}
+        open={sendEmailModal}
         onCancel={() => setSendEmailModal(false)}
         footer={null}
       >
@@ -834,21 +828,21 @@ const OrderDetail = () => {
           >
             <Input placeholder="exemple@domaine.com" />
           </Form.Item>
-          
+
           <Form.Item
             name="subject"
             label="Objet"
           >
             <Input placeholder={`Commande ${order.number} - ECINTELLIGENCE`} />
           </Form.Item>
-          
+
           <Form.Item
             name="message"
             label="Message additionnel"
           >
             <TextArea rows={4} placeholder="Votre message personnalisé (optionnel)" />
           </Form.Item>
-          
+
           <Form.Item>
             <div style={{ textAlign: 'right' }}>
               <Button onClick={() => setSendEmailModal(false)} style={{ marginRight: 8 }}>
@@ -865,7 +859,7 @@ const OrderDetail = () => {
       {/* Modal pour la création de facture d'acompte */}
       <Modal
         title="Créer une facture d'acompte"
-        visible={createDepositInvoiceModal}
+        open={createDepositInvoiceModal}
         onCancel={() => setCreateDepositInvoiceModal(false)}
         onOk={handleCreateDepositInvoice}
         confirmLoading={loadingAction}
@@ -886,7 +880,7 @@ const OrderDetail = () => {
             />
           </Form.Item>
         </Form>
-        
+
         <div style={{ marginTop: 16 }}>
           <Alert
             message="Aperçu du montant"

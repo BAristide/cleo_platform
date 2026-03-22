@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Modal, Upload, Button, Alert, Typography, Space, message } from 'antd';
 import { UploadOutlined, FileTextOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
 const { Text, Paragraph } = Typography;
@@ -43,9 +44,9 @@ const OFXImportModal = ({ visible, statementId, onClose, onSuccess }) => {
         setResult({ type: 'error', message: response.data.message });
       }
     } catch (error) {
-      const msg = error.response?.data?.message || 'Erreur lors de l\'import';
+      const msg = error.response?.data?.message || "Erreur lors de l'import";
       setResult({ type: 'error', message: msg });
-      message.error(msg);
+      handleApiError(error, null, msg);
     } finally {
       setUploading(false);
     }

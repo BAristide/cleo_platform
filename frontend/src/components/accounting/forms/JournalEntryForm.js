@@ -29,7 +29,7 @@ import {
   WarningOutlined
 } from '@ant-design/icons';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 import moment from 'moment';
 import { useCurrency } from '../../../context/CurrencyContext';
 
@@ -276,8 +276,7 @@ const JournalEntryForm = () => {
       message.success(isEditing ? 'Écriture modifiée avec succès.' : 'Écriture créée avec succès.');
       navigate(`/accounting/entries/${response.data.id || id}`);
     } catch (error) {
-      console.error('Erreur lors de l\'enregistrement de l\'écriture:', error);
-      message.error('Erreur lors de l\'enregistrement de l\'écriture. Veuillez réessayer.');
+      handleApiError(error, form, "Erreur lors de l'enregistrement de l'écriture.");
     } finally {
       setSubmitting(false);
     }
@@ -647,6 +646,7 @@ const JournalEntryForm = () => {
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
+          scrollToFirstError
           initialValues={{
             date: moment(),
             ref: '',

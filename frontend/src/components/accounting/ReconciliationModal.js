@@ -7,6 +7,7 @@ import {
 import {
   CheckCircleOutlined, SearchOutlined, ThunderboltOutlined
 } from '@ant-design/icons';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -44,8 +45,7 @@ const ReconciliationModal = ({ visible, statementId, line, onClose, onSuccess })
         }
       }
     } catch (error) {
-      console.error('Erreur suggestions:', error);
-      message.error('Erreur lors de la recherche de correspondances');
+      handleApiError(error, null, 'Erreur lors de la recherche de correspondances.');
     } finally {
       setLoading(false);
     }
@@ -69,8 +69,7 @@ const ReconciliationModal = ({ visible, statementId, line, onClose, onSuccess })
         message.error(response.data.message);
       }
     } catch (error) {
-      const msg = error.response?.data?.message || 'Erreur lors du rapprochement';
-      message.error(msg);
+      handleApiError(error, null, 'Erreur lors du rapprochement.');
     } finally {
       setReconciling(false);
     }

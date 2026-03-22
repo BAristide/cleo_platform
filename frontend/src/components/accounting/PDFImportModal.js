@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Modal, Upload, Button, Alert, Typography, Space, Tag, message } from 'antd';
 import { UploadOutlined, FilePdfOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
 const { Text, Paragraph } = Typography;
@@ -47,7 +48,7 @@ const PDFImportModal = ({ visible, statementId, onClose, onSuccess }) => {
     } catch (error) {
       const msg = error.response?.data?.message || "Erreur lors de l'import PDF";
       setResult({ type: 'error', message: msg });
-      message.error(msg);
+      handleApiError(error, null, msg);
     } finally {
       setUploading(false);
     }

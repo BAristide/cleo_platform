@@ -25,7 +25,7 @@ import {
   DollarOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
 
@@ -90,8 +90,7 @@ const AssetDepreciationList = () => {
       message.success('Dotation comptabilisée avec succès.');
       fetchData();
     } catch (error) {
-      console.error('Erreur lors de la comptabilisation de la dotation:', error);
-      message.error('Erreur lors de la comptabilisation de la dotation. Veuillez réessayer.');
+      handleApiError(error, null, 'Erreur lors de la comptabilisation de la dotation.');
     }
   };
 
@@ -110,8 +109,7 @@ const AssetDepreciationList = () => {
       setModalVisible(false);
       fetchData();
     } catch (error) {
-      console.error('Erreur lors de la comptabilisation des dotations:', error);
-      message.error('Erreur lors de la comptabilisation des dotations. Veuillez réessayer.');
+      handleApiError(error, form, 'Erreur lors de la comptabilisation des dotations.');
     } finally {
       setSubmitting(false);
     }
@@ -463,7 +461,7 @@ const AssetDepreciationList = () => {
 
       <Modal
         title="Comptabiliser les dotations"
-        visible={modalVisible}
+        open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
       >

@@ -30,7 +30,7 @@ import {
   PercentageOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
 
@@ -134,7 +134,7 @@ const TaxList = () => {
       setModalVisible(false);
       fetchData();
     } catch (error) {
-      console.error('Erreur lors de la création de la taxe:', error);
+      handleApiError(error, form, "Erreur lors de la création de la taxe.");
     } finally {
       setSubmitting(false);
     }
@@ -534,7 +534,7 @@ const TaxList = () => {
 
       <Modal
         title="Nouvelle taxe"
-        visible={modalVisible}
+        open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
       >

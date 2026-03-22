@@ -9,6 +9,7 @@ import {
   DollarOutlined, CheckCircleOutlined, LockOutlined,
   InfoCircleOutlined
 } from '@ant-design/icons';
+import { handleApiError } from '../../utils/apiUtils';
 import axiosInstance from '../../utils/axiosConfig';
 import { useCurrency } from '../../context/CurrencyContext';
 
@@ -122,19 +123,7 @@ const CurrencyList = () => {
       fetchCurrencies();
       refreshCurrency();
     } catch (error) {
-      if (error.response?.data) {
-        const errors = error.response.data;
-        if (errors.error) {
-          message.error(errors.error);
-        } else {
-          const msgs = Object.entries(errors)
-            .map(([field, errs]) => `${field}: ${Array.isArray(errs) ? errs.join(', ') : errs}`)
-            .join(' | ');
-          message.error(msgs);
-        }
-      } else {
-        message.error('Erreur lors de la sauvegarde');
-      }
+      handleApiError(error, form, 'Erreur lors de la sauvegarde.');
     }
   };
 

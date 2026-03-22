@@ -1,14 +1,14 @@
 // src/components/accounting/FiscalYearList.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Table, 
-  Card, 
-  Button, 
-  Tag, 
-  Typography, 
-  Space, 
-  Spin, 
+import {
+  Table,
+  Card,
+  Button,
+  Tag,
+  Typography,
+  Space,
+  Spin,
   Alert,
   Modal,
   Form,
@@ -16,15 +16,15 @@ import {
   DatePicker,
   message
 } from 'antd';
-import { 
-  PlusOutlined, 
+import {
+  PlusOutlined,
   CalendarOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   ExclamationCircleOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title } = Typography;
@@ -79,8 +79,7 @@ const FiscalYearList = () => {
       setModalVisible(false);
       fetchFiscalYears();
     } catch (error) {
-      console.error('Erreur lors de la création de l\'exercice fiscal:', error);
-      message.error('Erreur lors de la création de l\'exercice fiscal. Veuillez réessayer.');
+      handleApiError(error, form, "Erreur lors de la création de l'exercice fiscal.");
     } finally {
       setSubmitting(false);
     }
@@ -92,8 +91,7 @@ const FiscalYearList = () => {
       message.success('Périodes fiscales créées avec succès.');
       fetchFiscalYears();
     } catch (error) {
-      console.error('Erreur lors de la création des périodes:', error);
-      message.error('Erreur lors de la création des périodes. Veuillez réessayer.');
+      handleApiError(error, null, "Erreur lors de la création des périodes.");
     }
   };
 
@@ -103,8 +101,7 @@ const FiscalYearList = () => {
       message.success('Exercice fiscal ouvert avec succès.');
       fetchFiscalYears();
     } catch (error) {
-      console.error('Erreur lors de l\'ouverture de l\'exercice fiscal:', error);
-      message.error('Erreur lors de l\'ouverture de l\'exercice fiscal. Veuillez réessayer.');
+      handleApiError(error, null, "Erreur lors de l'ouverture de l'exercice fiscal.");
     }
   };
 
@@ -114,8 +111,7 @@ const FiscalYearList = () => {
       message.success('Exercice fiscal clôturé avec succès.');
       fetchFiscalYears();
     } catch (error) {
-      console.error('Erreur lors de la clôture de l\'exercice fiscal:', error);
-      message.error('Erreur lors de la clôture de l\'exercice fiscal. Veuillez réessayer.');
+      handleApiError(error, null, "Erreur lors de la clôture de l'exercice fiscal.");
     }
   };
 
@@ -125,7 +121,7 @@ const FiscalYearList = () => {
       'open': { text: 'Ouvert', color: 'green', icon: <CheckCircleOutlined /> },
       'closed': { text: 'Clôturé', color: 'red', icon: <CloseCircleOutlined /> }
     };
-    
+
     return (
       <Tag color={stateMap[state]?.color} icon={stateMap[state]?.icon}>
         {stateMap[state]?.text || state}
@@ -173,17 +169,17 @@ const FiscalYearList = () => {
         <Space size="small">
           {record.state === 'draft' && (
             <>
-              <Button 
-                type="link" 
-                size="small" 
+              <Button
+                type="link"
+                size="small"
                 onClick={() => handleCreatePeriods(record.id)}
                 disabled={record.periods_count > 0}
               >
                 Créer périodes
               </Button>
-              <Button 
-                type="link" 
-                size="small" 
+              <Button
+                type="link"
+                size="small"
                 onClick={() => handleOpenFiscalYear(record.id)}
                 disabled={record.periods_count === 0}
               >
@@ -192,9 +188,9 @@ const FiscalYearList = () => {
             </>
           )}
           {record.state === 'open' && (
-            <Button 
-              type="link" 
-              size="small" 
+            <Button
+              type="link"
+              size="small"
               onClick={() => handleCloseFiscalYear(record.id)}
             >
               Clôturer
@@ -277,7 +273,7 @@ const FiscalYearList = () => {
 
       <Modal
         title="Nouvel exercice fiscal"
-        visible={modalVisible}
+        open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
       >
@@ -293,7 +289,7 @@ const FiscalYearList = () => {
           >
             <Input placeholder="Ex: Exercice 2025" />
           </Form.Item>
-          
+
           <Form.Item
             name="date_range"
             label="Période"
@@ -304,7 +300,7 @@ const FiscalYearList = () => {
               format="DD/MM/YYYY"
             />
           </Form.Item>
-          
+
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <Button onClick={() => setModalVisible(false)} style={{ marginRight: 8 }}>
               Annuler

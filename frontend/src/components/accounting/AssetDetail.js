@@ -35,7 +35,7 @@ import {
   ClockCircleOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
 
@@ -101,8 +101,7 @@ const AssetDetail = () => {
           message.success('Immobilisation supprimée avec succès.');
           navigate('/accounting/assets');
         } catch (error) {
-          console.error('Erreur lors de la suppression de l\'immobilisation:', error);
-          message.error('Erreur lors de la suppression de l\'immobilisation. Veuillez réessayer.');
+          handleApiError(error, null, "Erreur lors de la suppression de l'immobilisation.");
         }
       },
     });
@@ -115,8 +114,7 @@ const AssetDetail = () => {
       message.success('Tableau d\'amortissement calculé avec succès.');
       fetchAssetDetails();
     } catch (error) {
-      console.error('Erreur lors du calcul du tableau d\'amortissement:', error);
-      message.error('Erreur lors du calcul du tableau d\'amortissement. Veuillez réessayer.');
+      handleApiError(error, null, "Erreur lors du calcul du tableau d'amortissement.");
     } finally {
       setComputingDepreciation(false);
     }
@@ -129,8 +127,7 @@ const AssetDetail = () => {
       message.success('Dotation comptabilisée avec succès.');
       fetchAssetDetails();
     } catch (error) {
-      console.error('Erreur lors de la comptabilisation de la dotation:', error);
-      message.error('Erreur lors de la comptabilisation de la dotation. Veuillez réessayer.');
+      handleApiError(error, null, 'Erreur lors de la comptabilisation de la dotation.');
     } finally {
       setPostingDepreciation(false);
     }

@@ -1,26 +1,26 @@
 // src/components/accounting/FiscalPeriodList.js
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { 
-  Table, 
-  Card, 
-  Button, 
-  Tag, 
-  Typography, 
-  Space, 
-  Spin, 
+import {
+  Table,
+  Card,
+  Button,
+  Tag,
+  Typography,
+  Space,
+  Spin,
   Alert,
   Select,
   message
 } from 'antd';
-import { 
+import {
   CalendarOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   ExclamationCircleOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title } = Typography;
@@ -75,7 +75,7 @@ const FiscalPeriodList = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des données:', error);
       setError('Impossible de charger les données. Veuillez réessayer plus tard.');
-      
+
       setFiscalYears(demoFiscalYears);
       setFiscalPeriods(demoFiscalPeriods);
     } finally {
@@ -93,8 +93,7 @@ const FiscalPeriodList = () => {
       message.success('Période fiscale ouverte avec succès.');
       fetchData();
     } catch (error) {
-      console.error('Erreur lors de l\'ouverture de la période fiscale:', error);
-      message.error('Erreur lors de l\'ouverture de la période fiscale. Veuillez réessayer.');
+      handleApiError(error, null, "Erreur lors de l'ouverture de la période fiscale.");
     }
   };
 
@@ -104,8 +103,7 @@ const FiscalPeriodList = () => {
       message.success('Période fiscale clôturée avec succès.');
       fetchData();
     } catch (error) {
-      console.error('Erreur lors de la clôture de la période fiscale:', error);
-      message.error('Erreur lors de la clôture de la période fiscale. Veuillez réessayer.');
+      handleApiError(error, null, "Erreur lors de la clôture de la période fiscale.");
     }
   };
 
@@ -115,7 +113,7 @@ const FiscalPeriodList = () => {
       'open': { text: 'Ouvert', color: 'green', icon: <CheckCircleOutlined /> },
       'closed': { text: 'Clôturé', color: 'red', icon: <CloseCircleOutlined /> }
     };
-    
+
     return (
       <Tag color={stateMap[state]?.color} icon={stateMap[state]?.icon}>
         {stateMap[state]?.text || state}
@@ -123,7 +121,7 @@ const FiscalPeriodList = () => {
     );
   };
 
-  const filteredPeriods = selectedYear !== 'all' 
+  const filteredPeriods = selectedYear !== 'all'
     ? fiscalPeriods.filter(period => period.fiscal_year.toString() === selectedYear)
     : fiscalPeriods;
 
@@ -165,18 +163,18 @@ const FiscalPeriodList = () => {
       render: (_, record) => (
         <Space size="small">
           {record.state === 'draft' && (
-            <Button 
-              type="link" 
-              size="small" 
+            <Button
+              type="link"
+              size="small"
               onClick={() => handleOpenPeriod(record.id)}
             >
               Ouvrir
             </Button>
           )}
           {record.state === 'open' && (
-            <Button 
-              type="link" 
-              size="small" 
+            <Button
+              type="link"
+              size="small"
               onClick={() => handleClosePeriod(record.id)}
             >
               Clôturer

@@ -27,7 +27,7 @@ import {
   BankOutlined
 } from '@ant-design/icons';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 import moment from 'moment';
 import { useCurrency } from '../../../context/CurrencyContext';
 
@@ -216,8 +216,7 @@ const BankStatementForm = () => {
       message.success(isEditing ? 'Relevé modifié avec succès.' : 'Relevé créé avec succès.');
       navigate(`/accounting/bank-statements/${response.data.id || id}`);
     } catch (error) {
-      console.error('Erreur lors de l\'enregistrement du relevé:', error);
-      message.error('Erreur lors de l\'enregistrement du relevé. Veuillez réessayer.');
+      handleApiError(error, form, "Erreur lors de l'enregistrement du relevé.");
     } finally {
       setSubmitting(false);
     }
@@ -462,6 +461,7 @@ const BankStatementForm = () => {
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
+          scrollToFirstError
           initialValues={{
             name: '',
             date: moment(),

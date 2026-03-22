@@ -35,6 +35,7 @@ import {
   FilePdfOutlined,
   DownOutlined
 } from '@ant-design/icons';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -97,7 +98,7 @@ const BankStatementDetail = () => {
           message.success('Relevé supprimé avec succès.');
           navigate('/accounting/bank-statements');
         } catch (error) {
-          message.error('Erreur lors de la suppression du relevé.');
+          handleApiError(error, null, 'Erreur lors de la suppression du relevé.');
         }
       },
     });
@@ -110,7 +111,7 @@ const BankStatementDetail = () => {
       message.success('Relevé confirmé avec succès.');
       fetchStatementDetails();
     } catch (error) {
-      message.error('Erreur lors de la confirmation du relevé.');
+      handleApiError(error, null, 'Erreur lors de la confirmation du relevé.');
     } finally {
       setConfirming(false);
     }
@@ -141,7 +142,7 @@ const BankStatementDetail = () => {
         message.error(response.data.message);
       }
     } catch (error) {
-      message.error('Erreur lors du rapprochement automatique');
+      handleApiError(error, null, 'Erreur lors du rapprochement automatique.');
     } finally {
       setAutoReconciling(false);
     }
@@ -157,7 +158,7 @@ const BankStatementDetail = () => {
         fetchStatementDetails();
       }
     } catch (error) {
-      message.error("Erreur lors de l'annulation du rapprochement");
+      handleApiError(error, null, "Erreur lors de l'annulation du rapprochement.");
     }
   };
 

@@ -26,7 +26,7 @@ import {
   HistoryOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title } = Typography;
@@ -55,7 +55,7 @@ const JournalEntryDetail = () => {
     } catch (error) {
       console.error('Erreur lors de la récupération des détails de l\'écriture:', error);
       setError('Impossible de charger les détails de l\'écriture. Veuillez réessayer plus tard.');
-      
+
       // If API fails, use demo data
       if (demoEntries[id - 1]) {
         setEntry(demoEntries[id - 1]);
@@ -79,8 +79,7 @@ const JournalEntryDetail = () => {
           message.success('Écriture supprimée avec succès.');
           navigate('/accounting/entries');
         } catch (error) {
-          console.error('Erreur lors de la suppression de l\'écriture:', error);
-          message.error('Erreur lors de la suppression de l\'écriture. Veuillez réessayer.');
+          handleApiError(error, null, "Erreur lors de la suppression de l'écriture.");
         }
       },
     });
@@ -93,8 +92,7 @@ const JournalEntryDetail = () => {
       message.success('Écriture validée avec succès.');
       fetchEntryDetails();
     } catch (error) {
-      console.error('Erreur lors de la validation de l\'écriture:', error);
-      message.error('Erreur lors de la validation de l\'écriture. Veuillez réessayer.');
+      handleApiError(error, null, "Erreur lors de la validation de l'écriture.");
     } finally {
       setPosting(false);
     }
@@ -107,8 +105,7 @@ const JournalEntryDetail = () => {
       message.success('Écriture annulée avec succès.');
       fetchEntryDetails();
     } catch (error) {
-      console.error('Erreur lors de l\'annulation de l\'écriture:', error);
-      message.error('Erreur lors de l\'annulation de l\'écriture. Veuillez réessayer.');
+      handleApiError(error, null, "Erreur lors de l'annulation de l'écriture.");
     } finally {
       setCancelling(false);
     }
@@ -278,7 +275,7 @@ const JournalEntryDetail = () => {
       'posted': { text: 'Validé', color: 'green', icon: <CheckOutlined /> },
       'cancel': { text: 'Annulé', color: 'red', icon: <CloseOutlined /> }
     };
-    
+
     return (
       <Tag color={stateMap[state]?.color} icon={stateMap[state]?.icon}>
         {stateMap[state]?.text || state}
@@ -333,8 +330,8 @@ const JournalEntryDetail = () => {
       dataIndex: 'is_reconciled',
       key: 'is_reconciled',
       align: 'center',
-      render: (reconciled) => reconciled ? 
-        <CheckOutlined style={{ color: 'green' }} /> : 
+      render: (reconciled) => reconciled ?
+        <CheckOutlined style={{ color: 'green' }} /> :
         <CloseOutlined style={{ color: 'red' }} />
     }
   ];
@@ -376,9 +373,9 @@ const JournalEntryDetail = () => {
             {getStateTag(displayedEntry.state)}
             {displayedEntry.source_module && (
               <Tag icon={<FileTextOutlined />} color="blue">
-                {displayedEntry.source_module === 'sales' ? 'Ventes' : 
-                 displayedEntry.source_module === 'purchases' ? 'Achats' : 
-                 displayedEntry.source_module === 'payroll' ? 'Paie' : 
+                {displayedEntry.source_module === 'sales' ? 'Ventes' :
+                 displayedEntry.source_module === 'purchases' ? 'Achats' :
+                 displayedEntry.source_module === 'payroll' ? 'Paie' :
                  displayedEntry.source_module}
               </Tag>
             )}
@@ -398,9 +395,9 @@ const JournalEntryDetail = () => {
               >
                 <Button icon={<DeleteOutlined />} danger>Supprimer</Button>
               </Popconfirm>
-              <Button 
-                type="primary" 
-                icon={<CheckOutlined />} 
+              <Button
+                type="primary"
+                icon={<CheckOutlined />}
                 onClick={handlePostEntry}
                 loading={posting}
               >
@@ -409,8 +406,8 @@ const JournalEntryDetail = () => {
             </>
           )}
           {displayedEntry.state === 'posted' && (
-            <Button 
-              icon={<CloseOutlined />} 
+            <Button
+              icon={<CloseOutlined />}
               onClick={handleCancelEntry}
               loading={cancelling}
             >
@@ -439,9 +436,9 @@ const JournalEntryDetail = () => {
           <Descriptions.Item label="Origine">
             {displayedEntry.source_module ? (
               <>
-                {displayedEntry.source_module === 'sales' ? 'Ventes' : 
-                 displayedEntry.source_module === 'purchases' ? 'Achats' : 
-                 displayedEntry.source_module === 'payroll' ? 'Paie' : 
+                {displayedEntry.source_module === 'sales' ? 'Ventes' :
+                 displayedEntry.source_module === 'purchases' ? 'Achats' :
+                 displayedEntry.source_module === 'payroll' ? 'Paie' :
                  displayedEntry.source_module}
                 {displayedEntry.source_id && ` (ID: ${displayedEntry.source_id})`}
               </>
@@ -462,12 +459,12 @@ const JournalEntryDetail = () => {
           summary={pageData => {
             let totalDebit = 0;
             let totalCredit = 0;
-            
+
             pageData.forEach(({ debit, credit }) => {
               totalDebit += parseFloat(debit || 0);
               totalCredit += parseFloat(credit || 0);
             });
-            
+
             return (
               <>
                 <Table.Summary.Row>

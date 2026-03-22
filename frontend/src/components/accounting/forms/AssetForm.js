@@ -27,7 +27,7 @@ import {
   InfoCircleOutlined
 } from '@ant-design/icons';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 import moment from 'moment';
 import { useCurrency } from '../../../context/CurrencyContext';
 
@@ -159,8 +159,7 @@ const AssetForm = () => {
       message.success(isEditing ? 'Immobilisation modifiée avec succès.' : 'Immobilisation créée avec succès.');
       navigate(`/accounting/assets/${response.data.id || id}`);
     } catch (error) {
-      console.error('Erreur lors de l\'enregistrement de l\'immobilisation:', error);
-      message.error('Erreur lors de l\'enregistrement de l\'immobilisation. Veuillez réessayer.');
+      handleApiError(error, form, "Erreur lors de l'enregistrement de l'immobilisation.");
     } finally {
       setSubmitting(false);
     }
@@ -335,6 +334,7 @@ const AssetForm = () => {
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
+          scrollToFirstError
           initialValues={{
             code: '',
             name: '',

@@ -1,5 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { message } from 'antd';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
 const stateLabels = {
@@ -81,7 +83,7 @@ export default function SupplierInvoiceDetail() {
       axios
         .post(`/api/purchasing/supplier-invoices/${id}/validate/`)
         .then(() => load())
-        .catch((e) => alert(e.response?.data?.detail || 'Erreur'));
+        .catch((e) => handleApiError(e, null, 'Une erreur est survenue.'));
     }
   };
 
@@ -90,7 +92,7 @@ export default function SupplierInvoiceDetail() {
       axios
         .post(`/api/purchasing/supplier-invoices/${id}/cancel/`)
         .then(() => load())
-        .catch((e) => alert(e.response?.data?.detail || 'Erreur'));
+        .catch((e) => handleApiError(e, null, 'Une erreur est survenue.'));
     }
   };
 
@@ -108,11 +110,11 @@ export default function SupplierInvoiceDetail() {
         `/api/purchasing/supplier-invoices/${id}/create_credit_note/`,
         payload
       );
-      alert('Avoir fournisseur créé avec succès');
+      message.success('Avoir fournisseur créé avec succès.');
       setShowCNModal(false);
       load();
     } catch (e) {
-      alert(e.response?.data?.detail || e.response?.data?.error || 'Erreur');
+      handleApiError(e, null, "Impossible de créer l'avoir fournisseur.");
     } finally {
       setCnLoading(false);
     }
@@ -141,7 +143,7 @@ export default function SupplierInvoiceDetail() {
       loadDocuments();
     } catch (err) {
       const msg = err.response?.data?.error || 'Erreur lors du téléversement';
-      alert(msg);
+      message.error(msg);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -156,7 +158,7 @@ export default function SupplierInvoiceDetail() {
       );
       loadDocuments();
     } catch (err) {
-      alert('Erreur lors de la suppression');
+      message.error('Erreur lors de la suppression.');
     }
   };
 

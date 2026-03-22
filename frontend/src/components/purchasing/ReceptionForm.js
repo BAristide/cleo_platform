@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { message } from 'antd';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
 export default function ReceptionForm() {
@@ -52,7 +54,7 @@ export default function ReceptionForm() {
       }
       navigate(`/purchasing/receptions/${recId}`);
     } catch (err) {
-      alert(JSON.stringify(err.response?.data));
+      handleApiError(err, null, 'Impossible de créer la réception.');
     }
   };
 

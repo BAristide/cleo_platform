@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import { message } from 'antd';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
 const stateLabels = {
@@ -20,13 +22,13 @@ export default function PurchaseOrderDetail() {
 
   const handleConfirm = () => {
     if (window.confirm('Confirmer ce bon de commande ?')) {
-      axios.post(`/api/purchasing/purchase-orders/${id}/confirm/`).then(() => load()).catch(e => alert(e.response?.data?.detail || 'Erreur'));
+      axios.post(`/api/purchasing/purchase-orders/${id}/confirm/`).then(() => load()).catch(e => handleApiError(e, null, 'Une erreur est survenue.'));
     }
   };
 
   const handleCancel = () => {
     if (window.confirm('Annuler ce bon de commande ?')) {
-      axios.post(`/api/purchasing/purchase-orders/${id}/cancel/`).then(() => load()).catch(e => alert(e.response?.data?.detail || 'Erreur'));
+      axios.post(`/api/purchasing/purchase-orders/${id}/cancel/`).then(() => load()).catch(e => handleApiError(e, null, 'Une erreur est survenue.'));
     }
   };
 

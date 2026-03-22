@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { message } from 'antd';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
 export default function SupplierForm() {
@@ -19,7 +21,7 @@ export default function SupplierForm() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const req = id ? axios.put(`/api/purchasing/suppliers/${id}/`, form) : axios.post('/api/purchasing/suppliers/', form);
-    req.then(() => navigate('/purchasing/suppliers')).catch(e => alert(JSON.stringify(e.response?.data)));
+    req.then(() => navigate('/purchasing/suppliers')).catch(e => handleApiError(e, null, "Impossible d'enregistrer le fournisseur."));
   };
 
   const fieldStyle = { width: '100%', padding: '10px 12px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 14, boxSizing: 'border-box' };

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { message } from 'antd';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
 export default function PaymentForm() {
@@ -31,7 +33,7 @@ export default function PaymentForm() {
     e.preventDefault();
     axios.post('/api/purchasing/supplier-payments/', form)
       .then(() => navigate('/purchasing/payments'))
-      .catch(err => alert(JSON.stringify(err.response?.data)));
+      .catch(err => handleApiError(err, null, "Impossible d'enregistrer le paiement."));
   };
 
   const fieldStyle = { width: '100%', padding: '10px 12px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 14, boxSizing: 'border-box' };

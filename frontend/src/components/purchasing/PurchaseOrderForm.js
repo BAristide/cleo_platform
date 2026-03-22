@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { message } from 'antd';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
 export default function PurchaseOrderForm() {
@@ -60,7 +62,7 @@ export default function PurchaseOrderForm() {
     try {
       const payload = { ...form };
       if (!payload.currency) {
-        alert('Veuillez sélectionner une devise.');
+        message.warning('Veuillez sélectionner une devise.');
         return;
       }
       if (!payload.expected_delivery_date) {
@@ -75,7 +77,7 @@ export default function PurchaseOrderForm() {
       }
       navigate(`/purchasing/orders/${orderId}`);
     } catch (err) {
-      alert(JSON.stringify(err.response?.data));
+      handleApiError(err, null, 'Impossible de créer le bon de commande.');
     }
   };
 

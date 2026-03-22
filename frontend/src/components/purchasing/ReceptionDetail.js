@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { message } from 'antd';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
 export default function ReceptionDetail() {
@@ -12,9 +14,9 @@ export default function ReceptionDetail() {
   const handleValidate = () => {
     if (window.confirm('Valider cette réception ? Les stocks seront mis à jour.')) {
       axios.post(`/api/purchasing/receptions/${id}/validate/`).then(r => {
-        alert(r.data.detail + ` (${r.data.moves_created} mouvement(s) créé(s))`);
+        message.success(r.data.detail + ` (${r.data.moves_created} mouvement(s) créé(s))`);
         load();
-      }).catch(e => alert(e.response?.data?.detail || 'Erreur'));
+      }).catch(e => handleApiError(e, null, 'Impossible de valider la réception.'));
     }
   };
 

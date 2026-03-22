@@ -91,6 +91,7 @@ class CompanyDetailSerializer(serializers.ModelSerializer):
         source='assigned_to',
         write_only=True,
         allow_null=True,
+        required=False,
     )
     tags = TagSerializer(many=True, read_only=True)
     tag_ids = serializers.PrimaryKeyRelatedField(
@@ -170,6 +171,7 @@ class ContactDetailSerializer(serializers.ModelSerializer):
         source='assigned_to',
         write_only=True,
         allow_null=True,
+        required=False,
     )
     tags = TagSerializer(many=True, read_only=True)
     tag_ids = serializers.PrimaryKeyRelatedField(
@@ -287,6 +289,7 @@ class OpportunityDetailSerializer(serializers.ModelSerializer):
         source='assigned_to',
         write_only=True,
         allow_null=True,
+        required=False,
     )
     tags = TagSerializer(many=True, read_only=True)
     tag_ids = serializers.PrimaryKeyRelatedField(
@@ -403,6 +406,7 @@ class ActivityDetailSerializer(serializers.ModelSerializer):
         source='company',
         write_only=True,
         allow_null=True,
+        required=False,
     )
     opportunity = OpportunityListSerializer(read_only=True)
     opportunity_id = serializers.PrimaryKeyRelatedField(
@@ -410,6 +414,7 @@ class ActivityDetailSerializer(serializers.ModelSerializer):
         source='opportunity',
         write_only=True,
         allow_null=True,
+        required=False,
     )
     contacts = ContactListSerializer(many=True, read_only=True)
     contact_ids = serializers.PrimaryKeyRelatedField(
@@ -426,6 +431,7 @@ class ActivityDetailSerializer(serializers.ModelSerializer):
         source='assigned_to',
         write_only=True,
         allow_null=True,
+        required=False,
     )
 
     class Meta:

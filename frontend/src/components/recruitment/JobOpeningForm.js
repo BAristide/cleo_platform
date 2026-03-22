@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Form, Input, Select, DatePicker, Switch, Button, Card, Typography, Row, Col, message, Spin } from 'antd';
 import { SaveOutlined, SendOutlined, RollbackOutlined } from '@ant-design/icons';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
@@ -111,8 +112,7 @@ const JobOpeningForm = () => {
       // Rediriger vers la liste des offres
       navigate('/recruitment/job-openings');
     } catch (error) {
-      console.error('Erreur lors de l\'enregistrement de l\'offre d\'emploi:', error);
-      message.error('Erreur lors de l\'enregistrement. Veuillez vérifier les données et réessayer.');
+      handleApiError(error, form, "Erreur lors de l'enregistrement de l'offre d'emploi.");
     } finally {
       setSubmitting(false);
     }
@@ -153,8 +153,7 @@ const JobOpeningForm = () => {
       // Rediriger vers la liste des offres
       navigate('/recruitment/job-openings');
     } catch (error) {
-      console.error('Erreur lors de la publication de l\'offre d\'emploi:', error);
-      message.error('Erreur lors de la publication. Veuillez vérifier les données et réessayer.');
+      handleApiError(error, form, "Erreur lors de la publication de l'offre d'emploi.");
     } finally {
       setSubmitting(false);
     }
@@ -177,6 +176,7 @@ const JobOpeningForm = () => {
           form={form}
           layout="vertical"
           onFinish={handleSubmit}
+          scrollToFirstError
           initialValues={{
             is_remote: false,
             status: 'draft',

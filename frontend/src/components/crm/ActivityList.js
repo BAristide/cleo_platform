@@ -1,20 +1,20 @@
 // src/components/crm/ActivityList.js
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Space, Input, Card, Typography, message, Tooltip, Popconfirm, Tag, DatePicker, Select } from 'antd';
-import { 
-  SearchOutlined, 
-  PlusOutlined, 
-  EditOutlined, 
-  DeleteOutlined, 
+import {
+  SearchOutlined,
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
   CheckOutlined,
-  CalendarOutlined, 
+  CalendarOutlined,
   UserOutlined,
   ShopOutlined,
   FundOutlined
 } from '@ant-design/icons';
 import { Link } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title } = Typography;
@@ -66,26 +66,26 @@ const ActivityList = () => {
         page_size: pagination.pageSize,
         search: searchText || undefined
       };
-      
+
       if (selectedType) {
         params.activity_type = selectedType;
       }
-      
+
       if (selectedStatus) {
         params.status = selectedStatus;
       }
-      
+
       if (dateRange && dateRange.length === 2) {
         params.start_date_after = dateRange[0].format('YYYY-MM-DD');
         params.start_date_before = dateRange[1].format('YYYY-MM-DD');
       }
-      
+
       const response = await axios.get('/api/crm/activities/', { params });
       console.log('Activities API response:', response);
-      
+
       // Utiliser l'utilitaire pour extraire les résultats
       const data = extractResultsFromResponse(response);
-      
+
       // Mettre à jour la pagination avec les données de l'API
       if (response.data && response.data.count !== undefined) {
         setPagination({
@@ -93,7 +93,7 @@ const ActivityList = () => {
           total: response.data.count
         });
       }
-      
+
       setActivities(data);
     } catch (error) {
       console.error("Erreur lors de la récupération des activités:", error);
@@ -138,8 +138,7 @@ const ActivityList = () => {
       message.success('Activité supprimée avec succès');
       fetchActivities();
     } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-      message.error("Impossible de supprimer l'activité");
+      handleApiError(error, null, "Impossible de supprimer l'activité");
     }
   };
 
@@ -149,8 +148,7 @@ const ActivityList = () => {
       message.success('Activité marquée comme terminée');
       fetchActivities();
     } catch (error) {
-      console.error("Erreur lors de la mise à jour du statut:", error);
-      message.error("Impossible de mettre à jour le statut de l'activité");
+      handleApiError(error, null, "Impossible de mettre à jour le statut de l'activité");
     }
   };
 
@@ -216,10 +214,10 @@ const ActivityList = () => {
       dataIndex: 'status',
       key: 'status',
       render: (status) => {
-        const statusInfo = STATUS_OPTIONS.find(opt => opt.value === status) || { 
-          value: status, 
-          label: status.charAt(0).toUpperCase() + status.slice(1), 
-          color: 'default' 
+        const statusInfo = STATUS_OPTIONS.find(opt => opt.value === status) || {
+          value: status,
+          label: status.charAt(0).toUpperCase() + status.slice(1),
+          color: 'default'
         };
         return <Tag color={statusInfo.color}>{statusInfo.label}</Tag>;
       },
@@ -275,10 +273,10 @@ const ActivityList = () => {
             <Link to={`/crm/activities/${record.id}`}>Détails</Link>
           </Button>
           {record.status === 'planned' && (
-            <Button 
-              size="small" 
-              type="primary" 
-              icon={<CheckOutlined />} 
+            <Button
+              size="small"
+              type="primary"
+              icon={<CheckOutlined />}
               onClick={() => handleComplete(record.id)}
             >
               Terminée
@@ -344,13 +342,13 @@ const ActivityList = () => {
                   </Option>
                 ))}
               </Select>
-              <RangePicker 
+              <RangePicker
                 placeholder={['Date début', 'Date fin']}
                 value={dateRange}
                 onChange={setDateRange}
               />
               <Button onClick={handleSearch} type="primary">Rechercher</Button>
-              {(searchText || selectedType || selectedStatus || dateRange) && 
+              {(searchText || selectedType || selectedStatus || dateRange) &&
                 <Button onClick={resetSearch}>Réinitialiser</Button>
               }
             </Space>

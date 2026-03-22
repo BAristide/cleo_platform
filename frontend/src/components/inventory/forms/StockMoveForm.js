@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, InputNumber, Select, Input, Button, Card, DatePicker, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../../utils/apiUtils';
 import axios from '../../../utils/axiosConfig';
 import dayjs from 'dayjs';
 
@@ -27,12 +28,7 @@ const StockMoveForm = () => {
       message.success('Mouvement créé');
       navigate('/inventory/stock-moves');
     } catch (err) {
-      const errors = err.response?.data;
-      if (errors && typeof errors === 'object') {
-        Object.entries(errors).forEach(([key, val]) => message.error(`${key}: ${val}`));
-      } else {
-        message.error("Erreur lors de l'enregistrement");
-      }
+      handleApiError(err, form, "Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
     }
@@ -40,7 +36,7 @@ const StockMoveForm = () => {
 
   return (
     <Card title="Nouveau mouvement de stock">
-      <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ date: dayjs(), move_type: 'IN' }}>
+      <Form form={form} layout="vertical" onFinish={onFinish} scrollToFirstError initialValues={{ date: dayjs(), move_type: 'IN' }}>
         <Form.Item name="product" label="Produit" rules={[{ required: true }]}>
           <Select showSearch placeholder="Sélectionner un produit" optionFilterProp="children">
             {products.map((p) => (

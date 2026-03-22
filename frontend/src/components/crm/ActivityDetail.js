@@ -1,18 +1,18 @@
 // src/components/crm/ActivityDetail.js
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { 
-  Card, 
-  Descriptions, 
-  Tag, 
-  Button, 
-  Space, 
-  Row, 
-  Col, 
-  Typography, 
-  Spin, 
-  message, 
-  Tabs, 
+import {
+  Card,
+  Descriptions,
+  Tag,
+  Button,
+  Space,
+  Row,
+  Col,
+  Typography,
+  Spin,
+  message,
+  Tabs,
   List,
   Avatar,
   Divider,
@@ -20,9 +20,9 @@ import {
   Timeline,
   Popconfirm
 } from 'antd';
-import { 
-  ArrowLeftOutlined, 
-  EditOutlined, 
+import {
+  ArrowLeftOutlined,
+  EditOutlined,
   DeleteOutlined,
   CheckOutlined,
   CloseOutlined,
@@ -34,6 +34,7 @@ import {
   FileTextOutlined,
   BellOutlined
 } from '@ant-design/icons';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 
@@ -84,8 +85,7 @@ const ActivityDetail = () => {
       message.success('Activité supprimée avec succès');
       navigate('/crm/activities');
     } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-      message.error("Impossible de supprimer l'activité");
+      handleApiError(error, null, "Impossible de supprimer l'activité");
     }
   };
 
@@ -95,8 +95,7 @@ const ActivityDetail = () => {
       message.success('Activité marquée comme terminée');
       fetchActivityDetails();
     } catch (error) {
-      console.error("Erreur lors de la mise à jour du statut:", error);
-      message.error("Impossible de mettre à jour le statut de l'activité");
+      handleApiError(error, null, "Impossible de mettre à jour le statut de l'activité");
     }
   };
 
@@ -107,8 +106,7 @@ const ActivityDetail = () => {
       message.success('Activité annulée');
       fetchActivityDetails();
     } catch (error) {
-      console.error("Erreur lors de l'annulation:", error);
-      message.error("Impossible d'annuler l'activité");
+      handleApiError(error, null, "Impossible d'annuler l'activité");
     }
   };
 
@@ -152,16 +150,16 @@ const ActivityDetail = () => {
           </Button>
           {activity.status === 'planned' && (
             <>
-              <Button 
-                type="primary" 
-                icon={<CheckOutlined />} 
+              <Button
+                type="primary"
+                icon={<CheckOutlined />}
                 onClick={handleComplete}
               >
                 Marquer comme terminée
               </Button>
-              <Button 
-                danger 
-                icon={<CloseOutlined />} 
+              <Button
+                danger
+                icon={<CloseOutlined />}
                 onClick={handleCancel}
               >
                 Annuler
@@ -201,8 +199,8 @@ const ActivityDetail = () => {
                   </Descriptions.Item>
                 )}
                 <Descriptions.Item label={<><ClockCircleOutlined /> Durée</>}>
-                  {activity.end_date ? 
-                    moment.duration(moment(activity.end_date).diff(moment(activity.start_date))).humanize() : 
+                  {activity.end_date ?
+                    moment.duration(moment(activity.end_date).diff(moment(activity.start_date))).humanize() :
                     activity.all_day ? 'Toute la journée' : 'Non spécifiée'
                   }
                 </Descriptions.Item>
@@ -266,7 +264,7 @@ const ActivityDetail = () => {
                 {activity.status !== 'planned' && (
                   <Timeline.Item color={activity.status === 'completed' ? 'green' : 'red'}>
                     {activity.status === 'completed' ? 'Terminée' : 'Annulée'}: {
-                      activity.completed_date ? 
+                      activity.completed_date ?
                       moment(activity.completed_date).format('DD/MM/YYYY HH:mm') :
                       moment(activity.updated_at).format('DD/MM/YYYY HH:mm')
                     }

@@ -1,17 +1,18 @@
 // src/components/recruitment/ApplicationDetail.js
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Card, Typography, Descriptions, Tag, Button, Spin, Alert, Row, Col, Space, Timeline, Divider } from 'antd';
-import { 
-  UserOutlined, 
-  FileTextOutlined, 
-  MailOutlined, 
+import { Card, Typography, Descriptions, Tag, Button, Spin, Alert, Row, Col, Space, Timeline, Divider, message } from 'antd';
+import {
+  UserOutlined,
+  FileTextOutlined,
+  MailOutlined,
   PhoneOutlined,
   EnvironmentOutlined,
   CheckCircleOutlined,
   CloseCircleOutlined,
   ScheduleOutlined
 } from '@ant-design/icons';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
 const { Title, Paragraph, Text } = Typography;
@@ -22,7 +23,7 @@ const ApplicationDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [application, setApplication] = useState(null);
-  
+
   useEffect(() => {
     const fetchApplication = async () => {
       setLoading(true);
@@ -36,10 +37,10 @@ const ApplicationDetail = () => {
         setLoading(false);
       }
     };
-    
+
     fetchApplication();
   }, [id]);
-  
+
   const getStatusTag = (status) => {
     const statusMap = {
       'received': { color: 'blue', text: 'Reçue' },
@@ -54,24 +55,24 @@ const ApplicationDetail = () => {
       'hired': { color: 'green', text: 'Embauché' },
       'withdrawn': { color: 'grey', text: 'Retirée' },
     };
-    
+
     const statusInfo = statusMap[status] || { color: 'default', text: status };
     return <Tag color={statusInfo.color}>{statusInfo.text}</Tag>;
   };
-  
+
   const handlePreselectApplication = async () => {
     try {
       await axios.post(`/api/recruitment/applications/${id}/preselect/`);
       setApplication({ ...application, status: 'preselected' });
     } catch (error) {
-      console.error('Erreur lors de la présélection:', error);
+      handleApiError(error, null, 'Erreur lors de la présélection.');
     }
   };
-  
+
   const handleRejectApplication = async () => {
     try {
       await axios.post(`/api/recruitment/applications/${id}/reject/`);
-      
+
       // Déterminer le nouveau statut en fonction du statut actuel
       let newStatus;
       if (application.status === 'received') {
@@ -83,13 +84,13 @@ const ApplicationDetail = () => {
       } else {
         newStatus = application.status;
       }
-      
+
       setApplication({ ...application, status: newStatus });
     } catch (error) {
-      console.error('Erreur lors du rejet:', error);
+      handleApiError(error, null, 'Erreur lors du rejet.');
     }
   };
-  
+
   if (loading) {
     return (
       <div style={{ textAlign: 'center', margin: '20px 0' }}>
@@ -97,7 +98,7 @@ const ApplicationDetail = () => {
       </div>
     );
   }
-  
+
   if (error) {
     return (
       <Alert
@@ -108,7 +109,7 @@ const ApplicationDetail = () => {
       />
     );
   }
-  
+
   if (!application) {
     return (
       <Alert
@@ -119,7 +120,7 @@ const ApplicationDetail = () => {
       />
     );
   }
-  
+
   return (
     <div className="application-detail">
       <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
@@ -132,33 +133,33 @@ const ApplicationDetail = () => {
         </Col>
         <Col>
           <Space>
-            <Button 
-              type="default" 
+            <Button
+              type="default"
               onClick={() => navigate('/recruitment/applications')}
             >
               Retour
             </Button>
-            
+
             {application.status === 'received' && (
-              <Button 
-                type="primary" 
+              <Button
+                type="primary"
                 icon={<CheckCircleOutlined />}
                 onClick={handlePreselectApplication}
               >
                 Présélectionner
               </Button>
             )}
-            
+
             {['received', 'preselected', 'analysis', 'selected_for_interview', 'interviewed'].includes(application.status) && (
-              <Button 
-                danger 
+              <Button
+                danger
                 icon={<CloseCircleOutlined />}
                 onClick={handleRejectApplication}
               >
                 Rejeter
               </Button>
             )}
-            
+
             {application.status === 'preselected' && (
               <Link to={`/recruitment/applications/${id}/schedule-interview`}>
                 <Button type="primary" icon={<ScheduleOutlined />}>
@@ -169,7 +170,7 @@ const ApplicationDetail = () => {
           </Space>
         </Col>
       </Row>
-      
+
       <Row gutter={16}>
         <Col span={16}>
           <Card title={<><UserOutlined /> Informations du candidat</>} style={{ marginBottom: 16 }}>
@@ -191,7 +192,7 @@ const ApplicationDetail = () => {
               )}
             </Descriptions>
           </Card>
-          
+
           <Card title="Poste concerné" style={{ marginBottom: 16 }}>
             <Descriptions bordered column={1}>
               <Descriptions.Item label="Titre">
@@ -201,14 +202,14 @@ const ApplicationDetail = () => {
               </Descriptions.Item>
             </Descriptions>
           </Card>
-          
+
           {application.notes && (
             <Card title="Notes" style={{ marginBottom: 16 }}>
               <Paragraph style={{ whiteSpace: 'pre-line' }}>{application.notes}</Paragraph>
             </Card>
           )}
         </Col>
-        
+
         <Col span={8}>
           <Card title="Entretien" style={{ marginBottom: 16 }}>
             {application.interview_date ? (
@@ -220,7 +221,7 @@ const ApplicationDetail = () => {
                   <EnvironmentOutlined /> {application.interview_location || 'Non spécifié'}
                 </Descriptions.Item>
                 <Descriptions.Item label="Statut">
-                  {application.status === 'selected_for_interview' 
+                  {application.status === 'selected_for_interview'
                     ? <Tag color="orange">Entretien prévu</Tag>
                     : application.status === 'interviewed'
                     ? <Tag color="geekblue">Entretien effectué</Tag>
@@ -232,7 +233,7 @@ const ApplicationDetail = () => {
               <Text type="secondary">Aucun entretien planifié</Text>
             )}
           </Card>
-          
+
           <Card title="Évaluations" style={{ marginBottom: 16 }}>
             {application.evaluations_count > 0 ? (
               <p>Ce candidat a reçu {application.evaluations_count} évaluation(s).</p>
@@ -240,51 +241,51 @@ const ApplicationDetail = () => {
               <Text type="secondary">Aucune évaluation pour ce candidat</Text>
             )}
           </Card>
-          
+
           <Card title="Suivi du processus">
             <Timeline>
               <Timeline.Item color="blue">
                 <p><strong>Candidature reçue</strong></p>
                 <p>{new Date(application.application_date).toLocaleString()}</p>
               </Timeline.Item>
-              
+
               {application.status !== 'received' && application.status !== 'rejected_screening' && (
                 <Timeline.Item color="cyan">
                   <p><strong>Présélectionnée</strong></p>
                 </Timeline.Item>
               )}
-              
+
               {application.status === 'rejected_screening' && (
                 <Timeline.Item color="red">
                   <p><strong>Rejetée (présélection)</strong></p>
                 </Timeline.Item>
               )}
-              
+
               {['selected_for_interview', 'interviewed', 'rejected_interview', 'selected', 'hired'].includes(application.status) && (
                 <Timeline.Item color="orange">
                   <p><strong>Entretien programmé</strong></p>
                   {application.interview_date && <p>{new Date(application.interview_date).toLocaleString()}</p>}
                 </Timeline.Item>
               )}
-              
+
               {['interviewed', 'rejected_interview', 'selected', 'hired'].includes(application.status) && (
                 <Timeline.Item color="blue">
                   <p><strong>Entretien effectué</strong></p>
                 </Timeline.Item>
               )}
-              
+
               {application.status === 'rejected_interview' && (
                 <Timeline.Item color="red">
                   <p><strong>Rejetée (après entretien)</strong></p>
                 </Timeline.Item>
               )}
-              
+
               {['selected', 'hired'].includes(application.status) && (
                 <Timeline.Item color="lime">
                   <p><strong>Candidat sélectionné</strong></p>
                 </Timeline.Item>
               )}
-              
+
               {application.status === 'hired' && (
                 <Timeline.Item color="green">
                   <p><strong>Candidat embauché</strong></p>

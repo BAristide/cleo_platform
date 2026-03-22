@@ -4,7 +4,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom';
 import { Table, Button, Tag, Card, Input, Select, Space, Typography, Spin, Row, Col, Badge, Divider, Descriptions, Popconfirm, message } from 'antd';
 import { SearchOutlined, FileTextOutlined, UserOutlined, MailOutlined, PhoneOutlined, FileSearchOutlined, SendOutlined, CloseCircleOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title, Text } = Typography;
@@ -19,16 +19,16 @@ const ApplicationList = () => {
   const [totalItems, setTotalItems] = useState(0);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
-  
+
   // Filtres
   const [filters, setFilters] = useState({
     status: '',
     search: '',
   });
-  
+
   // États de suivi
   const [appliedFilters, setAppliedFilters] = useState({});
-  
+
   // Charger l'offre d'emploi si on a un jobId
   useEffect(() => {
     if (jobId) {
@@ -40,23 +40,23 @@ const ApplicationList = () => {
           console.error('Erreur lors du chargement de l\'offre d\'emploi:', error);
         }
       };
-      
+
       fetchJobOpening();
     }
   }, [jobId]);
-  
+
   // Charger les candidatures
   useEffect(() => {
     const fetchApplications = async () => {
       setLoading(true);
       try {
         let queryParams = `page=${page}&page_size=${pageSize}`;
-        
+
         // Ajouter le filtre par offre d'emploi si on a un jobId
         if (jobId) {
           queryParams += `&job_opening=${jobId}`;
         }
-        
+
         // Ajouter les filtres appliqués
         if (appliedFilters.status) {
           queryParams += `&status=${appliedFilters.status}`;
@@ -64,13 +64,13 @@ const ApplicationList = () => {
         if (appliedFilters.search) {
           queryParams += `&search=${appliedFilters.search}`;
         }
-        
+
         const response = await axios.get(`/api/recruitment/applications/?${queryParams}`);
-        
+
         // Extraction des résultats et du total
         const data = response.data;
         const results = extractResultsFromResponse(response);
-        
+
         setApplications(results);
         setTotalItems(data.count || results.length);
         setLoading(false);
@@ -79,16 +79,16 @@ const ApplicationList = () => {
         setLoading(false);
       }
     };
-    
+
     fetchApplications();
   }, [jobId, page, pageSize, appliedFilters]);
-  
+
   // Gestionnaires d'événements
   const handleSearch = () => {
     setPage(1); // Réinitialiser la pagination
     setAppliedFilters({...filters});
   };
-  
+
   const handleReset = () => {
     setFilters({
       status: '',
@@ -97,33 +97,32 @@ const ApplicationList = () => {
     setAppliedFilters({});
     setPage(1);
   };
-  
+
   const handleTableChange = (pagination) => {
     setPage(pagination.current);
     setPageSize(pagination.pageSize);
   };
-  
+
   // Gestion des actions sur les candidatures
   const handlePreselectApplication = async (id) => {
     try {
       await axios.post(`/api/recruitment/applications/${id}/preselect/`);
       message.success('Candidature présélectionnée avec succès');
-      
+
       // Mettre à jour l'état local pour éviter de recharger la page
-      setApplications(applications.map(app => 
+      setApplications(applications.map(app =>
         app.id === id ? {...app, status: 'preselected'} : app
       ));
     } catch (error) {
-      console.error('Erreur lors de la présélection:', error);
-      message.error('Erreur lors de la présélection. Veuillez réessayer.');
+      handleApiError(error, null, 'Erreur lors de la présélection.');
     }
   };
-  
+
   const handleRejectApplication = async (id) => {
     try {
       await axios.post(`/api/recruitment/applications/${id}/reject/`);
       message.success('Candidature rejetée avec succès');
-      
+
       // Mettre à jour l'état local
       setApplications(applications.map(app => {
         if (app.id === id) {
@@ -138,17 +137,16 @@ const ApplicationList = () => {
           } else {
             newStatus = app.status;
           }
-          
+
           return {...app, status: newStatus};
         }
         return app;
       }));
     } catch (error) {
-      console.error('Erreur lors du rejet:', error);
-      message.error('Erreur lors du rejet. Veuillez réessayer.');
+      handleApiError(error, null, 'Erreur lors du rejet.');
     }
   };
-  
+
   // Configuration des colonnes du tableau
   const columns = [
     {
@@ -201,7 +199,7 @@ const ApplicationList = () => {
           'hired': { color: 'green', text: 'Embauché' },
           'withdrawn': { color: 'grey', text: 'Retirée' },
         };
-        
+
         const statusInfo = statusMap[status] || { color: 'default', text: status };
         return <Tag color={statusInfo.color}>{statusInfo.text}</Tag>;
       },
@@ -234,7 +232,7 @@ const ApplicationList = () => {
           <Link to={`/recruitment/applications/${record.id}`}>
             <Button type="primary" size="small" icon={<FileSearchOutlined />}>Détails</Button>
           </Link>
-          
+
           {record.status === 'received' && (
             <Popconfirm
               title="Voulez-vous présélectionner cette candidature?"
@@ -245,7 +243,7 @@ const ApplicationList = () => {
               <Button size="small" type="default" icon={<CheckCircleOutlined />}>Présélectionner</Button>
             </Popconfirm>
           )}
-          
+
           {['received', 'preselected', 'analysis', 'selected_for_interview', 'interviewed'].includes(record.status) && (
             <Popconfirm
               title="Voulez-vous rejeter cette candidature?"
@@ -256,7 +254,7 @@ const ApplicationList = () => {
               <Button size="small" danger icon={<CloseCircleOutlined />}>Rejeter</Button>
             </Popconfirm>
           )}
-          
+
           {record.status === 'preselected' && (
             <Link to={`/recruitment/applications/${record.id}/schedule-interview`}>
               <Button size="small" type="primary" icon={<SendOutlined />}>Planifier entretien</Button>
@@ -266,7 +264,7 @@ const ApplicationList = () => {
       ),
     },
   ];
-  
+
   return (
     <div className="recruitment-applications">
       <Row gutter={[16, 16]} align="middle" justify="space-between">
@@ -290,7 +288,7 @@ const ApplicationList = () => {
           )}
         </Col>
       </Row>
-      
+
       {jobOpening && (
         <Card style={{ marginBottom: 16 }}>
           <Descriptions title="Informations sur l'offre" bordered size="small">
@@ -308,7 +306,7 @@ const ApplicationList = () => {
           </Descriptions>
         </Card>
       )}
-      
+
       <Card style={{ marginBottom: 16 }}>
         <Row gutter={16}>
           <Col span={12}>
@@ -353,7 +351,7 @@ const ApplicationList = () => {
           </Col>
         </Row>
       </Card>
-      
+
       {loading ? (
         <div style={{ textAlign: 'center', margin: '20px 0' }}>
           <Spin size="large" />

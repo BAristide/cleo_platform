@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Button, Switch, Card, message, Spin } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../../utils/apiUtils';
 import axios from '../../../utils/axiosConfig';
 
 const WarehouseForm = () => {
@@ -34,12 +35,7 @@ const WarehouseForm = () => {
       }
       navigate('/inventory/warehouses');
     } catch (err) {
-      const errors = err.response?.data;
-      if (errors && typeof errors === 'object') {
-        Object.entries(errors).forEach(([key, val]) => message.error(`${key}: ${val}`));
-      } else {
-        message.error("Erreur lors de l'enregistrement");
-      }
+      handleApiError(err, form, "Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
     }
@@ -49,7 +45,7 @@ const WarehouseForm = () => {
 
   return (
     <Card title={isEdit ? "Modifier l'entrepôt" : 'Nouvel entrepôt'}>
-      <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ is_active: true, is_default: false }}>
+      <Form form={form} layout="vertical" onFinish={onFinish} scrollToFirstError initialValues={{ is_active: true, is_default: false }}>
         <Form.Item name="code" label="Code" rules={[{ required: true, message: 'Le code est requis' }]}>
           <Input maxLength={20} />
         </Form.Item>

@@ -1,7 +1,7 @@
 // src/components/crm/OpportunityDetail.js
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 import {
   Card,
   Descriptions,
@@ -132,8 +132,7 @@ const OpportunityDetail = () => {
       message.success('Opportunité supprimée avec succès');
       navigate('/crm/opportunities');
     } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-      message.error("Impossible de supprimer l'opportunité");
+      handleApiError(error, null, "Impossible de supprimer l'opportunité");
     }
   };
 
@@ -159,8 +158,7 @@ const OpportunityDetail = () => {
 
       setIsStageModalVisible(false);
     } catch (error) {
-      console.error("Erreur lors du changement d'étape:", error);
-      message.error("Impossible de modifier l'étape");
+      handleApiError(error, null, "Impossible de modifier l'étape");
     } finally {
       setIsLoading(false);
     }
@@ -385,7 +383,7 @@ const OpportunityDetail = () => {
       {/* Modal pour changer l'étape */}
       <Modal
         title="Changer l'étape de l'opportunité"
-        visible={isStageModalVisible}
+        open={isStageModalVisible}
         onCancel={() => setIsStageModalVisible(false)}
         footer={null}
       >

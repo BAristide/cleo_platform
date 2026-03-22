@@ -1,17 +1,17 @@
 // src/components/crm/forms/ActivityForm.js
 import React, { useState, useEffect } from 'react';
-import { 
-  Form, 
-  Input, 
-  Button, 
-  Select, 
-  DatePicker, 
-  Space, 
-  Card, 
-  Row, 
-  Col, 
-  Typography, 
-  message, 
+import {
+  Form,
+  Input,
+  Button,
+  Select,
+  DatePicker,
+  Space,
+  Card,
+  Row,
+  Col,
+  Typography,
+  message,
   Spin,
   Divider,
   Checkbox,
@@ -19,7 +19,7 @@ import {
 } from 'antd';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
-import { extractResultsFromResponse } from '../../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 import moment from 'moment';
 
 const { Title } = Typography;
@@ -89,7 +89,7 @@ const ActivityForm = () => {
 
           setIsAllDay(activityData.all_day);
           setIsReminder(activityData.reminder);
-          
+
           if (activityData.company) {
             setSelectedCompany(activityData.company.id);
             // Filtrer les contacts par entreprise
@@ -130,26 +130,26 @@ const ActivityForm = () => {
 
           // Pré-remplir avec les paramètres spécifiés dans l'URL
           const initialValues = {};
-          
+
           if (companyId) {
             initialValues.company_id = parseInt(companyId);
             setSelectedCompany(parseInt(companyId));
-            
+
             // Filtrer les contacts par entreprise sélectionnée
             setFilteredContacts(contactsData.filter(contact => contact.company_id === parseInt(companyId)));
-            
+
             // Filtrer les opportunités par entreprise sélectionnée
             setFilteredOpportunities(opportunitiesData.filter(opportunity => opportunity.company_id === parseInt(companyId)));
           }
-          
+
           if (opportunityId) {
             initialValues.opportunity_id = parseInt(opportunityId);
           }
-          
+
           if (contactId) {
             initialValues.contact_ids = [parseInt(contactId)];
           }
-          
+
           form.setFieldsValue(initialValues);
         }
       } catch (error) {
@@ -163,24 +163,24 @@ const ActivityForm = () => {
     fetchFormData();
   }, [id, form, companyId, opportunityId, contactId, isEditMode]);
 
-  
+
 const handleCompanyChange = async (value) => {
   console.log('Entreprise sélectionnée:', value);
   setSelectedCompany(value);
-  
+
   // Réinitialiser les sélections liées à l'entreprise
   form.setFieldsValue({
     opportunity_id: undefined,
     contact_ids: []
   });
-  
+
   try {
     // Récupérer les contacts de l'entreprise sélectionnée
     const contactsResponse = await axios.get(`/api/crm/companies/${value}/contacts/`);
     console.log('Réponse contacts:', contactsResponse);
     const contactsData = extractResultsFromResponse(contactsResponse);
     console.log('Données contacts après extraction:', contactsData);
-    
+
     // Mettre à jour les contacts filtrés
     if (Array.isArray(contactsData)) {
       setFilteredContacts(contactsData);
@@ -188,13 +188,13 @@ const handleCompanyChange = async (value) => {
       console.warn('Les données de contacts ne sont pas un tableau:', contactsData);
       setFilteredContacts([]);
     }
-    
+
     // Récupérer les opportunités de l'entreprise sélectionnée
     const opportunitiesResponse = await axios.get(`/api/crm/companies/${value}/opportunities/`);
     console.log('Réponse opportunités:', opportunitiesResponse);
     const opportunitiesData = extractResultsFromResponse(opportunitiesResponse);
     console.log('Données opportunités après extraction:', opportunitiesData);
-    
+
     // Mettre à jour les opportunités filtrées
     if (Array.isArray(opportunitiesData)) {
       setFilteredOpportunities(opportunitiesData);
@@ -214,18 +214,18 @@ const handleCompanyChange = async (value) => {
   const handleAllDayToggle = (e) => {
     const checked = e.target.checked;
     setIsAllDay(checked);
-    
+
     // Si tout le jour est activé, ajuster les heures
     if (checked) {
       const startDate = form.getFieldValue('start_date');
       const endDate = form.getFieldValue('end_date');
-      
+
       if (startDate) {
         form.setFieldsValue({
           start_date: startDate.startOf('day')
         });
       }
-      
+
       if (endDate) {
         form.setFieldsValue({
           end_date: endDate.endOf('day')
@@ -237,7 +237,7 @@ const handleCompanyChange = async (value) => {
   const handleReminderToggle = (e) => {
     const checked = e.target.checked;
     setIsReminder(checked);
-    
+
     // Si le rappel est activé, définir un temps par défaut (1 heure avant)
     if (checked) {
       const startDate = form.getFieldValue('start_date');
@@ -285,8 +285,7 @@ const handleCompanyChange = async (value) => {
       // Rediriger vers la page de détail de l'activité
       navigate(`/crm/activities/${id}`);
     } catch (error) {
-      console.error("Erreur lors de l'enregistrement:", error);
-      message.error("Impossible d'enregistrer l'activité");
+      handleApiError(error, form, "Impossible d'enregistrer l'activité");
     } finally {
       setSubmitting(false);
     }
@@ -312,6 +311,7 @@ const handleCompanyChange = async (value) => {
         layout="vertical"
         onFinish={onFinish}
         onFinishFailed={onFinishFailed}
+        scrollToFirstError
         initialValues={{
           status: 'planned',
           all_day: false,
@@ -358,13 +358,13 @@ const handleCompanyChange = async (value) => {
               rules={[{ required: true, message: 'Veuillez sélectionner une date de début' }]}
             >
               {isAllDay ? (
-                <DatePicker 
-                  style={{ width: '100%' }} 
+                <DatePicker
+                  style={{ width: '100%' }}
                   format="DD/MM/YYYY"
                 />
               ) : (
-                <DatePicker 
-                  style={{ width: '100%' }} 
+                <DatePicker
+                  style={{ width: '100%' }}
                   format="DD/MM/YYYY HH:mm"
                   showTime={{ format: 'HH:mm' }}
                 />
@@ -391,7 +391,7 @@ if (endTime >= startTime) {
 return Promise.resolve();
 }
 
- 
+
 
 
                     return Promise.reject(new Error('La date de fin doit être postérieure à la date de début'));
@@ -400,13 +400,13 @@ return Promise.resolve();
               ]}
             >
               {isAllDay ? (
-                <DatePicker 
-                  style={{ width: '100%' }} 
+                <DatePicker
+                  style={{ width: '100%' }}
                   format="DD/MM/YYYY"
                 />
               ) : (
-                <DatePicker 
-                  style={{ width: '100%' }} 
+                <DatePicker
+                  style={{ width: '100%' }}
                   format="DD/MM/YYYY HH:mm"
                   showTime={{ format: 'HH:mm' }}
                 />
@@ -534,8 +534,8 @@ return Promise.resolve();
               label="Date et heure du rappel"
               dependencies={['reminder']}
             >
-              <DatePicker 
-                style={{ width: '100%' }} 
+              <DatePicker
+                style={{ width: '100%' }}
                 format="DD/MM/YYYY HH:mm"
                 showTime={{ format: 'HH:mm' }}
                 disabled={!isReminder}

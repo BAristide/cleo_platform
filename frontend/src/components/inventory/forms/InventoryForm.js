@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Form, Input, Select, Button, Card, DatePicker, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../../utils/apiUtils';
 import axios from '../../../utils/axiosConfig';
 import dayjs from 'dayjs';
 
@@ -25,12 +26,7 @@ const InventoryForm = () => {
       message.success('Inventaire créé');
       navigate('/inventory/inventories');
     } catch (err) {
-      const errors = err.response?.data;
-      if (errors && typeof errors === 'object') {
-        Object.entries(errors).forEach(([key, val]) => message.error(`${key}: ${val}`));
-      } else {
-        message.error("Erreur lors de l'enregistrement");
-      }
+      handleApiError(err, form, "Erreur lors de l'enregistrement");
     } finally {
       setSaving(false);
     }
@@ -38,7 +34,7 @@ const InventoryForm = () => {
 
   return (
     <Card title="Nouvel inventaire">
-      <Form form={form} layout="vertical" onFinish={onFinish} initialValues={{ date: dayjs(), state: 'draft' }}>
+      <Form form={form} layout="vertical" onFinish={onFinish} scrollToFirstError initialValues={{ date: dayjs(), state: 'draft' }}>
         <Form.Item name="reference" label="Référence" rules={[{ required: true, message: 'La référence est requise' }]}>
           <Input maxLength={50} />
         </Form.Item>

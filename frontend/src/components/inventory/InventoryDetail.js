@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Descriptions, Table, Tag, Button, Spin, message, Popconfirm } from 'antd';
 import { CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useParams, useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
 const InventoryDetail = () => {
@@ -31,7 +32,7 @@ const InventoryDetail = () => {
       message.success('Inventaire validé avec succès');
       fetchData();
     } catch (err) {
-      message.error(err.response?.data?.detail || 'Erreur lors de la validation');
+      handleApiError(err, null, 'Erreur lors de la validation');
     } finally {
       setValidating(false);
     }

@@ -1,60 +1,46 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { Table, Button, Tag, Typography } from 'antd';
+import { PlusOutlined } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 
+const { Title } = Typography;
+
 export default function SupplierList() {
+  const navigate = useNavigate();
   const [suppliers, setSuppliers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    axios.get('/api/purchasing/suppliers/').then(r => setSuppliers(r.data.results || r.data)).catch(console.error);
+    axios.get('/api/purchasing/suppliers/')
+      .then(r => setSuppliers(r.data.results || r.data))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
+
+  const columns = [
+    { title: 'Code', dataIndex: 'code', width: 130, render: v => <code style={{ fontFamily: 'monospace', color: '#0F172A' }}>{v}</code> },
+    { title: 'Nom', dataIndex: 'name', render: v => <strong>{v}</strong> },
+    { title: 'Contact', dataIndex: 'contact_name', render: v => v || '—' },
+    { title: 'Email', dataIndex: 'email', render: v => v || '—' },
+    { title: 'Devise', dataIndex: 'currency_code', width: 80, render: v => v || '—' },
+    { title: 'Statut', dataIndex: 'is_active', width: 100,
+      render: v => <Tag color={v ? 'success' : 'error'}>{v ? 'Actif' : 'Inactif'}</Tag> },
+    { title: 'Actions', key: 'actions', width: 100,
+      render: (_, r) => <Button type="link" style={{ color: '#10B981', padding: 0 }} onClick={() => navigate(`/purchasing/suppliers/${r.id}/edit`)}>Modifier</Button> },
+  ];
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h1 style={{ margin: 0, fontSize: 22 }}>Fournisseurs</h1>
-        <Link to="/purchasing/suppliers/new" style={{
-          padding: '8px 16px', background: '#3182ce', color: '#fff',
-          borderRadius: 6, textDecoration: 'none', fontSize: 14
-        }}>+ Ajouter</Link>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <Title level={4} style={{ color: '#0F172A', margin: 0 }}>Fournisseurs</Title>
+        <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/purchasing/suppliers/new')}
+          style={{ background: '#10B981', borderColor: '#10B981', borderRadius: 8 }}>
+          Ajouter
+        </Button>
       </div>
-      <table style={{ width: '100%', borderCollapse: 'collapse', background: '#fff', borderRadius: 8, overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <thead>
-          <tr style={{ background: '#edf2f7', textAlign: 'left' }}>
-            <th style={{ padding: '12px 16px', fontSize: 13 }}>Code</th>
-            <th style={{ padding: '12px 16px', fontSize: 13 }}>Nom</th>
-            <th style={{ padding: '12px 16px', fontSize: 13 }}>Contact</th>
-            <th style={{ padding: '12px 16px', fontSize: 13 }}>Email</th>
-            <th style={{ padding: '12px 16px', fontSize: 13 }}>Devise</th>
-            <th style={{ padding: '12px 16px', fontSize: 13 }}>Statut</th>
-            <th style={{ padding: '12px 16px', fontSize: 13 }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {suppliers.map(s => (
-            <tr key={s.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-              <td style={{ padding: '12px 16px', fontFamily: 'monospace' }}>{s.code}</td>
-              <td style={{ padding: '12px 16px', fontWeight: 600 }}>{s.name}</td>
-              <td style={{ padding: '12px 16px' }}>{s.contact_name || '—'}</td>
-              <td style={{ padding: '12px 16px' }}>{s.email || '—'}</td>
-              <td style={{ padding: '12px 16px' }}>{s.currency_code || '—'}</td>
-              <td style={{ padding: '12px 16px' }}>
-                <span style={{
-                  padding: '2px 8px', borderRadius: 12, fontSize: 12,
-                  background: s.is_active ? '#c6f6d5' : '#fed7d7',
-                  color: s.is_active ? '#276749' : '#9b2c2c'
-                }}>{s.is_active ? 'Actif' : 'Inactif'}</span>
-              </td>
-              <td style={{ padding: '12px 16px' }}>
-                <Link to={`/purchasing/suppliers/${s.id}/edit`} style={{ color: '#3182ce', fontSize: 13 }}>Modifier</Link>
-              </td>
-            </tr>
-          ))}
-          {suppliers.length === 0 && (
-            <tr><td colSpan="7" style={{ padding: 24, textAlign: 'center', color: '#a0aec0' }}>Aucun fournisseur</td></tr>
-          )}
-        </tbody>
-      </table>
+      <Table dataSource={suppliers} columns={columns} rowKey="id" loading={loading}
+        style={{ borderRadius: 12 }} locale={{ emptyText: 'Aucun fournisseur' }} />
     </div>
   );
 }

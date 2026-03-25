@@ -98,9 +98,11 @@ class ReceptionDetailSerializer(ReceptionSerializer):
 
 
 class SupplierInvoiceItemSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_name = serializers.CharField(
+        source='product.name', read_only=True, allow_null=True, default=None
+    )
     product_reference = serializers.CharField(
-        source='product.reference', read_only=True
+        source='product.reference', read_only=True, allow_null=True, default=None
     )
     subtotal = serializers.DecimalField(max_digits=15, decimal_places=2, read_only=True)
     tax_amount = serializers.DecimalField(

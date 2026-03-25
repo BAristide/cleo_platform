@@ -1,132 +1,124 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { message } from 'antd';
+import { Form, Select, DatePicker, InputNumber, Button, Card, Table, Space, Typography } from 'antd';
+import dayjs from 'dayjs';
 import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
+
+const { Title, Text } = Typography;
+const { Option } = Select;
 
 export default function ReceptionForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const poId = searchParams.get('po');
-
+  const [form] = Form.useForm();
   const [orders, setOrders] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
-  const [selectedOrder, setSelectedOrder] = useState(null);
-  const [form, setForm] = useState({
-    purchase_order: poId || '', warehouse: '', date: new Date().toISOString().slice(0, 10), notes: ''
-  });
   const [items, setItems] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     axios.get('/api/purchasing/purchase-orders/?state=confirmed').then(r => setOrders(r.data.results || r.data)).catch(console.error);
     axios.get('/api/inventory/warehouses/?is_active=true').then(r => setWarehouses(r.data.results || r.data)).catch(console.error);
+    if (poId) {
+      form.setFieldValue('purchase_order', parseInt(poId));
+      loadOrderItems(poId);
+    }
   }, []);
 
-  useEffect(() => {
-    if (form.purchase_order) {
-      axios.get(`/api/purchasing/purchase-orders/${form.purchase_order}/`).then(r => {
-        setSelectedOrder(r.data);
-        setItems((r.data.items || []).map(item => ({
-          purchase_order_item: item.id,
-          product: item.product,
-          product_name: item.product_name || item.description,
-          quantity_ordered: item.quantity,
-          quantity_already_received: item.quantity_received,
-          quantity_remaining: item.quantity - item.quantity_received,
-          quantity_received: item.quantity - item.quantity_received,
-        })));
-      }).catch(console.error);
-    }
-  }, [form.purchase_order]);
+  const loadOrderItems = id => {
+    axios.get(`/api/purchasing/purchase-orders/${id}/`).then(r => {
+      setItems((r.data.items || []).map(item => ({
+        purchase_order_item: item.id,
+        product: item.product,
+        product_name: item.product_name || item.description,
+        quantity_ordered: parseFloat(item.quantity),
+        quantity_already_received: parseFloat(item.quantity_received),
+        quantity_remaining: parseFloat(item.quantity) - parseFloat(item.quantity_received),
+        quantity_received: parseFloat(item.quantity) - parseFloat(item.quantity_received),
+      })));
+    }).catch(console.error);
+  };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     try {
-      const recRes = await axios.post('/api/purchasing/receptions/', form);
+      const values = await form.validateFields();
+      setSubmitting(true);
+      const payload = {
+        purchase_order: values.purchase_order, warehouse: values.warehouse,
+        date: values.date ? values.date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
+        notes: values.notes || '',
+      };
+      const recRes = await axios.post('/api/purchasing/receptions/', payload);
       const recId = recRes.data.id;
-      for (const item of items) {
-        if (item.quantity_received > 0) {
-          await axios.post('/api/purchasing/reception-items/', {
-            reception: recId, purchase_order_item: item.purchase_order_item,
-            product: item.product, quantity_received: item.quantity_received
-          });
-        }
+      for (const item of items.filter(it => it.quantity_received > 0)) {
+        await axios.post('/api/purchasing/reception-items/', {
+          reception: recId, purchase_order_item: item.purchase_order_item,
+          product: item.product, quantity_received: item.quantity_received,
+        });
       }
       navigate(`/purchasing/receptions/${recId}`);
     } catch (err) {
-      handleApiError(err, null, 'Impossible de créer la réception.');
+      if (err?.errorFields) return;
+      handleApiError(err, form, 'Impossible de créer la réception.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const fieldStyle = { width: '100%', padding: '10px 12px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 14, boxSizing: 'border-box' };
+  const itemColumns = [
+    { title: 'Produit', dataIndex: 'product_name', render: v => v || '—' },
+    { title: 'Commandé', dataIndex: 'quantity_ordered', width: 100, align: 'right' },
+    { title: 'Déjà reçu', dataIndex: 'quantity_already_received', width: 100, align: 'right' },
+    { title: 'Restant', dataIndex: 'quantity_remaining', width: 100, align: 'right',
+      render: v => <Text style={{ color: v > 0 ? '#F97316' : '#10B981' }}>{v}</Text> },
+    { title: 'À réceptionner', key: 'qty_input', width: 150,
+      render: (_, row, index) => (
+        <InputNumber min={0} max={row.quantity_remaining} value={row.quantity_received} style={{ width: 100 }}
+          onChange={v => { const u = [...items]; u[index] = { ...u[index], quantity_received: v || 0 }; setItems(u); }} />
+      )},
+  ];
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, marginBottom: 20 }}>Nouvelle réception</h1>
-      <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Bon de commande *</label>
-            <select required style={fieldStyle} value={form.purchase_order} onChange={e => setForm({ ...form, purchase_order: e.target.value })}>
-              <option value="">— Sélectionner —</option>
-              {orders.map(o => <option key={o.id} value={o.id}>{o.number} — {o.supplier_name}</option>)}
-            </select>
+      <Title level={4} style={{ color: '#0F172A', marginBottom: 24 }}>Nouvelle réception</Title>
+      <Form form={form} layout="vertical" scrollToFirstError>
+        <Card style={{ borderRadius: 12, border: '1px solid #E5E7EB', marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0 16px' }}>
+            <Form.Item name="purchase_order" label="Bon de commande" rules={[{ required: true, message: 'Champ requis' }]}>
+              <Select showSearch optionFilterProp="children" placeholder="— Sélectionner —"
+                onChange={v => { if (v) loadOrderItems(v); else setItems([]); }}>
+                {orders.map(o => <Option key={o.id} value={o.id}>{o.number} — {o.supplier_name}</Option>)}
+              </Select>
+            </Form.Item>
+            <Form.Item name="warehouse" label="Entrepôt" rules={[{ required: true, message: 'Champ requis' }]}>
+              <Select showSearch optionFilterProp="children" placeholder="— Sélectionner —">
+                {warehouses.map(w => <Option key={w.id} value={w.id}>{w.name}</Option>)}
+              </Select>
+            </Form.Item>
+            <Form.Item name="date" label="Date" initialValue={dayjs()}>
+              <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+            </Form.Item>
           </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Entrepôt *</label>
-            <select required style={fieldStyle} value={form.warehouse} onChange={e => setForm({ ...form, warehouse: e.target.value })}>
-              <option value="">— Sélectionner —</option>
-              {warehouses.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Date</label>
-            <input type="date" style={fieldStyle} value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
-          </div>
-        </div>
+        </Card>
 
         {items.length > 0 && (
-          <>
-            <h3 style={{ fontSize: 16, marginBottom: 12 }}>Lignes à réceptionner</h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: 20 }}>
-              <thead>
-                <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-                  <th style={{ padding: '8px 12px', fontSize: 13 }}>Produit</th>
-                  <th style={{ padding: '8px 12px', fontSize: 13 }}>Commandé</th>
-                  <th style={{ padding: '8px 12px', fontSize: 13 }}>Déjà reçu</th>
-                  <th style={{ padding: '8px 12px', fontSize: 13 }}>Restant</th>
-                  <th style={{ padding: '8px 12px', fontSize: 13 }}>À réceptionner</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                    <td style={{ padding: '8px 12px' }}>{item.product_name}</td>
-                    <td style={{ padding: '8px 12px' }}>{item.quantity_ordered}</td>
-                    <td style={{ padding: '8px 12px' }}>{item.quantity_already_received}</td>
-                    <td style={{ padding: '8px 12px', color: item.quantity_remaining > 0 ? '#dd6b20' : '#38a169' }}>{item.quantity_remaining}</td>
-                    <td style={{ padding: '8px 12px' }}>
-                      <input type="number" min="0" max={item.quantity_remaining}
-                        style={{ ...fieldStyle, width: 100 }}
-                        value={item.quantity_received}
-                        onChange={e => {
-                          const updated = [...items];
-                          updated[i] = { ...updated[i], quantity_received: parseFloat(e.target.value) || 0 };
-                          setItems(updated);
-                        }} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
+          <Card title={<span style={{ fontSize: 15, fontWeight: 600, color: '#0F172A' }}>Lignes à réceptionner</span>}
+            style={{ borderRadius: 12, border: '1px solid #E5E7EB', marginBottom: 16 }}>
+            <Table dataSource={items} columns={itemColumns} rowKey="purchase_order_item"
+              pagination={false} locale={{ emptyText: 'Aucune ligne' }} />
+          </Card>
         )}
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button type="submit" style={{ padding: '10px 24px', background: '#3182ce', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>Créer la réception</button>
-          <button type="button" onClick={() => navigate('/purchasing/receptions')} style={{ padding: '10px 24px', background: '#e2e8f0', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Annuler</button>
-        </div>
-      </form>
+        <Space>
+          <Button type="primary" onClick={handleSubmit} loading={submitting}
+            style={{ background: '#10B981', borderColor: '#10B981', borderRadius: 8 }}>
+            Créer la réception
+          </Button>
+          <Button onClick={() => navigate('/purchasing/receptions')} style={{ borderRadius: 8 }}>Annuler</Button>
+        </Space>
+      </Form>
     </div>
   );
 }

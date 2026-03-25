@@ -1,19 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { message } from 'antd';
+import { Form, Input, Select, DatePicker, InputNumber, Button, Card, Space, Typography } from 'antd';
+import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
+const { Title } = Typography;
+const { Option } = Select;
+
 export default function PurchaseOrderForm() {
   const navigate = useNavigate();
+  const [form] = Form.useForm();
   const [suppliers, setSuppliers] = useState([]);
   const [currencies, setCurrencies] = useState([]);
   const [products, setProducts] = useState([]);
-  const [form, setForm] = useState({
-    supplier: '', currency: '', date: new Date().toISOString().slice(0, 10),
-    expected_delivery_date: '', notes: ''
-  });
-  const [items, setItems] = useState([{ product: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0 }]);
+  const [items, setItems] = useState([{ product: undefined, description: '', quantity: 1, unit_price: 0, tax_rate: 0 }]);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     axios.get('/api/purchasing/suppliers/?is_active=true').then(r => setSuppliers(r.data.results || r.data)).catch(console.error);
@@ -21,122 +24,116 @@ export default function PurchaseOrderForm() {
     axios.get('/api/sales/products/').then(r => setProducts(r.data.results || r.data)).catch(console.error);
   }, []);
 
-  // Auto-remplir la devise quand on sélectionne un fournisseur
-  const handleSupplierChange = (supplierId) => {
-    if (supplierId) {
-      const supplier = suppliers.find(s => s.id === parseInt(supplierId));
-      if (supplier && supplier.currency) {
-        setForm(prev => ({ ...prev, supplier: supplierId, currency: String(supplier.currency) }));
-      } else {
-        setForm(prev => ({ ...prev, supplier: supplierId }));
-      }
-    } else {
-      setForm(prev => ({ ...prev, supplier: '', currency: '' }));
-    }
+  const handleSupplierChange = supplierId => {
+    const supplier = suppliers.find(s => s.id === supplierId);
+    if (supplier?.currency) form.setFieldValue('currency', supplier.currency);
   };
 
-  // Auto-remplir le prix et la TVA quand on sélectionne un produit
   const handleProductChange = (index, productId) => {
     const updated = [...items];
-    updated[index] = { ...updated[index], product: productId };
+    updated[index] = { ...updated[index], product: productId || undefined };
     if (productId) {
-      const product = products.find(p => p.id === parseInt(productId));
-      if (product) {
-        updated[index].unit_price = product.unit_price || 0;
-        updated[index].tax_rate = product.tax_rate ?? 0;
-      }
+      const p = products.find(p => p.id === productId);
+      if (p) { updated[index].unit_price = parseFloat(p.unit_price) || 0; updated[index].tax_rate = parseFloat(p.tax_rate) ?? 0; }
     }
     setItems(updated);
   };
 
-  const addItem = () => setItems([...items, { product: '', description: '', quantity: 1, unit_price: 0, tax_rate: 0 }]);
-  const removeItem = (i) => setItems(items.filter((_, idx) => idx !== i));
-  const updateItem = (i, field, value) => {
-    const updated = [...items];
-    updated[i] = { ...updated[i], [field]: value };
-    setItems(updated);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     try {
-      const payload = { ...form };
-      if (!payload.currency) {
-        message.warning('Veuillez sélectionner une devise.');
-        return;
-      }
-      if (!payload.expected_delivery_date) {
-        delete payload.expected_delivery_date;
-      }
+      const values = await form.validateFields();
+      setSubmitting(true);
+      const payload = {
+        supplier: values.supplier, currency: values.currency,
+        date: values.date ? values.date.format('YYYY-MM-DD') : '',
+        expected_delivery_date: values.expected_delivery_date ? values.expected_delivery_date.format('YYYY-MM-DD') : null,
+        notes: values.notes || '',
+      };
       const orderRes = await axios.post('/api/purchasing/purchase-orders/', payload);
       const orderId = orderRes.data.id;
-      for (const item of items) {
-        if (item.product || item.description) {
-          await axios.post('/api/purchasing/purchase-order-items/', { ...item, order: orderId });
-        }
+      for (const item of items.filter(it => it.product || it.description?.trim())) {
+        await axios.post('/api/purchasing/purchase-order-items/', { ...item, product: item.product || null, order: orderId });
       }
       navigate(`/purchasing/orders/${orderId}`);
     } catch (err) {
-      handleApiError(err, null, 'Impossible de créer le bon de commande.');
+      if (err?.errorFields) return;
+      handleApiError(err, form, 'Impossible de créer le bon de commande.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  const fieldStyle = { width: '100%', padding: '10px 12px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 14, boxSizing: 'border-box' };
+  const colLabel = text => (
+    <span style={{ fontSize: 12, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{text}</span>
+  );
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, marginBottom: 20 }}>Nouveau bon de commande</h1>
-      <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 16, marginBottom: 20 }}>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Fournisseur *</label>
-            <select required style={fieldStyle} value={form.supplier} onChange={e => handleSupplierChange(e.target.value)}>
-              <option value="">— Sélectionner —</option>
-              {suppliers.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-            </select>
+      <Title level={4} style={{ color: '#0F172A', marginBottom: 24 }}>Nouveau bon de commande</Title>
+      <Form form={form} layout="vertical" scrollToFirstError>
+        <Card style={{ borderRadius: 12, border: '1px solid #E5E7EB', marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '0 16px' }}>
+            <Form.Item name="supplier" label="Fournisseur" rules={[{ required: true, message: 'Champ requis' }]}>
+              <Select showSearch optionFilterProp="children" placeholder="— Sélectionner —" onChange={handleSupplierChange} allowClear>
+                {suppliers.map(s => <Option key={s.id} value={s.id}>{s.name}</Option>)}
+              </Select>
+            </Form.Item>
+            <Form.Item name="currency" label="Devise" rules={[{ required: true, message: 'Champ requis' }]}>
+              <Select showSearch optionFilterProp="children" placeholder="— Sélectionner —" allowClear>
+                {currencies.map(c => <Option key={c.id} value={c.id}>{c.code} — {c.name}</Option>)}
+              </Select>
+            </Form.Item>
+            <Form.Item name="date" label="Date" rules={[{ required: true, message: 'Champ requis' }]} initialValue={dayjs()}>
+              <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+            </Form.Item>
+            <Form.Item name="expected_delivery_date" label="Livraison prévue">
+              <DatePicker style={{ width: '100%' }} format="DD/MM/YYYY" />
+            </Form.Item>
           </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Devise *</label>
-            <select required style={fieldStyle} value={form.currency || ''} onChange={e => setForm({ ...form, currency: e.target.value })}>
-              <option value="">— Sélectionner —</option>
-              {currencies.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Date *</label>
-            <input type="date" required style={fieldStyle} value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
-          </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Livraison prévue</label>
-            <input type="date" style={fieldStyle} value={form.expected_delivery_date} onChange={e => setForm({ ...form, expected_delivery_date: e.target.value })} />
-          </div>
-        </div>
+        </Card>
 
-        <h3 style={{ fontSize: 16, marginBottom: 12 }}>Lignes</h3>
-        {items.map((item, i) => (
-          <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 40px', gap: 8, marginBottom: 8 }}>
-            <select style={fieldStyle} value={item.product} onChange={e => handleProductChange(i, e.target.value)}>
-              <option value="">— Produit —</option>
-              {products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-            <input type="number" placeholder="Qté" style={fieldStyle} value={item.quantity} onChange={e => updateItem(i, 'quantity', e.target.value)} />
-            <input type="number" step="0.01" placeholder="P.U." style={fieldStyle} value={item.unit_price} onChange={e => updateItem(i, 'unit_price', e.target.value)} />
-            <input type="number" step="0.01" placeholder="TVA %" style={fieldStyle} value={item.tax_rate} onChange={e => updateItem(i, 'tax_rate', e.target.value)} />
-            <button type="button" onClick={() => removeItem(i)} style={{ background: '#fed7d7', border: 'none', borderRadius: 6, cursor: 'pointer', fontSize: 18, color: '#e53e3e' }}>×</button>
+        <Card title={<span style={{ fontSize: 15, fontWeight: 600, color: '#0F172A' }}>Lignes</span>}
+          style={{ borderRadius: 12, border: '1px solid #E5E7EB', marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 90px 130px 80px 40px', gap: 8, marginBottom: 8 }}>
+            {['Produit', 'Quantité', 'P.U. HT', 'TVA %', ''].map((h, i) => <div key={i}>{colLabel(h)}</div>)}
           </div>
-        ))}
-        <button type="button" onClick={addItem} style={{ padding: '6px 16px', background: '#edf2f7', border: 'none', borderRadius: 6, cursor: 'pointer', marginBottom: 20 }}>+ Ajouter une ligne</button>
+          {items.map((item, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '2fr 90px 130px 80px 40px', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+              <Select showSearch allowClear optionFilterProp="children" placeholder="— Produit —"
+                value={item.product || undefined} onChange={v => handleProductChange(i, v)}>
+                {products.map(p => <Option key={p.id} value={p.id}>{p.name}</Option>)}
+              </Select>
+              <InputNumber style={{ width: '100%' }} min={0.001} step={1} value={item.quantity}
+                onChange={v => { const u = [...items]; u[i] = { ...u[i], quantity: v }; setItems(u); }} />
+              <InputNumber style={{ width: '100%' }} min={0} step={0.01} value={item.unit_price}
+                onChange={v => { const u = [...items]; u[i] = { ...u[i], unit_price: v }; setItems(u); }} />
+              <InputNumber style={{ width: '100%' }} min={0} max={100} step={0.01} value={item.tax_rate}
+                onChange={v => { const u = [...items]; u[i] = { ...u[i], tax_rate: v }; setItems(u); }} />
+              <Button danger type="text" icon={<DeleteOutlined />} disabled={items.length === 1}
+                onClick={() => setItems(items.filter((_, idx) => idx !== i))} />
+            </div>
+          ))}
+          <Button type="dashed" icon={<PlusOutlined />}
+            onClick={() => setItems([...items, { product: undefined, description: '', quantity: 1, unit_price: 0, tax_rate: 0 }])}
+            style={{ marginTop: 8, borderColor: '#10B981', color: '#10B981' }}>
+            Ajouter une ligne
+          </Button>
+        </Card>
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 13, color: '#4a5568' }}>Notes</label>
-          <textarea style={{ ...fieldStyle, minHeight: 60 }} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
-        </div>
+        <Card style={{ borderRadius: 12, border: '1px solid #E5E7EB', marginBottom: 24 }}>
+          <Form.Item name="notes" label="Notes internes" style={{ marginBottom: 0 }}>
+            <Input.TextArea rows={3} placeholder="Notes internes" />
+          </Form.Item>
+        </Card>
 
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button type="submit" style={{ padding: '10px 24px', background: '#3182ce', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>Créer le bon de commande</button>
-          <button type="button" onClick={() => navigate('/purchasing/orders')} style={{ padding: '10px 24px', background: '#e2e8f0', border: 'none', borderRadius: 6, cursor: 'pointer' }}>Annuler</button>
-        </div>
-      </form>
+        <Space>
+          <Button type="primary" onClick={handleSubmit} loading={submitting}
+            style={{ background: '#10B981', borderColor: '#10B981', borderRadius: 8 }}>
+            Créer le bon de commande
+          </Button>
+          <Button onClick={() => navigate('/purchasing/orders')} style={{ borderRadius: 8 }}>Annuler</Button>
+        </Space>
+      </Form>
     </div>
   );
 }

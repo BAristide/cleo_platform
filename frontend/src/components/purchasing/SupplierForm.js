@@ -1,89 +1,100 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { message } from 'antd';
+import { Form, Input, Select, InputNumber, Button, Card, Space, Typography } from 'antd';
 import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
+
+const { Title } = Typography;
+const { Option } = Select;
 
 export default function SupplierForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [form] = Form.useForm();
   const [currencies, setCurrencies] = useState([]);
-  const [form, setForm] = useState({
-    code: '', name: '', contact_name: '', email: '', phone: '',
-    address: '', tax_id: '', currency: '', payment_terms: 30, is_active: true, notes: ''
-  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     axios.get('/api/core/currencies/').then(r => setCurrencies(r.data.results || r.data)).catch(console.error);
-    if (id) axios.get(`/api/purchasing/suppliers/${id}/`).then(r => setForm(r.data)).catch(console.error);
+    if (id) {
+      axios.get(`/api/purchasing/suppliers/${id}/`).then(r => {
+        const d = r.data;
+        form.setFieldsValue({
+          code: d.code, name: d.name, contact_name: d.contact_name,
+          email: d.email, phone: d.phone, tax_id: d.tax_id,
+          currency: d.currency, payment_terms: d.payment_terms,
+          address: d.address, notes: d.notes,
+        });
+      }).catch(console.error);
+    }
   }, [id]);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const req = id ? axios.put(`/api/purchasing/suppliers/${id}/`, form) : axios.post('/api/purchasing/suppliers/', form);
-    req.then(() => navigate('/purchasing/suppliers')).catch(e => handleApiError(e, null, "Impossible d'enregistrer le fournisseur."));
+  const handleSubmit = async () => {
+    try {
+      const values = await form.validateFields();
+      setSubmitting(true);
+      if (id) {
+        await axios.put(`/api/purchasing/suppliers/${id}/`, values);
+      } else {
+        await axios.post('/api/purchasing/suppliers/', values);
+      }
+      navigate('/purchasing/suppliers');
+    } catch (err) {
+      if (err?.errorFields) return;
+      handleApiError(err, form, "Impossible d'enregistrer le fournisseur.");
+    } finally {
+      setSubmitting(false);
+    }
   };
-
-  const fieldStyle = { width: '100%', padding: '10px 12px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 14, boxSizing: 'border-box' };
 
   return (
     <div>
-      <h1 style={{ fontSize: 22, marginBottom: 20 }}>{id ? 'Modifier' : 'Nouveau'} fournisseur</h1>
-      <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 12, padding: 24, boxShadow: '0 1px 3px rgba(0,0,0,0.1)', maxWidth: 700 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Code *</label>
-            <input required style={fieldStyle} value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} />
+      <Title level={4} style={{ color: '#0F172A', marginBottom: 24 }}>{id ? 'Modifier' : 'Nouveau'} fournisseur</Title>
+      <Form form={form} layout="vertical" scrollToFirstError style={{ maxWidth: 800 }}>
+        <Card style={{ borderRadius: 12, border: '1px solid #E5E7EB', marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
+            <Form.Item name="code" label="Code" rules={[{ required: true, message: 'Champ requis' }]}>
+              <Input placeholder="EX : HETZNER" />
+            </Form.Item>
+            <Form.Item name="name" label="Nom" rules={[{ required: true, message: 'Champ requis' }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item name="contact_name" label="Contact">
+              <Input />
+            </Form.Item>
+            <Form.Item name="email" label="Email" rules={[{ type: 'email', message: 'Email invalide' }]}>
+              <Input />
+            </Form.Item>
+            <Form.Item name="phone" label="Téléphone">
+              <Input />
+            </Form.Item>
+            <Form.Item name="tax_id" label="Identifiant fiscal (ICE, IF…)">
+              <Input />
+            </Form.Item>
+            <Form.Item name="currency" label="Devise">
+              <Select showSearch optionFilterProp="children" placeholder="— Sélectionner —" allowClear>
+                {currencies.map(c => <Option key={c.id} value={c.id}>{c.code} — {c.name}</Option>)}
+              </Select>
+            </Form.Item>
+            <Form.Item name="payment_terms" label="Délai de paiement (jours)" initialValue={30}>
+              <InputNumber min={0} style={{ width: '100%' }} />
+            </Form.Item>
           </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Nom *</label>
-            <input required style={fieldStyle} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-          </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Contact</label>
-            <input style={fieldStyle} value={form.contact_name} onChange={e => setForm({ ...form, contact_name: e.target.value })} />
-          </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Email</label>
-            <input type="email" style={fieldStyle} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-          </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Téléphone</label>
-            <input style={fieldStyle} value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-          </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>ICE</label>
-            <input style={fieldStyle} value={form.tax_id} onChange={e => setForm({ ...form, tax_id: e.target.value })} />
-          </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Devise</label>
-            <select style={fieldStyle} value={form.currency || ''} onChange={e => setForm({ ...form, currency: e.target.value || null })}>
-              <option value="">— Sélectionner —</option>
-              {currencies.map(c => <option key={c.id} value={c.id}>{c.code} — {c.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={{ fontSize: 13, color: '#4a5568' }}>Délai paiement (jours)</label>
-            <input type="number" style={fieldStyle} value={form.payment_terms} onChange={e => setForm({ ...form, payment_terms: parseInt(e.target.value) || 0 })} />
-          </div>
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 13, color: '#4a5568' }}>Adresse</label>
-          <textarea style={{ ...fieldStyle, minHeight: 60 }} value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
-        </div>
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 13, color: '#4a5568' }}>Notes</label>
-          <textarea style={{ ...fieldStyle, minHeight: 60 }} value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
-        </div>
-        <div style={{ display: 'flex', gap: 12 }}>
-          <button type="submit" style={{ padding: '10px 24px', background: '#3182ce', color: '#fff', border: 'none', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
+          <Form.Item name="address" label="Adresse">
+            <Input.TextArea rows={2} />
+          </Form.Item>
+          <Form.Item name="notes" label="Notes" style={{ marginBottom: 0 }}>
+            <Input.TextArea rows={2} />
+          </Form.Item>
+        </Card>
+        <Space>
+          <Button type="primary" onClick={handleSubmit} loading={submitting}
+            style={{ background: '#10B981', borderColor: '#10B981', borderRadius: 8 }}>
             {id ? 'Enregistrer' : 'Créer'}
-          </button>
-          <button type="button" onClick={() => navigate('/purchasing/suppliers')} style={{ padding: '10px 24px', background: '#e2e8f0', border: 'none', borderRadius: 6, cursor: 'pointer' }}>
-            Annuler
-          </button>
-        </div>
-      </form>
+          </Button>
+          <Button onClick={() => navigate('/purchasing/suppliers')} style={{ borderRadius: 8 }}>Annuler</Button>
+        </Space>
+      </Form>
     </div>
   );
 }

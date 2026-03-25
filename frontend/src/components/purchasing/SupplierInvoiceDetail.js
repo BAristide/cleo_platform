@@ -454,7 +454,7 @@ export default function SupplierInvoiceDetail() {
           <table style={{ width: '100%', fontSize: 14, borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#f7fafc', textAlign: 'left' }}>
-                <th style={{ padding: '8px 12px' }}>Produit</th>
+                <th style={{ padding: '8px 12px' }}>Produit / Description</th>
                 <th style={{ padding: '8px 12px' }}>Réf</th>
                 <th style={{ padding: '8px 12px', textAlign: 'right' }}>Qté</th>
                 <th style={{ padding: '8px 12px', textAlign: 'right' }}>P.U. HT</th>
@@ -465,7 +465,12 @@ export default function SupplierInvoiceDetail() {
             <tbody>
               {invoice.items.map((item) => (
                 <tr key={item.id} style={{ borderBottom: '1px solid #edf2f7' }}>
-                  <td style={{ padding: '8px 12px' }}>{item.product_name}</td>
+                  <td style={{ padding: '8px 12px' }}>
+                    <div>{item.product_name || <span style={{ color: '#94A3B8' }}>—</span>}</div>
+                    {item.description && (
+                      <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{item.description}</div>
+                    )}
+                  </td>
                   <td style={{ padding: '8px 12px', color: '#718096' }}>
                     {item.product_reference || '—'}
                   </td>

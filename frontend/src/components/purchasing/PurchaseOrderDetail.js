@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { message } from 'antd';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Card, Button, Tag, Table, Typography, Space, Row, Col, message } from 'antd';
+import { CheckOutlined, CloseOutlined, InboxOutlined } from '@ant-design/icons';
 import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 
-const stateLabels = {
-  draft: { label: 'Brouillon', bg: '#e2e8f0', color: '#4a5568' },
-  confirmed: { label: 'Confirmé', bg: '#bee3f8', color: '#2b6cb0' },
-  received: { label: 'Réceptionné', bg: '#c6f6d5', color: '#276749' },
-  invoiced: { label: 'Facturé', bg: '#e9d8fd', color: '#553c9a' },
-  cancelled: { label: 'Annulé', bg: '#fed7d7', color: '#9b2c2c' },
+const { Title, Text } = Typography;
+
+const STATE_LABELS = {
+  draft: { label: 'Brouillon', color: 'default' },
+  confirmed: { label: 'Confirmé', color: 'blue' },
+  received: { label: 'Réceptionné', color: 'success' },
+  invoiced: { label: 'Facturé', color: 'purple' },
+  cancelled: { label: 'Annulé', color: 'error' },
 };
 
 export default function PurchaseOrderDetail() {
@@ -22,100 +25,95 @@ export default function PurchaseOrderDetail() {
 
   const handleConfirm = () => {
     if (window.confirm('Confirmer ce bon de commande ?')) {
-      axios.post(`/api/purchasing/purchase-orders/${id}/confirm/`).then(() => load()).catch(e => handleApiError(e, null, 'Une erreur est survenue.'));
+      axios.post(`/api/purchasing/purchase-orders/${id}/confirm/`)
+        .then(() => { message.success('Bon de commande confirmé.'); load(); })
+        .catch(e => handleApiError(e, null, 'Une erreur est survenue.'));
     }
   };
 
   const handleCancel = () => {
     if (window.confirm('Annuler ce bon de commande ?')) {
-      axios.post(`/api/purchasing/purchase-orders/${id}/cancel/`).then(() => load()).catch(e => handleApiError(e, null, 'Une erreur est survenue.'));
+      axios.post(`/api/purchasing/purchase-orders/${id}/cancel/`)
+        .then(() => { message.success('Bon de commande annulé.'); load(); })
+        .catch(e => handleApiError(e, null, 'Une erreur est survenue.'));
     }
   };
 
-  if (!order) return <p>Chargement...</p>;
-  const s = stateLabels[order.state] || {};
+  if (!order) return <div style={{ padding: 40, textAlign: 'center', color: '#64748B' }}>Chargement...</div>;
+
+  const s = STATE_LABELS[order.state] || {};
+  const fmt = v => parseFloat(v || 0).toLocaleString('fr-FR', { minimumFractionDigits: 2 });
+
+  const columns = [
+    { title: 'Produit / Description', key: 'product', render: (_, r) => r.product_name || r.description || '—' },
+    { title: 'Quantité', dataIndex: 'quantity', width: 100, align: 'right' },
+    { title: 'Reçu', dataIndex: 'quantity_received', width: 100, align: 'right',
+      render: (v, r) => <Text style={{ color: parseFloat(v) >= parseFloat(r.quantity) ? '#10B981' : '#F97316' }}>{v}</Text> },
+    { title: 'P.U. HT', dataIndex: 'unit_price', width: 130, align: 'right', render: v => fmt(v) },
+    { title: 'TVA', dataIndex: 'tax_rate', width: 80, align: 'right', render: v => `${v}%` },
+    { title: 'Total TTC', key: 'total', width: 140, align: 'right', render: (_, r) => <strong>{fmt(r.total)}</strong> },
+  ];
 
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 22 }}>BC {order.number}</h1>
-          <span style={{ padding: '2px 10px', borderRadius: 12, fontSize: 12, background: s.bg, color: s.color }}>{s.label}</span>
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <Space direction="vertical" size={4}>
+          <Title level={4} style={{ color: '#0F172A', margin: 0 }}>BC {order.number}</Title>
+          <Tag color={s.color}>{s.label}</Tag>
+        </Space>
+        <Space>
           {order.state === 'draft' && (
-            <button onClick={handleConfirm} style={{
-              padding: '8px 16px', background: '#38a169', color: '#fff',
-              border: 'none', borderRadius: 6, cursor: 'pointer'
-            }}>✓ Confirmer</button>
+            <Button type="primary" icon={<CheckOutlined />} onClick={handleConfirm}
+              style={{ background: '#10B981', borderColor: '#10B981', borderRadius: 8 }}>
+              Confirmer
+            </Button>
           )}
           {order.state === 'confirmed' && (
-            <Link to={`/purchasing/receptions/new?po=${id}`} style={{
-              padding: '8px 16px', background: '#805ad5', color: '#fff',
-              borderRadius: 6, textDecoration: 'none', fontSize: 14
-            }}>Créer réception</Link>
+            <Button icon={<InboxOutlined />} onClick={() => navigate(`/purchasing/receptions/new?po=${id}`)}
+              style={{ background: '#8B5CF6', borderColor: '#8B5CF6', color: '#fff', borderRadius: 8 }}>
+              Créer réception
+            </Button>
           )}
           {['draft', 'confirmed'].includes(order.state) && (
-            <button onClick={handleCancel} style={{
-              padding: '8px 16px', background: '#e53e3e', color: '#fff',
-              border: 'none', borderRadius: 6, cursor: 'pointer'
-            }}>✗ Annuler</button>
+            <Button danger icon={<CloseOutlined />} onClick={handleCancel} style={{ borderRadius: 8 }}>Annuler</Button>
           )}
-        </div>
+          <Button onClick={() => navigate('/purchasing/orders')} style={{ borderRadius: 8 }}>Retour</Button>
+        </Space>
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 12, padding: 20, marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
-          <div><span style={{ color: '#718096', fontSize: 13 }}>Fournisseur</span><br /><strong>{order.supplier_name}</strong></div>
-          <div><span style={{ color: '#718096', fontSize: 13 }}>Date</span><br /><strong>{order.date ? new Date(order.date).toLocaleDateString('fr-FR') : '—'}</strong></div>
-          <div><span style={{ color: '#718096', fontSize: 13 }}>Livraison prévue</span><br /><strong>{order.expected_delivery_date ? new Date(order.expected_delivery_date).toLocaleDateString('fr-FR') : '—'}</strong></div>
-        </div>
-      </div>
+      <Row gutter={[16, 16]} style={{ marginBottom: 16 }}>
+        {[
+          { label: 'Fournisseur', value: order.supplier_name },
+          { label: 'Date', value: order.date ? new Date(order.date).toLocaleDateString('fr-FR') : '—' },
+          { label: 'Livraison prévue', value: order.expected_delivery_date ? new Date(order.expected_delivery_date).toLocaleDateString('fr-FR') : '—' },
+        ].map(({ label, value }) => (
+          <Col key={label} xs={24} md={8}>
+            <Card style={{ borderRadius: 12, border: '1px solid #E5E7EB' }} bodyStyle={{ padding: 20 }}>
+              <Text style={{ color: '#64748B', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.3px' }}>{label}</Text>
+              <div style={{ fontWeight: 600, fontSize: 15, color: '#0F172A', marginTop: 4 }}>{value}</div>
+            </Card>
+          </Col>
+        ))}
+      </Row>
 
-      <div style={{ background: '#fff', borderRadius: 12, padding: 20, marginBottom: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <h3 style={{ margin: '0 0 12px', fontSize: 16 }}>Lignes</h3>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #e2e8f0', textAlign: 'left' }}>
-              <th style={{ padding: '8px 12px', fontSize: 13 }}>Produit</th>
-              <th style={{ padding: '8px 12px', fontSize: 13 }}>Quantité</th>
-              <th style={{ padding: '8px 12px', fontSize: 13 }}>Reçu</th>
-              <th style={{ padding: '8px 12px', fontSize: 13 }}>P.U.</th>
-              <th style={{ padding: '8px 12px', fontSize: 13 }}>TVA</th>
-              <th style={{ padding: '8px 12px', fontSize: 13, textAlign: 'right' }}>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(order.items || []).map(item => (
-              <tr key={item.id} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                <td style={{ padding: '8px 12px' }}>{item.product_name || item.description}</td>
-                <td style={{ padding: '8px 12px' }}>{item.quantity}</td>
-                <td style={{ padding: '8px 12px', color: item.quantity_received >= item.quantity ? '#38a169' : '#dd6b20' }}>
-                  {item.quantity_received}
-                </td>
-                <td style={{ padding: '8px 12px' }}>{parseFloat(item.unit_price).toLocaleString('fr-MA', { minimumFractionDigits: 2 })}</td>
-                <td style={{ padding: '8px 12px' }}>{item.tax_rate}%</td>
-                <td style={{ padding: '8px 12px', textAlign: 'right', fontWeight: 600 }}>
-                  {parseFloat(item.total).toLocaleString('fr-MA', { minimumFractionDigits: 2 })}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16, gap: 24 }}>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ color: '#718096', fontSize: 13 }}>HT : {parseFloat(order.subtotal).toLocaleString('fr-MA', { minimumFractionDigits: 2 })}</div>
-            <div style={{ color: '#718096', fontSize: 13 }}>TVA : {parseFloat(order.tax_amount).toLocaleString('fr-MA', { minimumFractionDigits: 2 })}</div>
-            <div style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>Total : {parseFloat(order.total).toLocaleString('fr-MA', { minimumFractionDigits: 2 })}</div>
-          </div>
-        </div>
-      </div>
+      <Card title={<span style={{ fontSize: 15, fontWeight: 600, color: '#0F172A' }}>Lignes</span>}
+        style={{ borderRadius: 12, border: '1px solid #E5E7EB', marginBottom: 16 }}>
+        <Table dataSource={order.items || []} columns={columns} rowKey="id" pagination={false}
+          locale={{ emptyText: 'Aucune ligne' }}
+          footer={() => (
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 32 }}>
+              <Text style={{ color: '#64748B' }}>HT : {fmt(order.subtotal)}</Text>
+              <Text style={{ color: '#64748B' }}>TVA : {fmt(order.tax_amount)}</Text>
+              <Text strong style={{ fontSize: 16 }}>Total : {fmt(order.total)} {order.currency_code}</Text>
+            </div>
+          )} />
+      </Card>
 
       {order.notes && (
-        <div style={{ background: '#fff', borderRadius: 12, padding: 20, boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-          <h3 style={{ margin: '0 0 8px', fontSize: 16 }}>Notes</h3>
-          <p style={{ margin: 0, color: '#4a5568' }}>{order.notes}</p>
-        </div>
+        <Card title={<span style={{ fontSize: 15, fontWeight: 600, color: '#0F172A' }}>Notes</span>}
+          style={{ borderRadius: 12, border: '1px solid #E5E7EB' }}>
+          <Text style={{ color: '#4A5568', whiteSpace: 'pre-line' }}>{order.notes}</Text>
+        </Card>
       )}
     </div>
   );

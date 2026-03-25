@@ -397,6 +397,8 @@ class SupplierInvoiceItem(models.Model):
     product = models.ForeignKey(
         'catalog.Product',
         on_delete=models.PROTECT,
+        null=True,
+        blank=True,
         verbose_name=_('Produit'),
     )
     description = models.CharField(_('Description'), max_length=300, blank=True)
@@ -423,7 +425,8 @@ class SupplierInvoiceItem(models.Model):
         ]
 
     def __str__(self):
-        return f'{self.product.name} × {self.quantity}'
+        label = self.product.name if self.product else (self.description or '—')
+        return f'{label} × {self.quantity}'
 
     @property
     def subtotal(self):

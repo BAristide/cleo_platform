@@ -68,8 +68,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <div class="logo">{{ company.name }}</div>
-            <div>Experts Computing Intelligence</div>
+            <div class="logo">{{ company_info.name }}</div>
         </div>
 
         <div class="content">
@@ -93,12 +92,16 @@
 
         <div class="footer">
             <p>Cordialement,</p>
-            <p class="highlight">L'équipe {{ company.name }}</p>
+            <p class="highlight">L'équipe {{ company_info.name }}</p>
 
             <div class="company-details">
-                <p>{{ company.address_line1 }} - {{ company.city_line }}</p>
-                <p>{% if company.email %}Email: {{ company.email }}{% endif %}{% if company.phone %} | Tél: {{ company.phone }}{% endif %}</p>
-                <p>RC 393329 - IF 25018675 - Patente 350424929 - ICE 00203009000092</p>
+                {% if company_info.address_line1 %}
+                <p>{{ company_info.address_line1 }}{% if company_info.city_line %} — {{ company_info.city_line }}{% endif %}</p>
+                {% endif %}
+                <p>{% if company_info.email %}Email : {{ company_info.email }}{% endif %}{% if company_info.phone %} | Tél : {{ company_info.phone }}{% endif %}{% if company_info.website %} | {{ company_info.website }}{% endif %}</p>
+                {% if company_info.legal_ids %}
+                <p>{% for id in company_info.legal_ids %}{{ id.label }} : {{ id.value }}{% if not forloop.last %} — {% endif %}{% endfor %}</p>
+                {% endif %}
             </div>
         </div>
     </div>

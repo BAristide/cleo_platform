@@ -122,7 +122,11 @@ const ProductDetail = () => {
 
   const showEditModal = () => {
     if (!product) return;
-    form.setFieldsValue({ ...product });
+    form.setFieldsValue({
+      ...product,
+      unit_price: parseFloat(product.unit_price) || 0,
+      tax_rate:   parseFloat(product.tax_rate)   || 0,
+    });
     setEditModalVisible(true);
   };
 

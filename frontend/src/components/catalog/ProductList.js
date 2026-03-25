@@ -145,7 +145,17 @@ const ProductList = () => {
 
   const showEditModal = (product) => {
     setCurrentProduct(product);
-    form.setFieldsValue({ ...product });
+    form.setFieldsValue({
+      ...product,
+      unit_price:            parseFloat(product.unit_price)            || 0,
+      tax_rate:              parseFloat(product.tax_rate)              || 0,
+      stock_alert_threshold: product.stock_alert_threshold != null
+                               ? parseInt(product.stock_alert_threshold, 10)
+                               : 0,
+      weight:                product.weight != null
+                               ? parseFloat(product.weight)
+                               : null,
+    });
     setEditModalVisible(true);
   };
 

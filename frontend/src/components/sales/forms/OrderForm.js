@@ -9,7 +9,7 @@ import {
 } from 'antd';
 import {
   PlusOutlined, DeleteOutlined, SaveOutlined, ArrowLeftOutlined,
-  TagOutlined, BankOutlined, ShopOutlined
+  TagOutlined, BankOutlined, ShopOutlined, CheckOutlined
 } from '@ant-design/icons';
 import axios from '../../../utils/axiosConfig';
 import moment from 'moment';
@@ -43,6 +43,8 @@ const OrderForm = () => {
   const [currentProduct, setCurrentProduct] = useState(null);
   const [currentQuantity, setCurrentQuantity] = useState(1);
   const [currentDescription, setCurrentDescription] = useState('');
+  const [currentTaxRate, setCurrentTaxRate] = useState(0);
+  const [currentCurrency, setCurrentCurrency] = useState(null);
   const [isExempt, setIsExempt] = useState(false);
   const [loadingQuoteItems, setLoadingQuoteItems] = useState(false);
   const [itemsError, setItemsError] = useState(null);
@@ -269,6 +271,16 @@ const OrderForm = () => {
     }
   };
 
+  const handleProductSelect = (productId) => {
+    setCurrentProduct(productId);
+    const product = products.find(p => p.id === productId);
+    if (product) {
+      const isForeign = checkForeign(product.currency);
+      setCurrentTaxRate(isForeign ? 0 : parseFloat(product.tax_rate || 0));
+      setCurrentCurrency(product.currency || form.getFieldValue('currency') || null);
+    }
+  };
+
   const handleCompanyChange = (value) => {
     setSelectedCompany(value);
     form.setFieldsValue({ contact: undefined });
@@ -394,7 +406,9 @@ const OrderForm = () => {
       description: currentDescription || product.description,
       quantity: currentQuantity,
       unit_price: product.unit_price,
-      tax_rate: product.tax_rate,
+      tax_rate: currentTaxRate,
+      currency: currentCurrency || product.currency || form.getFieldValue('currency') || null,
+      confirmed: false,
       subtotal: product.unit_price * currentQuantity,
       tax_amount: isExempt ? 0 : (product.unit_price * currentQuantity * (product.tax_rate / 100)),
       total: product.unit_price * currentQuantity * (isExempt ? 1 : (1 + product.tax_rate / 100))
@@ -411,6 +425,8 @@ const OrderForm = () => {
     setCurrentProduct(null);
     setCurrentQuantity(1);
     setCurrentDescription('');
+    setCurrentTaxRate(0);
+    setCurrentCurrency(null);
     setNewProductVisible(false);
   };
 
@@ -422,8 +438,68 @@ const OrderForm = () => {
     calculateTotals(updatedItems, form.getFieldValue('discount_percentage') || 0, isExempt);
   };
 
+  const handleDescriptionChange = (itemId, value) => {
+    setOrderItems(orderItems.map(item =>
+      item.id === itemId ? { ...item, description: value } : item
+    ));
+  };
+
+  const handleQuantityChange = (itemId, value) => {
+    const qty = value || 0;
+    const updatedItems = orderItems.map(item => {
+      if (item.id !== itemId) return item;
+      return {
+        ...item,
+        quantity: qty,
+        subtotal: qty * item.unit_price,
+        tax_amount: qty * item.unit_price * (item.tax_rate / 100),
+        total: qty * item.unit_price * (1 + item.tax_rate / 100),
+      };
+    });
+    setOrderItems(updatedItems);
+    calculateTotals(updatedItems, form.getFieldValue('discount_percentage') || 0, isExempt);
+  };
+
+  const handleTaxRateChange = (itemId, value) => {
+    const rate = value || 0;
+    const updatedItems = orderItems.map(item => {
+      if (item.id !== itemId) return item;
+      return {
+        ...item,
+        tax_rate: rate,
+        tax_amount: item.quantity * item.unit_price * (rate / 100),
+        total: item.quantity * item.unit_price * (1 + rate / 100),
+      };
+    });
+    setOrderItems(updatedItems);
+    calculateTotals(updatedItems, form.getFieldValue('discount_percentage') || 0, isExempt);
+  };
+
+  const handleToggleConfirmed = (itemId) => {
+    setOrderItems(orderItems.map(item =>
+      item.id === itemId ? { ...item, confirmed: !item.confirmed } : item
+    ));
+  };
+
+  const handleItemCurrencyChange = (itemId, currencyId) => {
+    const isForeign = checkForeign(currencyId);
+    const updatedItems = orderItems.map(item => {
+      if (item.id !== itemId) return item;
+      const product = products.find(p => p.id === item.product);
+      const defaultTaxRate = isForeign ? 0 : parseFloat(product?.tax_rate || item.tax_rate || 0);
+      return { ...item, currency: currencyId, tax_rate: defaultTaxRate };
+    });
+    setOrderItems(updatedItems);
+    calculateTotals(updatedItems, form.getFieldValue('discount_percentage') || 0, isExempt);
+  };
+
   const onFinish = async (values) => {
     setItemsError(null);
+    const devises = [...new Set(orderItems.map(i => i.currency).filter(Boolean))];
+    if (devises.length > 1) {
+      setItemsError("Tous les produits de la commande doivent avoir la même devise. Veuillez harmoniser les devises avant de valider.");
+      return;
+    }
     const currentStatus = values.status || 'draft';
     if (orderItems.length === 0 && currentStatus !== 'draft') {
       setItemsError("Une commande avec le statut \"" + (currentStatus === 'confirmed' ? 'Confirmée' : currentStatus === 'in_progress' ? 'En cours' : currentStatus === 'delivered' ? 'Livrée' : 'Annulée') + "\" doit contenir au moins un produit.");
@@ -462,7 +538,8 @@ const OrderForm = () => {
           description: item.description,
           quantity: item.quantity,
           unit_price: item.unit_price,
-          tax_rate: item.tax_rate
+          tax_rate: item.tax_rate,
+          currency: item.currency || null,
         };
 
         if (item.id && (item.id.toString().startsWith('temp_') || !isEditMode)) {
@@ -499,13 +576,29 @@ const OrderForm = () => {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
-      ellipsis: true,
+      render: (text, record) => (
+        <Input.TextArea
+          value={text}
+          rows={1}
+          style={{ minWidth: 100 }}
+          onChange={e => handleDescriptionChange(record.id, e.target.value)}
+        />
+      ),
     },
     {
       title: 'Quantité',
       dataIndex: 'quantity',
       key: 'quantity',
       align: 'right',
+      render: (text, record) => (
+        <InputNumber
+          value={text}
+          min={0.01}
+          step={1}
+          style={{ width: 80 }}
+          onChange={value => handleQuantityChange(record.id, value)}
+        />
+      ),
     },
     {
       title: 'Prix unitaire',
@@ -522,7 +615,35 @@ const OrderForm = () => {
       dataIndex: 'tax_rate',
       key: 'tax_rate',
       align: 'right',
-      render: text => `${text}%`,
+      render: (text, record) => (
+        <InputNumber
+          value={text}
+          min={0}
+          max={100}
+          step={0.1}
+          style={{ width: 75 }}
+          formatter={v => `${v}%`}
+          parser={v => v.replace('%', '')}
+          onChange={value => handleTaxRateChange(record.id, value)}
+        />
+      ),
+    },
+    {
+      title: 'Devise',
+      dataIndex: 'currency',
+      key: 'currency',
+      render: (currencyId, record) => (
+        <Select
+          value={currencyId}
+          style={{ width: 90 }}
+          size="small"
+          onChange={(value) => handleItemCurrencyChange(record.id, value)}
+        >
+          {currencies.map(cur => (
+            <Option key={cur.id} value={cur.id}>{cur.code}</Option>
+          ))}
+        </Select>
+      ),
     },
     {
       title: 'Total HT',
@@ -530,26 +651,36 @@ const OrderForm = () => {
       align: 'right',
       render: (_, record) => {
         const subtotal = record.quantity * record.unit_price;
-        const currency = currencies.find(c => c.id === form.getFieldValue('currency'));
-        return `${subtotal.toFixed(2)} ${currency ? currency.code : ''}`;
+        const cur = currencies.find(cu => cu.id === record.currency) ||
+                    currencies.find(cu => cu.id === form.getFieldValue('currency'));
+        return `${subtotal.toFixed(2)} ${cur ? cur.code : ''}`;
       },
     },
     {
       title: 'Actions',
       key: 'actions',
       render: (_, record) => (
-        <Popconfirm
-          title="Êtes-vous sûr de vouloir supprimer cet élément?"
-          onConfirm={() => handleRemoveItem(record.id)}
-          okText="Oui"
-          cancelText="Non"
-        >
+        <Space size={4}>
           <Button
-            danger
-            icon={<DeleteOutlined />}
             size="small"
+            icon={<CheckOutlined />}
+            onClick={() => handleToggleConfirmed(record.id)}
+            style={{
+              borderColor: record.confirmed ? '#52c41a' : '#d9d9d9',
+              color: record.confirmed ? '#52c41a' : '#8c8c8c',
+              background: record.confirmed ? '#f6ffed' : '#fff',
+            }}
+            title={record.confirmed ? 'Ligne validée — cliquer pour dévalider' : 'Valider la ligne'}
           />
-        </Popconfirm>
+          <Popconfirm
+            title="Êtes-vous sûr de vouloir supprimer cet élément?"
+            onConfirm={() => handleRemoveItem(record.id)}
+            okText="Oui"
+            cancelText="Non"
+          >
+            <Button danger icon={<DeleteOutlined />} size="small" />
+          </Popconfirm>
+        </Space>
       ),
     },
   ];
@@ -608,12 +739,12 @@ const OrderForm = () => {
             <Form.Item
               name="contact"
               label="Contact"
-              rules={[{ required: true, message: 'Veuillez sélectionner un contact' }]}
             >
               <Select
-                placeholder="Sélectionner un contact"
-                disabled={!selectedCompany || isEditMode}
+                placeholder="Sélectionner un contact (optionnel)"
+                disabled={!selectedCompany}
                 options={contactOptions}
+                allowClear
               />
             </Form.Item>
           </Col>
@@ -753,15 +884,12 @@ const OrderForm = () => {
           {newProductVisible ? (
             <Card size="small" title="Ajouter un produit">
               <Row gutter={16}>
-                <Col span={10}>
-                  <Form.Item
-                    label="Produit"
-                    required
-                  >
+                <Col span={8}>
+                  <Form.Item label="Produit" required>
                     <Select
                       placeholder="Sélectionner un produit"
                       value={currentProduct}
-                      onChange={setCurrentProduct}
+                      onChange={handleProductSelect}
                       style={{ width: '100%' }}
                     >
                       {products.map(product => (
@@ -772,11 +900,8 @@ const OrderForm = () => {
                     </Select>
                   </Form.Item>
                 </Col>
-                <Col span={4}>
-                  <Form.Item
-                    label="Quantité"
-                    required
-                  >
+                <Col span={3}>
+                  <Form.Item label="Quantité" required>
                     <InputNumber
                       value={currentQuantity}
                       onChange={setCurrentQuantity}
@@ -785,10 +910,39 @@ const OrderForm = () => {
                     />
                   </Form.Item>
                 </Col>
-                <Col span={10}>
-                  <Form.Item
-                    label="Description personnalisée"
-                  >
+                <Col span={3}>
+                  <Form.Item label="TVA (%)">
+                    <InputNumber
+                      value={currentTaxRate}
+                      onChange={setCurrentTaxRate}
+                      min={0}
+                      max={100}
+                      step={0.1}
+                      style={{ width: '100%' }}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={4}>
+                  <Form.Item label="Devise">
+                    <Select
+                      value={currentCurrency}
+                      onChange={(val) => {
+                        setCurrentCurrency(val);
+                        if (checkForeign(val)) {
+                          setCurrentTaxRate(0);
+                        }
+                      }}
+                      style={{ width: '100%' }}
+                      placeholder="Devise"
+                    >
+                      {currencies.map(cur => (
+                        <Option key={cur.id} value={cur.id}>{cur.code}</Option>
+                      ))}
+                    </Select>
+                  </Form.Item>
+                </Col>
+                <Col span={6}>
+                  <Form.Item label="Description personnalisée">
                     <Input.TextArea
                       value={currentDescription}
                       onChange={e => setCurrentDescription(e.target.value)}

@@ -59,6 +59,7 @@ const QuoteDetail = () => {
   const [contacts, setContacts] = useState([]);
   const [loadingAction, setLoadingAction] = useState(false);
   const [sendEmailModal, setSendEmailModal] = useState(false);
+  const [noContactModal, setNoContactModal] = useState(false);
   const [emailForm] = Form.useForm();
   const [relatedOrders, setRelatedOrders] = useState([]);
   const [relatedInvoices, setRelatedInvoices] = useState([]);
@@ -70,12 +71,10 @@ const QuoteDetail = () => {
   const fetchQuoteDetails = async () => {
     setLoading(true);
     try {
-      // Récupérer les détails du devis
       const quoteResponse = await axios.get(`/api/sales/quotes/${id}/`);
       const quoteData = quoteResponse.data;
       setQuote(quoteData);
 
-      // Récupérer les éléments du devis
       if (quoteData.id) {
         try {
           const itemsResponse = await axios.get(`/api/sales/quote-items/?quote=${quoteData.id}`);
@@ -86,7 +85,6 @@ const QuoteDetail = () => {
           setItems([]);
         }
 
-        // Récupérer les contacts associés à l'entreprise
         if (quoteData.company) {
           try {
             const contactsResponse = await axios.get(`/api/crm/companies/${quoteData.company}/contacts/`);
@@ -98,7 +96,6 @@ const QuoteDetail = () => {
           }
         }
 
-        // Récupérer les commandes liées au devis
         try {
           const ordersResponse = await axios.get(`/api/sales/orders/?quote=${quoteData.id}`);
           const ordersData = extractResultsFromResponse(ordersResponse);
@@ -108,7 +105,6 @@ const QuoteDetail = () => {
           setRelatedOrders([]);
         }
 
-        // Récupérer les factures liées au devis
         try {
           const invoicesResponse = await axios.get(`/api/sales/invoices/?quote=${quoteData.id}`);
           const invoicesData = extractResultsFromResponse(invoicesResponse);
@@ -170,7 +166,6 @@ const QuoteDetail = () => {
     try {
       const response = await axios.post(`/api/sales/quotes/${id}/convert_to_order/`);
       message.success('Devis converti en commande avec succès');
-      // Si la réponse contient l'ID de la commande, naviguer vers la page de détail de la commande
       if (response.data && response.data.order && response.data.order.id) {
         navigate(`/sales/orders/${response.data.order.id}`);
       } else {
@@ -187,7 +182,6 @@ const QuoteDetail = () => {
     try {
       await axios.post(`/api/sales/quotes/${id}/generate_pdf/`);
       message.success('PDF généré avec succès');
-      // Ouvrir le PDF dans un nouvel onglet
       window.open(`/api/sales/quotes/${id}/download_pdf/`, '_blank');
       fetchQuoteDetails();
     } catch (error) {
@@ -197,16 +191,19 @@ const QuoteDetail = () => {
     }
   };
 
-  const showSendEmailModal = () => {
+  const showSendEmailModal = async () => {
+    if (!quote.contact) {
+      setNoContactModal(true);
+      return;
+    }
     emailForm.resetFields();
-    // Pré-remplir l'adresse email avec celle du contact si disponible
-    if (quote && quote.contact) {
-      const contact = contacts.find(c => c.id === quote.contact);
-      if (contact && contact.email) {
-        emailForm.setFieldsValue({
-          recipient_email: contact.email
-        });
+    try {
+      const res = await axios.get(`/api/crm/contacts/${quote.contact}/`);
+      if (res.data.email) {
+        emailForm.setFieldsValue({ recipient_email: res.data.email });
       }
+    } catch (e) {
+      console.error('Erreur récupération contact:', e);
     }
     setSendEmailModal(true);
   };
@@ -254,7 +251,6 @@ const QuoteDetail = () => {
     return <div>Devis non trouvé</div>;
   }
 
-  // Colonnes pour le tableau des éléments du devis
   const itemColumns = [
     {
       title: 'Référence',
@@ -313,7 +309,6 @@ const QuoteDetail = () => {
             <Link to={`/sales/quotes/${id}/edit`}>Modifier</Link>
           </Button>
 
-          {/* Actions spécifiques selon le statut du devis */}
           {quote.status === 'sent' && (
             <>
               <Button
@@ -683,6 +678,19 @@ const QuoteDetail = () => {
           )}
         </Tabs>
       </Card>
+
+      {/* Modal contact manquant */}
+      <Modal
+        title="Contact manquant"
+        open={noContactModal}
+        onCancel={() => setNoContactModal(false)}
+        onOk={() => setNoContactModal(false)}
+        cancelButtonProps={{ style: { display: 'none' } }}
+        okText="Compris"
+      >
+        <p>Aucun contact n'est renseigné sur ce devis.</p>
+        <p>Veuillez d'abord associer un contact avant d'envoyer un email.</p>
+      </Modal>
 
       {/* Modal pour l'envoi d'email */}
       <Modal

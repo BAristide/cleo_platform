@@ -92,6 +92,7 @@ class QuoteItemSerializer(serializers.ModelSerializer):
 
     product_name = serializers.SerializerMethodField()
     product_reference = serializers.SerializerMethodField()
+    currency_code = serializers.SerializerMethodField()
     subtotal = serializers.SerializerMethodField()
     tax_amount = serializers.SerializerMethodField()
     total = serializers.SerializerMethodField()
@@ -108,10 +109,15 @@ class QuoteItemSerializer(serializers.ModelSerializer):
             'quantity',
             'unit_price',
             'tax_rate',
+            'currency',
+            'currency_code',
             'subtotal',
             'tax_amount',
             'total',
         ]
+
+    def get_currency_code(self, obj):
+        return obj.currency.code if obj.currency else None
 
     def get_product_name(self, obj):
         return obj.product.name if obj.product else None
@@ -206,6 +212,9 @@ class QuoteSerializer(serializers.ModelSerializer):
             'expired': 'Expiré',
         }
         return status_map.get(obj.status, obj.status)
+
+    def validate_contact(self, value):
+        return value
 
     def get_is_expired(self, obj):
         from django.utils import timezone
@@ -317,6 +326,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
     product_name = serializers.SerializerMethodField()
     product_reference = serializers.SerializerMethodField()
+    currency_code = serializers.SerializerMethodField()
     subtotal = serializers.SerializerMethodField()
     tax_amount = serializers.SerializerMethodField()
     total = serializers.SerializerMethodField()
@@ -333,10 +343,15 @@ class OrderItemSerializer(serializers.ModelSerializer):
             'quantity',
             'unit_price',
             'tax_rate',
+            'currency',
+            'currency_code',
             'subtotal',
             'tax_amount',
             'total',
         ]
+
+    def get_currency_code(self, obj):
+        return obj.currency.code if obj.currency else None
 
     def get_product_name(self, obj):
         return obj.product.name if obj.product else None
@@ -577,6 +592,7 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
 
     product_name = serializers.SerializerMethodField()
     product_reference = serializers.SerializerMethodField()
+    currency_code = serializers.SerializerMethodField()
     subtotal = serializers.SerializerMethodField()
     tax_amount = serializers.SerializerMethodField()
     total = serializers.SerializerMethodField()
@@ -593,10 +609,15 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
             'quantity',
             'unit_price',
             'tax_rate',
+            'currency',
+            'currency_code',
             'subtotal',
             'tax_amount',
             'total',
         ]
+
+    def get_currency_code(self, obj):
+        return obj.currency.code if obj.currency else None
 
     def get_product_name(self, obj):
         return obj.product.name if obj.product else None

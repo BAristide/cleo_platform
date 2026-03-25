@@ -354,7 +354,11 @@ class Quote(SalesDocument):
         'crm.Company', on_delete=models.PROTECT, verbose_name=_('Entreprise')
     )
     contact = models.ForeignKey(
-        'crm.Contact', on_delete=models.PROTECT, verbose_name=_('Contact')
+        'crm.Contact',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_('Contact'),
     )
     opportunity = models.ForeignKey(
         'crm.Opportunity',
@@ -695,6 +699,13 @@ class SalesDocumentItem(models.Model):
     tax_rate = models.DecimalField(
         _('Taux de TVA (%)'), max_digits=5, decimal_places=2, default=0
     )
+    currency = models.ForeignKey(
+        'core.Currency',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_('Devise'),
+    )
 
     class Meta:
         abstract = True
@@ -722,7 +733,7 @@ class SalesDocumentItem(models.Model):
             self.unit_price = self.product.unit_price
         if not self.description:
             self.description = self.product.description
-        if self.tax_rate is None or self.tax_rate == 0:
+        if self.tax_rate is None:
             self.tax_rate = self.product.tax_rate
         super().save(*args, **kwargs)
 
@@ -762,7 +773,11 @@ class Order(SalesDocument):
         'crm.Company', on_delete=models.PROTECT, verbose_name=_('Entreprise')
     )
     contact = models.ForeignKey(
-        'crm.Contact', on_delete=models.PROTECT, verbose_name=_('Contact')
+        'crm.Contact',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_('Contact'),
     )
     opportunity = models.ForeignKey(
         'crm.Opportunity',
@@ -1022,7 +1037,11 @@ class Invoice(SalesDocument):
         'crm.Company', on_delete=models.PROTECT, verbose_name=_('Entreprise')
     )
     contact = models.ForeignKey(
-        'crm.Contact', on_delete=models.PROTECT, verbose_name=_('Contact')
+        'crm.Contact',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name=_('Contact'),
     )
     opportunity = models.ForeignKey(
         'crm.Opportunity',

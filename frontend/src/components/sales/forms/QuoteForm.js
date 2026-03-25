@@ -422,9 +422,10 @@ const QuoteForm = () => {
   const onFinish = async (values) => {
     setItemsError(null);
     // Validation homogénéité des devises
-    const devises = [...new Set(quoteItems.map(i => i.currency).filter(Boolean))];
-    if (devises.length > 1) {
-      setItemsError("Tous les produits du devis doivent avoir la même devise. Veuillez harmoniser les devises avant de valider.");
+    const docCurrency = form.getFieldValue('currency');
+    const lignesMauvaiseDevise = quoteItems.filter(i => i.currency && i.currency !== docCurrency);
+    if (lignesMauvaiseDevise.length > 0) {
+      setItemsError("Toutes les lignes doivent avoir la même devise que le document. Veuillez harmoniser les devises avant de valider.");
       return;
     }
     const currentStatus = values.status || 'draft';

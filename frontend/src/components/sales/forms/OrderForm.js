@@ -495,9 +495,10 @@ const OrderForm = () => {
 
   const onFinish = async (values) => {
     setItemsError(null);
-    const devises = [...new Set(orderItems.map(i => i.currency).filter(Boolean))];
-    if (devises.length > 1) {
-      setItemsError("Tous les produits de la commande doivent avoir la même devise. Veuillez harmoniser les devises avant de valider.");
+    const docCurrency = form.getFieldValue('currency');
+    const lignesMauvaiseDevise = orderItems.filter(i => i.currency && i.currency !== docCurrency);
+    if (lignesMauvaiseDevise.length > 0) {
+      setItemsError("Toutes les lignes doivent avoir la même devise que le document. Veuillez harmoniser les devises avant de valider.");
       return;
     }
     const currentStatus = values.status || 'draft';

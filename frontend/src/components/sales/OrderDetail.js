@@ -272,9 +272,14 @@ const OrderDetail = () => {
           </Button>
 
           {order.status === 'draft' && (
-            <Button type="primary" icon={<CheckOutlined />} onClick={handleConfirmOrder} loading={loadingAction}>
-              Confirmer la commande
-            </Button>
+            <>
+              <Button type="primary" icon={<EditOutlined />} onClick={() => navigate(`/sales/orders/${id}/edit`)}>
+                Modifier
+              </Button>
+              <Button type="primary" icon={<CheckOutlined />} onClick={handleConfirmOrder} loading={loadingAction}>
+                Confirmer la commande
+              </Button>
+            </>
           )}
 
           {['draft', 'confirmed', 'in_progress'].includes(order.status) && !order.has_final_invoice && (

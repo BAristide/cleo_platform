@@ -561,9 +561,10 @@ const InvoiceForm = () => {
 
   const onFinish = async (values) => {
     const isDraft = !isEditMode;
-    const devises = [...new Set(invoiceItems.map(i => i.currency).filter(Boolean))];
-    if (devises.length > 1) {
-      message.error("Tous les produits de la facture doivent avoir la même devise. Veuillez harmoniser les devises avant de valider.");
+    const docCurrency = form.getFieldValue('currency');
+    const lignesMauvaiseDevise = invoiceItems.filter(i => i.currency && i.currency !== docCurrency);
+    if (lignesMauvaiseDevise.length > 0) {
+      message.error("Toutes les lignes doivent avoir la même devise que le document. Veuillez harmoniser les devises avant de valider.");
       return;
     }
     if (invoiceItems.length === 0 && !isDraft) {

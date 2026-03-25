@@ -60,39 +60,18 @@ const OrderList = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // Construire les paramètres de requête
-      const params = {
-        page: pagination.current,
-        page_size: pagination.pageSize,
-      };
-
-      // Ajouter les filtres si définis
-      if (statusFilter && statusFilter !== 'all') {
-        params.status = statusFilter;
-      }
-
-      if (searchText) {
-        params.search = searchText;
-      }
-
+      const params = { page: pagination.current, page_size: pagination.pageSize };
+      if (statusFilter && statusFilter !== 'all') params.status = statusFilter;
+      if (searchText) params.search = searchText;
       if (dateRange && dateRange[0] && dateRange[1]) {
         params.date_min = dateRange[0].format('YYYY-MM-DD');
         params.date_max = dateRange[1].format('YYYY-MM-DD');
       }
-
       const response = await axios.get('/api/sales/orders/', { params });
-
-      // Extraire les résultats avec l'utilitaire
       const ordersData = extractResultsFromResponse(response);
-
-      // Mettre à jour la pagination avec la réponse
       if (response.data && response.data.count !== undefined) {
-        setPagination({
-          ...pagination,
-          total: response.data.count,
-        });
+        setPagination({ ...pagination, total: response.data.count });
       }
-
       setOrders(ordersData);
     } catch (error) {
       console.error('Erreur lors de la récupération des commandes:', error);
@@ -102,41 +81,14 @@ const OrderList = () => {
     }
   };
 
-  const handleSearch = () => {
-    // Réinitialiser à la première page lors d'une recherche
-    setPagination({
-      ...pagination,
-      current: 1,
-    });
-    fetchOrders();
-  };
-
+  const handleSearch = () => { setPagination({ ...pagination, current: 1 }); fetchOrders(); };
   const resetFilters = () => {
-    setSearchText('');
-    setStatusFilter('all');
-    setDateRange(null);
-    setPagination({
-      ...pagination,
-      current: 1,
-    });
-    fetchOrders();
+    setSearchText(''); setStatusFilter('all'); setDateRange(null);
+    setPagination({ ...pagination, current: 1 }); fetchOrders();
   };
-
-  const handleTableChange = (pagination, filters, sorter) => {
-    setPagination(pagination);
-  };
-
-  const handleStatusChange = (value) => {
-    setStatusFilter(value);
-    setPagination({
-      ...pagination,
-      current: 1,
-    });
-  };
-
-  const handleDateRangeChange = (dates) => {
-    setDateRange(dates);
-  };
+  const handleTableChange = (pagination) => { setPagination(pagination); };
+  const handleStatusChange = (value) => { setStatusFilter(value); setPagination({ ...pagination, current: 1 }); };
+  const handleDateRangeChange = (dates) => { setDateRange(dates); };
 
   const handleConfirmOrder = async (id) => {
     setActionLoading(true);
@@ -166,7 +118,6 @@ const OrderList = () => {
 
   const handleCreateDepositInvoice = async () => {
     if (!selectedOrderId) return;
-
     setActionLoading(true);
     try {
       const response = await axios.post(`/api/sales/orders/${selectedOrderId}/create_deposit_invoice/`, {
@@ -174,8 +125,6 @@ const OrderList = () => {
       });
       message.success(`Facture d'acompte créée avec succès (${depositPercentage}%)`);
       setCreateDepositModal(false);
-
-      // Si la réponse contient l'ID de la facture, naviguer vers la page de détail
       if (response.data && response.data.invoice && response.data.invoice.id) {
         navigate(`/sales/invoices/${response.data.invoice.id}`);
       } else {
@@ -199,8 +148,6 @@ const OrderList = () => {
     try {
       const response = await axios.post(`/api/sales/orders/${id}/convert_to_invoice/`);
       message.success('Commande convertie en facture avec succès');
-
-      // Si la réponse contient l'ID de la facture, naviguer vers la page de détail
       if (response.data && response.data.invoice && response.data.invoice.id) {
         navigate(`/sales/invoices/${response.data.invoice.id}`);
       } else {
@@ -217,7 +164,6 @@ const OrderList = () => {
     try {
       await axios.post(`/api/sales/orders/${id}/generate_pdf/`);
       message.success('PDF généré avec succès');
-      // Ouvrir le PDF dans un nouvel onglet
       window.open(`/api/sales/orders/${id}/download_pdf/`, '_blank');
       fetchOrders();
     } catch (error) {
@@ -230,15 +176,12 @@ const OrderList = () => {
   const handleSendByEmail = async (id) => {
     setActionLoading(true);
     try {
-      // Pour simplifier, nous utilisons directement l'API sans modal ici
-      // Dans un cas réel, il faudrait probablement utiliser un modal pour saisir l'email
       await axios.post(`/api/sales/orders/${id}/send_by_email/`);
       message.success('Commande envoyée par email avec succès');
       fetchOrders();
     } catch (error) {
       handleApiError(error, null, "Impossible d'envoyer la commande par email.");
       navigate(`/sales/orders/${id}`);
-      navigate(`/sales/orders/${id}`); // Rediriger vers la page de détail pour l'envoi manuel
     } finally {
       setActionLoading(false);
     }
@@ -249,66 +192,56 @@ const OrderList = () => {
       title: 'Numéro',
       dataIndex: 'number',
       key: 'number',
+      width: 120,
       render: (text, record) => <Link to={`/sales/orders/${record.id}`}>{text}</Link>,
     },
     {
       title: 'Entreprise',
       dataIndex: 'company_name',
       key: 'company_name',
+      width: 160,
     },
     {
       title: 'Contact',
       dataIndex: 'contact_name',
       key: 'contact_name',
+      width: 140,
     },
     {
       title: 'Date',
       dataIndex: 'date',
       key: 'date',
+      width: 110,
       render: text => text ? moment(text).format('DD/MM/YYYY') : '-',
     },
     {
       title: 'Livraison',
       dataIndex: 'delivery_date',
       key: 'delivery_date',
+      width: 110,
       render: text => text ? moment(text).format('DD/MM/YYYY') : '-',
     },
     {
       title: 'Total',
       dataIndex: 'total',
       key: 'total',
+      width: 130,
       render: (text, record) => `${text} ${record.currency_code || ''}`,
     },
     {
       title: 'Statut',
       dataIndex: 'status',
       key: 'status',
+      width: 160,
       render: (status, record) => {
         let color, label;
         switch (status) {
-          case 'draft':
-            color = 'default';
-            label = 'Brouillon';
-            break;
-          case 'confirmed':
-            color = 'blue';
-            label = 'Confirmée';
-            break;
-          case 'in_progress':
-            color = 'processing';
-            label = 'En cours';
-            break;
-          case 'delivered':
-            color = 'green';
-            label = 'Livrée';
-            break;
-          case 'cancelled':
-            color = 'red';
-            label = 'Annulée';
-            break;
-          default:
-            color = 'default';
-            label = status;
+          case 'draft': color = 'default'; label = 'Brouillon'; break;
+          case 'confirmed': color = 'blue'; label = 'Confirmée'; break;
+          case 'in_progress': color = 'processing'; label = 'En cours'; break;
+          case 'delivered': color = 'green'; label = 'Livrée'; break;
+          case 'cancelled': color = 'red'; label = 'Annulée'; break;
+          default: color = 'default'; label = status;
         }
         return (
           <Space>
@@ -322,6 +255,8 @@ const OrderList = () => {
     {
       title: 'Actions',
       key: 'actions',
+      width: 320,
+      fixed: 'right',
       render: (_, record) => (
         <Space size="small">
           <Button size="small" type="primary">
@@ -329,25 +264,15 @@ const OrderList = () => {
           </Button>
 
           {record.status === 'draft' && (
-            <Button
-              size="small"
-              type="primary"
-              icon={<CheckOutlined />}
-              onClick={() => handleConfirmOrder(record.id)}
-              loading={actionLoading}
-            >
+            <Button size="small" type="primary" icon={<CheckOutlined />}
+              onClick={() => handleConfirmOrder(record.id)} loading={actionLoading}>
               Confirmer
             </Button>
           )}
 
           {['draft', 'confirmed', 'in_progress'].includes(record.status) && !record.has_final_invoice && (
-            <Button
-              size="small"
-              danger
-              icon={<CloseOutlined />}
-              onClick={() => handleCancelOrder(record.id)}
-              loading={actionLoading}
-            >
+            <Button size="small" danger icon={<CloseOutlined />}
+              onClick={() => handleCancelOrder(record.id)} loading={actionLoading}>
               Annuler
             </Button>
           )}
@@ -355,46 +280,27 @@ const OrderList = () => {
           {record.status === 'confirmed' && (
             <>
               {record.can_create_deposit_invoice && (
-                <Button
-                  size="small"
-                  type="primary"
-                  icon={<BankOutlined />}
-                  onClick={() => showCreateDepositModal(record)}
-                  loading={actionLoading}
-                >
+                <Button size="small" type="primary" icon={<BankOutlined />}
+                  onClick={() => showCreateDepositModal(record)} loading={actionLoading}>
                   Acompte
                 </Button>
               )}
-
               {record.can_create_final_invoice && (
-                <Button
-                  size="small"
-                  type="primary"
-                  icon={<ShopOutlined />}
-                  onClick={() => handleConvertToInvoice(record.id)}
-                  loading={actionLoading}
-                >
+                <Button size="small" type="primary" icon={<ShopOutlined />}
+                  onClick={() => handleConvertToInvoice(record.id)} loading={actionLoading}>
                   Facturer
                 </Button>
               )}
             </>
           )}
 
-          <Button
-            size="small"
-            icon={<FileOutlined />}
-            onClick={() => handleGeneratePdf(record.id)}
-            loading={actionLoading}
-          >
+          <Button size="small" icon={<FileOutlined />}
+            onClick={() => handleGeneratePdf(record.id)} loading={actionLoading}>
             PDF
           </Button>
 
-          <Button
-            size="small"
-            icon={<MailOutlined />}
-            onClick={() => handleSendByEmail(record.id)}
-            loading={actionLoading}
-          >
+          <Button size="small" icon={<MailOutlined />}
+            onClick={() => handleSendByEmail(record.id)} loading={actionLoading}>
             Email
           </Button>
         </Space>
@@ -407,34 +313,21 @@ const OrderList = () => {
       <Card>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
           <Title level={2}>Commandes</Title>
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => navigate('/sales/orders/new')}
-          >
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/sales/orders/new')}>
             Nouvelle commande
           </Button>
         </div>
 
-        {/* Filtres */}
         <div style={{ marginBottom: 16 }}>
           <Row gutter={16}>
             <Col span={8}>
-              <Input
-                placeholder="Rechercher par numéro, entreprise ou contact"
-                value={searchText}
-                onChange={e => setSearchText(e.target.value)}
-                onPressEnter={handleSearch}
-                prefix={<SearchOutlined />}
-              />
+              <Input placeholder="Rechercher par numéro, entreprise ou contact"
+                value={searchText} onChange={e => setSearchText(e.target.value)}
+                onPressEnter={handleSearch} prefix={<SearchOutlined />} />
             </Col>
             <Col span={6}>
-              <Select
-                placeholder="Filtrer par statut"
-                style={{ width: '100%' }}
-                value={statusFilter}
-                onChange={handleStatusChange}
-              >
+              <Select placeholder="Filtrer par statut" style={{ width: '100%' }}
+                value={statusFilter} onChange={handleStatusChange}>
                 <Option value="all">Tous les statuts</Option>
                 <Option value="draft">Brouillon</Option>
                 <Option value="confirmed">Confirmée</Option>
@@ -445,11 +338,8 @@ const OrderList = () => {
             </Col>
             <Col span={10}>
               <Space>
-                <RangePicker
-                  placeholder={['Date début', 'Date fin']}
-                  value={dateRange}
-                  onChange={handleDateRangeChange}
-                />
+                <RangePicker placeholder={['Date début', 'Date fin']}
+                  value={dateRange} onChange={handleDateRangeChange} />
                 <Button onClick={handleSearch} type="primary">Rechercher</Button>
                 {(searchText || statusFilter !== 'all' || dateRange) && (
                   <Button onClick={resetFilters}>Réinitialiser</Button>
@@ -459,7 +349,6 @@ const OrderList = () => {
           </Row>
         </div>
 
-        {/* Tableau des commandes */}
         <Table
           columns={columns}
           dataSource={orders}
@@ -467,14 +356,13 @@ const OrderList = () => {
           loading={loading}
           pagination={pagination}
           onChange={handleTableChange}
+          scroll={{ x: 'max-content' }}
           locale={{ emptyText: 'Aucune commande trouvée' }}
           summary={pageData => {
             if (pageData.length === 0) return null;
-
             const defaultCurr = currencies.find(c => c.is_default);
             const defaultCode = defaultCurr?.code || '';
             let totalAmount = 0;
-
             pageData.forEach(item => {
               const amount = Number(item.total || 0);
               const itemCurrCode = item.currency_code || defaultCode;
@@ -486,7 +374,6 @@ const OrderList = () => {
                 totalAmount += amount;
               }
             });
-
             return (
               <Table.Summary.Row>
                 <Table.Summary.Cell index={0} colSpan={5}>
@@ -502,7 +389,6 @@ const OrderList = () => {
         />
       </Card>
 
-      {/* Modal pour la création de facture d'acompte */}
       <Modal
         title="Créer une facture d'acompte"
         open={createDepositModal}
@@ -512,35 +398,19 @@ const OrderList = () => {
       >
         <p>Veuillez indiquer le pourcentage d'acompte à facturer:</p>
         <Form layout="vertical">
-          <Form.Item
-            label="Pourcentage d'acompte"
-            required
-          >
-            <Input
-              type="number"
-              min={1}
-              max={100}
-              value={depositPercentage}
-              onChange={e => setDepositPercentage(parseInt(e.target.value))}
-              suffix="%"
-            />
+          <Form.Item label="Pourcentage d'acompte" required>
+            <Input type="number" min={1} max={100} value={depositPercentage}
+              onChange={e => setDepositPercentage(parseInt(e.target.value))} suffix="%" />
           </Form.Item>
         </Form>
-
         {selectedOrderId && (
           <div style={{ marginTop: 16 }}>
             <Alert
               message="Aperçu du montant"
               description={
-                <>
-                  <p>
-                    Montant de l'acompte ({depositPercentage}%): {
-                      ((orders.find(order => order.id === selectedOrderId)?.total * depositPercentage) / 100).toFixed(2)
-                    } {
-                      orders.find(order => order.id === selectedOrderId)?.currency_code
-                    }
-                  </p>
-                </>
+                <p>Montant de l'acompte ({depositPercentage}%): {
+                  ((orders.find(order => order.id === selectedOrderId)?.total * depositPercentage) / 100).toFixed(2)
+                } {orders.find(order => order.id === selectedOrderId)?.currency_code}</p>
               }
               type="info"
               showIcon

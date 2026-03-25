@@ -347,13 +347,13 @@ const InvoiceDetail = () => {
   }
 
   const itemColumns = [
-    { title: 'Référence', dataIndex: 'product_reference', key: 'product_reference' },
-    { title: 'Produit', dataIndex: 'product_name', key: 'product_name' },
-    { title: 'Description', dataIndex: 'description', key: 'description', render: text => text || '-', ellipsis: true },
-    { title: 'Quantité', dataIndex: 'quantity', key: 'quantity', align: 'right' },
-    { title: 'Prix unitaire', dataIndex: 'unit_price', key: 'unit_price', align: 'right', render: (text) => `${text} ${invoice.currency_code || ''}` },
-    { title: 'TVA (%)', dataIndex: 'tax_rate', key: 'tax_rate', align: 'right', render: text => `${text}%` },
-    { title: 'Total HT', dataIndex: 'subtotal', key: 'subtotal', align: 'right', render: (text, record) => `${text || (record.quantity * record.unit_price).toFixed(2)} ${invoice.currency_code || ''}` },
+    { title: 'Référence', dataIndex: 'product_reference', key: 'product_reference', width: 110 },
+    { title: 'Produit', dataIndex: 'product_name', key: 'product_name', width: 150 },
+    { title: 'Description', dataIndex: 'description', key: 'description', width: 160, render: text => text || '-', ellipsis: true },
+    { title: 'Quantité', dataIndex: 'quantity', key: 'quantity', align: 'right', width: 90 },
+    { title: 'Prix unitaire', dataIndex: 'unit_price', key: 'unit_price', align: 'right', width: 130, render: (text) => `${text} ${invoice.currency_code || ''}` },
+    { title: 'TVA (%)', dataIndex: 'tax_rate', key: 'tax_rate', align: 'right', width: 85, render: text => `${text}%` },
+    { title: 'Total HT', dataIndex: 'subtotal', key: 'subtotal', align: 'right', width: 130, render: (text, record) => `${text || (record.quantity * record.unit_price).toFixed(2)} ${invoice.currency_code || ''}` },
   ];
 
   const paymentColumns = [
@@ -490,7 +490,7 @@ const InvoiceDetail = () => {
             </Row>
 
             <Card title="Produits et services" style={{ marginTop: 16 }}>
-              <Table columns={itemColumns} dataSource={items} rowKey="id" pagination={false}
+              <Table columns={itemColumns} dataSource={items} rowKey="id" pagination={false} scroll={{ x: 'max-content' }}
                 summary={() => (
                   <Table.Summary>
                     <Table.Summary.Row>

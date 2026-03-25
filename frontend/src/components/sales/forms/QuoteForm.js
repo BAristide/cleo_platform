@@ -531,16 +531,19 @@ const QuoteForm = () => {
       title: 'Référence',
       dataIndex: 'product_reference',
       key: 'reference',
+      width: 110,
     },
     {
       title: 'Produit',
       dataIndex: 'product_name',
       key: 'product',
+      width: 150,
     },
     {
       title: 'Description',
       dataIndex: 'description',
       key: 'description',
+      width: 160,
       render: (text, record) => (
         <Input.TextArea
           value={text}
@@ -554,6 +557,7 @@ const QuoteForm = () => {
       title: 'Quantité',
       dataIndex: 'quantity',
       key: 'quantity',
+      width: 90,
       align: 'right',
       render: (text, record) => (
         <InputNumber
@@ -569,6 +573,7 @@ const QuoteForm = () => {
       title: 'Prix unitaire',
       dataIndex: 'unit_price',
       key: 'unit_price',
+      width: 150,
       align: 'right',
       render: (text, record) => {
         const currency = currencies.find(c => c.id === form.getFieldValue('currency'));
@@ -590,6 +595,7 @@ const QuoteForm = () => {
       title: 'TVA (%)',
       dataIndex: 'tax_rate',
       key: 'tax_rate',
+      width: 85,
       align: 'right',
       render: (text, record) => (
         <InputNumber
@@ -608,6 +614,7 @@ const QuoteForm = () => {
       title: 'Devise',
       dataIndex: 'currency',
       key: 'currency',
+      width: 90,
       render: (currencyId, record) => (
         <Select
           value={currencyId}
@@ -624,6 +631,7 @@ const QuoteForm = () => {
     {
       title: 'Total HT',
       key: 'subtotal',
+      width: 120,
       align: 'right',
       render: (_, record) => {
         const subtotal = record.quantity * record.unit_price;
@@ -635,6 +643,8 @@ const QuoteForm = () => {
     {
       title: 'Actions',
       key: 'actions',
+      width: 80,
+      fixed: 'right',
       render: (_, record) => (
         <Space size={4}>
           <Button
@@ -919,6 +929,7 @@ const QuoteForm = () => {
           dataSource={quoteItems}
           rowKey="id"
           pagination={false}
+          scroll={{ x: 'max-content' }}
           summary={() => (
             <Table.Summary>
               <Table.Summary.Row>

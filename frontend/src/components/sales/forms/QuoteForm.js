@@ -1,6 +1,6 @@
 // src/components/sales/forms/QuoteForm.js
 import { useCurrency } from '../../../context/CurrencyContext';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Form, Input, Button, Select, DatePicker, InputNumber, Card, Row, Col,
@@ -12,6 +12,7 @@ import {
 } from '@ant-design/icons';
 import axios from '../../../utils/axiosConfig';
 import moment from 'moment';
+import { debounce } from 'lodash';
 import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 
 const { Title, Text } = Typography;
@@ -34,7 +35,9 @@ const QuoteForm = () => {
   const [currencies, setCurrencies] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [filteredBankAccounts, setFilteredBankAccounts] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [productOptions, setProductOptions] = useState([]);
+  const [productSearching, setProductSearching] = useState(false);
+  const [currentProductData, setCurrentProductData] = useState(null);
   const [quoteItems, setQuoteItems] = useState([]);
   const [newProductVisible, setNewProductVisible] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -64,22 +67,19 @@ const QuoteForm = () => {
 
   const fetchInitialData = async () => {
     try {
-      const [companiesRes, currenciesRes, bankAccountsRes, productsRes] = await Promise.all([
+      const [companiesRes, currenciesRes, bankAccountsRes] = await Promise.all([
         axios.get('/api/crm/companies/'),
         axios.get('/api/core/currencies/'),
         axios.get('/api/sales/bank-accounts/'),
-        axios.get('/api/sales/products/')
       ]);
 
       const companiesData = extractResultsFromResponse(companiesRes);
       const currenciesData = extractResultsFromResponse(currenciesRes);
       const bankAccountsData = extractResultsFromResponse(bankAccountsRes);
-      const productsData = extractResultsFromResponse(productsRes);
 
       setCompanies(companiesData);
       setCurrencies(currenciesData);
       setBankAccounts(bankAccountsData);
-      setProducts(productsData);
 
       // Initialiser le formulaire avec des valeurs par défaut si en mode création
       if (!isEditMode) {
@@ -99,7 +99,7 @@ const QuoteForm = () => {
           });
         }
       }
-      return { companiesData, currenciesData, bankAccountsData, productsData };
+      return { companiesData, currenciesData, bankAccountsData };
     } catch (error) {
       console.error("Erreur lors du chargement des données initiales:", error);
       message.error("Impossible de charger les données nécessaires");
@@ -108,7 +108,7 @@ const QuoteForm = () => {
   };
 
   const fetchQuoteDetails = async (initialData = {}) => {
-    const { bankAccountsData: initialBankAccounts = [] } = initialData;
+    const { bankAccountsData: initialBankAccounts = [], currenciesData: initialCurrencies = [] } = initialData;
     setLoading(true);
     try {
       // Récupérer les détails du devis
@@ -138,6 +138,16 @@ const QuoteForm = () => {
       const itemsResponse = await axios.get(`/api/sales/quote-items/?quote=${id}`);
       const itemsData = extractResultsFromResponse(itemsResponse);
       setQuoteItems(itemsData);
+
+      // Pré-remplir les options produits depuis les lignes existantes
+      const existingOptions = itemsData
+        .filter(item => item.product)
+        .map(item => ({
+          value: item.product,
+          label: `${item.product_reference || ''} - ${item.product_name || ''}`,
+          product: { id: item.product, unit_price: item.unit_price, tax_rate: item.tax_rate, currency: item.currency },
+        }));
+      setProductOptions(existingOptions);
 
       // Mettre à jour l'état d'exonération de TVA
       setIsExempt(quoteData.is_tax_exempt || false);
@@ -176,14 +186,42 @@ const QuoteForm = () => {
     }
   };
 
-  const handleProductSelect = (productId) => {
+  const handleProductSearch = useCallback(
+    debounce(async (searchText) => {
+      if (!searchText || searchText.length < 2) {
+        setProductOptions([]);
+        return;
+      }
+      setProductSearching(true);
+      try {
+        const response = await axios.get(
+          `/api/sales/products/?search=${encodeURIComponent(searchText)}&page_size=15`
+        );
+        const data = extractResultsFromResponse(response);
+        setProductOptions(
+          data.map(p => ({
+            value: p.id,
+            label: `${p.reference} - ${p.name} (${p.unit_price} ${p.currency_code || ''})`,
+            product: p,
+          }))
+        );
+      } catch (err) {
+        console.error('Erreur recherche produit:', err);
+      } finally {
+        setProductSearching(false);
+      }
+    }, 300),
+    []
+  );
+
+  const handleProductSelect = (productId, option) => {
     setCurrentProduct(productId);
-    const product = products.find(p => p.id === productId);
+    const product = option?.product;
     if (product) {
-      const docCurrency = form.getFieldValue('currency');
       const isForeign = checkForeign(product.currency);
       setCurrentTaxRate(isForeign ? 0 : parseFloat(product.tax_rate || 0));
-      setCurrentCurrency(product.currency || docCurrency || null);
+      setCurrentCurrency(product.currency || form.getFieldValue('currency') || null);
+      setCurrentProductData(product);
     }
   };
 
@@ -284,7 +322,7 @@ const QuoteForm = () => {
       return;
     }
 
-    const product = products.find(p => p.id === currentProduct);
+    const product = currentProductData;
     if (!product) {
       message.error("Produit non trouvé");
       return;
@@ -330,6 +368,7 @@ const QuoteForm = () => {
 
     // Réinitialiser le formulaire d'ajout
     setCurrentProduct(null);
+    setCurrentProductData(null);
     setCurrentQuantity(1);
     setCurrentDescription('');
     setCurrentTaxRate(0);
@@ -411,8 +450,7 @@ const QuoteForm = () => {
     const isForeign = checkForeign(currencyId);
     const updatedItems = quoteItems.map(item => {
       if (item.id !== itemId) return item;
-      const product = products.find(p => p.id === item.product);
-      const defaultTaxRate = isForeign ? 0 : parseFloat(product?.tax_rate || item.tax_rate || 0);
+      const defaultTaxRate = isForeign ? 0 : parseFloat(item.tax_rate || 0);
       return { ...item, currency: currencyId, tax_rate: defaultTaxRate };
     });
     setQuoteItems(updatedItems);
@@ -791,17 +829,17 @@ const QuoteForm = () => {
                 <Col span={8}>
                   <Form.Item label="Produit" required>
                     <Select
-                      placeholder="Sélectionner un produit"
+                      showSearch
+                      placeholder="Rechercher un produit (référence ou nom)..."
                       value={currentProduct}
                       onChange={handleProductSelect}
+                      onSearch={handleProductSearch}
+                      filterOption={false}
+                      loading={productSearching}
+                      notFoundContent={productSearching ? 'Recherche...' : 'Tapez au moins 2 caractères'}
+                      options={productOptions}
                       style={{ width: '100%' }}
-                    >
-                      {products.map(product => (
-                        <Option key={product.id} value={product.id}>
-                          {product.reference} - {product.name} ({product.unit_price} {product.currency_code})
-                        </Option>
-                      ))}
-                    </Select>
+                    />
                   </Form.Item>
                 </Col>
                 <Col span={3}>

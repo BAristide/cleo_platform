@@ -1,6 +1,6 @@
 // src/components/sales/forms/OrderForm.js
 import { useCurrency } from '../../../context/CurrencyContext';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Form, Input, Button, Select, DatePicker, InputNumber, Card, Row, Col,
@@ -13,6 +13,7 @@ import {
 } from '@ant-design/icons';
 import axios from '../../../utils/axiosConfig';
 import moment from 'moment';
+import { debounce } from 'lodash';
 import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 
 const { Title, Text } = Typography;
@@ -37,7 +38,9 @@ const OrderForm = () => {
   const [currencies, setCurrencies] = useState([]);
   const [bankAccounts, setBankAccounts] = useState([]);
   const [filteredBankAccounts, setFilteredBankAccounts] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [productOptions, setProductOptions] = useState([]);
+  const [productSearching, setProductSearching] = useState(false);
+  const [currentProductData, setCurrentProductData] = useState(null);
   const [orderItems, setOrderItems] = useState([]);
   const [newProductVisible, setNewProductVisible] = useState(false);
   const [currentProduct, setCurrentProduct] = useState(null);
@@ -68,24 +71,21 @@ const OrderForm = () => {
 
   const fetchInitialData = async () => {
     try {
-      const [companiesRes, currenciesRes, bankAccountsRes, productsRes, quotesRes] = await Promise.all([
+      const [companiesRes, currenciesRes, bankAccountsRes, quotesRes] = await Promise.all([
         axios.get('/api/crm/companies/'),
         axios.get('/api/core/currencies/'),
         axios.get('/api/sales/bank-accounts/'),
-        axios.get('/api/sales/products/'),
         axios.get('/api/sales/quotes/?status=accepted')
       ]);
 
       const companiesData = extractResultsFromResponse(companiesRes);
       const currenciesData = extractResultsFromResponse(currenciesRes);
       const bankAccountsData = extractResultsFromResponse(bankAccountsRes);
-      const productsData = extractResultsFromResponse(productsRes);
       const quotesData = extractResultsFromResponse(quotesRes);
 
       setCompanies(companiesData);
       setCurrencies(currenciesData);
       setBankAccounts(bankAccountsData);
-      setProducts(productsData);
       setQuotes(quotesData);
 
       // Initialiser le formulaire avec des valeurs par défaut si en mode création
@@ -106,7 +106,7 @@ const OrderForm = () => {
           });
         }
       }
-      return { companiesData, currenciesData, bankAccountsData, productsData, quotesData };
+      return { companiesData, currenciesData, bankAccountsData, quotesData };
     } catch (error) {
       console.error("Erreur lors du chargement des données initiales:", error);
       message.error("Impossible de charger les données nécessaires");
@@ -150,6 +150,16 @@ const OrderForm = () => {
       const itemsResponse = await axios.get(`/api/sales/order-items/?order=${id}`);
       const itemsData = extractResultsFromResponse(itemsResponse);
       setOrderItems(itemsData);
+
+      // Pré-remplir les options produits depuis les lignes existantes
+      const existingOptions = itemsData
+        .filter(item => item.product)
+        .map(item => ({
+          value: item.product,
+          label: `${item.product_reference || ''} - ${item.product_name || ''}`,
+          product: { id: item.product, unit_price: item.unit_price, tax_rate: item.tax_rate, currency: item.currency },
+        }));
+      setProductOptions(existingOptions);
 
       // Mettre à jour l'état d'exonération de TVA
       setIsExempt(orderData.is_tax_exempt || false);
@@ -206,10 +216,21 @@ const OrderForm = () => {
         quantity: item.quantity,
         unit_price: item.unit_price,
         tax_rate: item.tax_rate,
+        currency: item.currency || null,
+        confirmed: false,
         subtotal: item.quantity * item.unit_price,
         tax_amount: isExempt ? 0 : (item.quantity * item.unit_price * (item.tax_rate / 100)),
         total: item.quantity * item.unit_price * (isExempt ? 1 : (1 + item.tax_rate / 100))
       }));
+      // Pré-remplir les options produits
+      const quoteProductOptions = itemsData
+        .filter(item => item.product)
+        .map(item => ({
+          value: item.product,
+          label: `${item.product_reference || ''} - ${item.product_name || ''}`,
+          product: { id: item.product, unit_price: item.unit_price, tax_rate: item.tax_rate },
+        }));
+      setProductOptions(quoteProductOptions);
 
       setOrderItems(convertedItems);
 
@@ -271,13 +292,42 @@ const OrderForm = () => {
     }
   };
 
-  const handleProductSelect = (productId) => {
+  const handleProductSearch = useCallback(
+    debounce(async (searchText) => {
+      if (!searchText || searchText.length < 2) {
+        setProductOptions([]);
+        return;
+      }
+      setProductSearching(true);
+      try {
+        const response = await axios.get(
+          `/api/sales/products/?search=${encodeURIComponent(searchText)}&page_size=15`
+        );
+        const data = extractResultsFromResponse(response);
+        setProductOptions(
+          data.map(p => ({
+            value: p.id,
+            label: `${p.reference} - ${p.name} (${p.unit_price} ${p.currency_code || ''})`,
+            product: p,
+          }))
+        );
+      } catch (err) {
+        console.error('Erreur recherche produit:', err);
+      } finally {
+        setProductSearching(false);
+      }
+    }, 300),
+    []
+  );
+
+  const handleProductSelect = (productId, option) => {
     setCurrentProduct(productId);
-    const product = products.find(p => p.id === productId);
+    const product = option?.product;
     if (product) {
       const isForeign = checkForeign(product.currency);
       setCurrentTaxRate(isForeign ? 0 : parseFloat(product.tax_rate || 0));
       setCurrentCurrency(product.currency || form.getFieldValue('currency') || null);
+      setCurrentProductData(product);
     }
   };
 
@@ -391,7 +441,7 @@ const OrderForm = () => {
       return;
     }
 
-    const product = products.find(p => p.id === currentProduct);
+    const product = currentProductData;
     if (!product) {
       message.error("Produit non trouvé");
       return;
@@ -423,6 +473,7 @@ const OrderForm = () => {
 
     // Réinitialiser le formulaire d'ajout
     setCurrentProduct(null);
+    setCurrentProductData(null);
     setCurrentQuantity(1);
     setCurrentDescription('');
     setCurrentTaxRate(0);
@@ -485,8 +536,7 @@ const OrderForm = () => {
     const isForeign = checkForeign(currencyId);
     const updatedItems = orderItems.map(item => {
       if (item.id !== itemId) return item;
-      const product = products.find(p => p.id === item.product);
-      const defaultTaxRate = isForeign ? 0 : parseFloat(product?.tax_rate || item.tax_rate || 0);
+      const defaultTaxRate = isForeign ? 0 : parseFloat(item.tax_rate || 0);
       return { ...item, currency: currencyId, tax_rate: defaultTaxRate };
     });
     setOrderItems(updatedItems);
@@ -888,17 +938,17 @@ const OrderForm = () => {
                 <Col span={8}>
                   <Form.Item label="Produit" required>
                     <Select
-                      placeholder="Sélectionner un produit"
+                      showSearch
+                      placeholder="Rechercher un produit (référence ou nom)..."
                       value={currentProduct}
                       onChange={handleProductSelect}
+                      onSearch={handleProductSearch}
+                      filterOption={false}
+                      loading={productSearching}
+                      notFoundContent={productSearching ? 'Recherche...' : 'Tapez au moins 2 caractères'}
+                      options={productOptions}
                       style={{ width: '100%' }}
-                    >
-                      {products.map(product => (
-                        <Option key={product.id} value={product.id}>
-                          {product.reference} - {product.name} ({product.unit_price} {product.currency_code})
-                        </Option>
-                      ))}
-                    </Select>
+                    />
                   </Form.Item>
                 </Col>
                 <Col span={3}>

@@ -15,6 +15,7 @@ import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
+import usePayrollLabels from '../../hooks/usePayrollLabels';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -52,14 +53,11 @@ const PayrollRunDetail = () => {
     total: 0
   });
 
-    const [labels, setLabels] = useState({
-    social: 'CNSS', health: 'AMO', tax: 'IR',
-    social_employer: 'CNSS Employeur', health_employer: 'AMO Employeur',
-  });
+    const labels = usePayrollLabels();
 
   useEffect(() => {
     fetchData();
-    axios.get('/api/payroll/labels/').then(r => setLabels(prev => ({ ...prev, ...r.data }))).catch(() => {});
+
   }, [id]);
 
   const fetchData = async () => {
@@ -312,21 +310,21 @@ const PayrollRunDetail = () => {
       sorter: (a, b) => (a.gross_salary || 0) - (b.gross_salary || 0),
     },
     {
-      title: 'CNSS',
+      title: labels.social,
       dataIndex: 'cnss_employee',
       key: 'cnss_employee',
       render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.cnss_employee || 0) - (b.cnss_employee || 0),
     },
     {
-      title: 'AMO',
+      title: labels.health,
       dataIndex: 'amo_employee',
       key: 'amo_employee',
       render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
       sorter: (a, b) => (a.amo_employee || 0) - (b.amo_employee || 0),
     },
     {
-      title: 'IR',
+      title: labels.tax_short,
       dataIndex: 'income_tax',
       key: 'income_tax',
       render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
@@ -599,7 +597,7 @@ const PayrollRunDetail = () => {
                 },
                 {
                   key: '3',
-                  organisme: `${labels.tax} (Impôt)`,
+                  organisme: labels.tax,
                   base: '-',
                   part_salariale: payrollRun.payslips_summary?.total_income_tax || 0,
                   part_patronale: 0,

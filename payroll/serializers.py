@@ -152,6 +152,8 @@ class EmployeePayrollSerializer(serializers.ModelSerializer):
     """Serializer pour les données de paie des employés."""
 
     employee_name = serializers.SerializerMethodField()
+    marital_status = serializers.SerializerMethodField()
+    dependent_children = serializers.SerializerMethodField()
     contract_type_name = serializers.SerializerMethodField()
     payment_method_display = serializers.SerializerMethodField()
     allowances = EmployeeAllowanceSerializer(many=True, read_only=True)
@@ -162,6 +164,8 @@ class EmployeePayrollSerializer(serializers.ModelSerializer):
             'id',
             'employee',
             'employee_name',
+            'marital_status',
+            'dependent_children',
             'contract_type',
             'contract_type_name',
             'base_salary',
@@ -184,6 +188,12 @@ class EmployeePayrollSerializer(serializers.ModelSerializer):
             'created_at',
             'updated_at',
         ]
+
+    def get_marital_status(self, obj):
+        return obj.employee.marital_status if obj.employee else None
+
+    def get_dependent_children(self, obj):
+        return obj.employee.dependent_children if obj.employee else 0
 
     def get_employee_name(self, obj):
         return (

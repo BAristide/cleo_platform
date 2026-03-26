@@ -8,6 +8,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import axios from '../../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../../context/CurrencyContext';
+import usePayrollLabels from '../../../hooks/usePayrollLabels';
 
 const { Option } = Select;
 const { Text } = Typography;
@@ -135,14 +136,23 @@ export const PayrollRunForm = () => {
     }
   }, [id, form]);
 
-  const onFinish = (values) => {
+  const onFinish = async (values) => {
     setLoading(true);
-    const request = id
-      ? axios.put(`/api/payroll/payroll-runs/${id}/`, values)
-      : axios.post('/api/payroll/payroll-runs/', values);
-    request
-      .then(() => { message.success(`Lancement ${id ? 'modifié' : 'créé'} avec succès`); navigate('/payroll/runs'); })
-      .catch(() => { message.error("Erreur lors de l'enregistrement"); setLoading(false); });
+    try {
+      if (id) {
+        await axios.put(`/api/payroll/payroll-runs/${id}/`, values);
+        message.success('Lancement modifié avec succès');
+        navigate('/payroll/runs');
+      } else {
+        const response = await axios.post('/api/payroll/payroll-runs/', values);
+        const newId = response.data.id;
+        message.success('Lancement créé — bulletins en cours de génération');
+        navigate(`/payroll/runs/${newId}`);
+      }
+    } catch (error) {
+      message.error("Erreur lors de l'enregistrement");
+      setLoading(false);
+    }
   };
 
   return (
@@ -159,7 +169,7 @@ export const PayrollRunForm = () => {
           </Col>
           <Col span={12}>
             <Form.Item name="department" label="Département">
-              <Select placeholder="Tous les départements" allowClear>
+              <Select placeholder="Tous les employés (laisser vide pour un lancement global)" allowClear>
                 {departments.map(d => <Option key={d.id} value={d.id}>{d.name}</Option>)}
               </Select>
             </Form.Item>
@@ -185,6 +195,7 @@ export const PayrollRunForm = () => {
 
 export const EmployeePayrollForm = () => {
   const { currencySymbol } = useCurrency();
+  const payrollLabels = usePayrollLabels();
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -429,8 +440,8 @@ export const EmployeePayrollForm = () => {
         {sectionTitle('Coordonnées bancaires & Paiement')}
         <Row gutter={16}>
           <Col xs={24} md={8}>
-            <Form.Item name="cnss_number" label="N° immatriculation sociale">
-              <Input placeholder="Numéro CNSS / IPRES / CNSS selon le pays" />
+            <Form.Item name="cnss_number" label={payrollLabels.social_number}>
+              <Input placeholder={payrollLabels.social_number} />
             </Form.Item>
           </Col>
           <Col xs={24} md={8}>

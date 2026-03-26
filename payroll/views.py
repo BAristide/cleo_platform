@@ -193,6 +193,99 @@ class EmployeePayrollViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+    @action(detail=True, methods=['post'])
+    def update_family_status(self, request, pk=None):
+        """Met à jour la situation familiale sur le modèle Employee sous-jacent."""
+        employee_payroll = self.get_object()
+        employee = employee_payroll.employee
+
+        marital_status = request.data.get('marital_status')
+        dependent_children = request.data.get('dependent_children')
+
+        update_fields = []
+        if marital_status is not None:
+            employee.marital_status = marital_status
+            update_fields.append('marital_status')
+        if dependent_children is not None:
+            employee.dependent_children = int(dependent_children)
+            update_fields.append('dependent_children')
+
+        if not update_fields:
+            return Response(
+                {'error': 'Aucune donnée à mettre à jour'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        employee.save(update_fields=update_fields)
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Situation familiale mise à jour',
+                'marital_status': employee.marital_status,
+                'dependent_children': employee.dependent_children,
+            }
+        )
+
+    @action(detail=True, methods=['post'])
+    def declare_leave_days(self, request, pk=None):
+        """Déclare des jours de congé sur le bulletin de la période indiquée."""
+        employee_payroll = self.get_object()
+        employee = employee_payroll.employee
+
+        period_id = request.data.get('period_id')
+        paid_leave_days = request.data.get('paid_leave_days')
+        unpaid_leave_days = request.data.get('unpaid_leave_days')
+
+        if not period_id:
+            return Response(
+                {'error': 'period_id est requis'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Chercher un bulletin existant pour cet employé dans cette période
+        payslip = PaySlip.objects.filter(
+            payroll_run__period_id=period_id,
+            employee=employee,
+        ).first()
+
+        if not payslip:
+            return Response(
+                {'error': 'Aucun bulletin trouvé pour cet employé sur cette période'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if payslip.status not in ('draft', 'calculated'):
+            return Response(
+                {'error': 'Le bulletin est déjà validé ou payé'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        update_fields = []
+        if paid_leave_days is not None:
+            from decimal import Decimal as D
+
+            payslip.paid_leave_days = D(str(paid_leave_days))
+            update_fields.append('paid_leave_days')
+        if unpaid_leave_days is not None:
+            from decimal import Decimal as D
+
+            payslip.unpaid_leave_days = D(str(unpaid_leave_days))
+            update_fields.append('unpaid_leave_days')
+
+        if update_fields:
+            payslip.save(update_fields=update_fields)
+
+        return Response(
+            {
+                'success': True,
+                'message': 'Jours de congé déclarés avec succès',
+                'payslip_id': payslip.id,
+                'paid_leave_days': str(payslip.paid_leave_days),
+                'unpaid_leave_days': str(payslip.unpaid_leave_days),
+            }
+        )
+
 
 class EmployeeAllowanceViewSet(viewsets.ModelViewSet):
     """API pour les primes et indemnités dynamiques."""
@@ -227,28 +320,48 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
     ordering_fields = ['period__start_date', 'run_date', 'status']
     ordering = ['-period__start_date', '-run_date']
 
-    @action(detail=True, methods=['post'])
-    def generate_payslips(self, request, pk=None):
-        """Génère les bulletins de paie pour ce lancement."""
-        payroll_run = self.get_object()
+    def perform_create(self, serializer):
+        """Crée le run puis auto-génère les bulletins."""
+        import logging
 
-        if payroll_run.status != 'draft':
-            return Response(
-                {
-                    'error': "Impossible de générer les bulletins, le lancement n'est pas en brouillon"
-                },
-                status=status.HTTP_400_BAD_REQUEST,
+        from hr.models import Employee
+
+        logger = logging.getLogger(__name__)
+
+        # created_by est une FK vers Employee, pas User
+        try:
+            employee = Employee.objects.get(user=self.request.user)
+        except Employee.DoesNotExist:
+            employee = None
+
+        payroll_run = serializer.save(created_by=employee)
+
+        # Auto-génération des bulletins à la création
+        try:
+            count = self._generate_payslips_for_run(payroll_run)
+            logger.info(
+                'EVO-PAIE-01 : %d bulletins auto-générés pour le run %s',
+                count,
+                payroll_run.name,
+            )
+        except Exception as e:
+            logger.exception(
+                'EVO-PAIE-01 : erreur auto-génération bulletins run %s : %s',
+                payroll_run.name,
+                e,
             )
 
-        # Récupérer les employés concernés (tous ou par département)
-        from hr.models import Employee
+    def _generate_payslips_for_run(self, payroll_run):
+        """Logique de génération extraite — réutilisée par perform_create et generate_payslips."""
+        from decimal import Decimal as D
+
+        from hr.models import Employee, LeaveRequest
 
         employees = Employee.objects.filter(is_active=True)
 
         if payroll_run.department:
             employees = employees.filter(department=payroll_run.department)
 
-        # Créer les bulletins
         period = payroll_run.period
         months = [
             '',
@@ -270,25 +383,19 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
 
         created_count = 0
         for employee in employees:
-            # Vérifier que l'employé a des infos de paie
             try:
                 payroll_info = employee.payroll_info
             except EmployeePayroll.DoesNotExist:
                 continue
 
-            # Vérifier si un bulletin existe déjà pour cet employé dans ce lancement
+            # Vérifier si un bulletin existe déjà pour cet employé sur cette période
+            # (dans n'importe quel run) — empêche le double paiement
             if PaySlip.objects.filter(
-                payroll_run=payroll_run, employee=employee
+                payroll_run__period=period, employee=employee
             ).exists():
                 continue
 
-            # Générer un numéro de bulletin unique
             number = f'BUL-{month_code}{year_code}-{employee.employee_id}'
-
-            # Congés approuvés chevauchant la période — pack-agnostique (is_paid sur LeaveType)
-            from decimal import Decimal as D
-
-            from hr.models import LeaveRequest
 
             approved_leaves = LeaveRequest.objects.filter(
                 employee=employee,
@@ -306,30 +413,46 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
                 D('0'),
             )
 
-            # Créer le bulletin
             PaySlip.objects.create(
                 payroll_run=payroll_run,
                 employee=employee,
                 number=number,
                 basic_salary=payroll_info.base_salary,
-                worked_days=26,  # Valeur par défaut
-                gross_salary=0,  # Sera calculé
-                taxable_salary=0,  # Sera calculé
-                net_salary=0,  # Sera calculé
-                cnss_employee=0,  # Sera calculé
-                cnss_employer=0,  # Sera calculé
-                amo_employee=0,  # Sera calculé
-                amo_employer=0,  # Sera calculé
-                income_tax=0,  # Sera calculé
+                worked_days=26,
+                gross_salary=0,
+                taxable_salary=0,
+                net_salary=0,
+                cnss_employee=0,
+                cnss_employer=0,
+                amo_employee=0,
+                amo_employer=0,
+                income_tax=0,
                 paid_leave_days=paid_leave_days,
                 unpaid_leave_days=unpaid_leave_days,
                 status='draft',
             )
             created_count += 1
 
-        # Mettre à jour le statut du lancement
-        payroll_run.status = 'in_progress'
-        payroll_run.save(update_fields=['status'])
+        if created_count > 0:
+            payroll_run.status = 'in_progress'
+            payroll_run.save(update_fields=['status'])
+
+        return created_count
+
+    @action(detail=True, methods=['post'])
+    def generate_payslips(self, request, pk=None):
+        """Génère les bulletins de paie pour ce lancement."""
+        payroll_run = self.get_object()
+
+        if payroll_run.status != 'draft':
+            return Response(
+                {
+                    'error': "Impossible de générer les bulletins, le lancement n'est pas en brouillon"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        created_count = self._generate_payslips_for_run(payroll_run)
 
         return Response(
             {
@@ -758,6 +881,10 @@ def payroll_labels(request):
         'health': 'Cotisation complémentaire',
         'tax': 'Impôt sur le revenu',
         'social_number': 'N° immatriculation sociale',
+        'social_number_short': 'N° immatriculation',
+        'social_organism': 'Organisme social',
+        'retirement_label': 'Retraite',
+        'tax_short': 'Impôt',
     }
     try:
         from core.models import CompanySetup
@@ -770,6 +897,7 @@ def payroll_labels(request):
                     'payroll_labels', defaults
                 )
             )
+            # Clés dérivées automatiques
             labels.setdefault(
                 'social_employer',
                 f'{labels.get("social", "Cotisations sociales")} employeur',
@@ -778,6 +906,9 @@ def payroll_labels(request):
                 'health_employer',
                 f'{labels.get("health", "Cotisation complémentaire")} employeur',
             )
+            # Fallback sur les valeurs par défaut pour les clés manquantes
+            for key, default_val in defaults.items():
+                labels.setdefault(key, default_val)
             return Response(labels)
     except Exception:
         pass

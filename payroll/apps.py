@@ -8,5 +8,4 @@ class PayrollConfig(AppConfig):
     verbose_name = 'Paie'
 
     def ready(self):
-        # Importer les signaux
-        pass
+        import payroll.signals  # noqa: F401

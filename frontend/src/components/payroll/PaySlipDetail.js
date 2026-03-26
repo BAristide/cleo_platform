@@ -14,6 +14,7 @@ import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
+import usePayrollLabels from '../../hooks/usePayrollLabels';
 
 const { Title, Text } = Typography;
 
@@ -45,18 +46,11 @@ const PaySlipDetail = () => {
   const [loading, setLoading] = useState(true);
   const [calculating, setCalculating] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
-  const [labels, setLabels] = useState({
-    social: 'Cotisations sociales',
-    health: 'Cotisation complémentaire',
-    tax: 'Impôt sur le revenu',
-    social_employer: 'Cotisations sociales employeur',
-    health_employer: 'Cotisation complémentaire employeur',
-  });
+  const labels = usePayrollLabels();
 
   useEffect(() => {
     fetchData();
-    // Charger les labels dynamiques
-    axios.get('/api/payroll/labels/').then(r => setLabels(prev => ({ ...prev, ...r.data }))).catch(() => {});
+
   }, [id]);
 
   const fetchData = async () => {
@@ -446,21 +440,21 @@ const PaySlipDetail = () => {
             </Col>
             <Col span={5}>
               <Statistic
-                title="Cumul cotisations sociales"
+                title={`Cumul ${labels.social_organism}`}
                 value={num(payslip.ytd_totals.ytd_cnss).toLocaleString()}
                 suffix={currencyCode}
               />
             </Col>
             <Col span={4}>
               <Statistic
-                title="Cumul santé"
+                title={`Cumul ${labels.health}`}
                 value={num(payslip.ytd_totals.ytd_amo).toLocaleString()}
                 suffix={currencyCode}
               />
             </Col>
             <Col span={5}>
               <Statistic
-                title="Cumul IR"
+                title={`Cumul ${labels.tax_short}`}
                 value={num(payslip.ytd_totals.ytd_tax).toLocaleString()}
                 suffix={currencyCode}
               />

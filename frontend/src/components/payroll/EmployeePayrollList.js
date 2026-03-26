@@ -2,14 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import {
   Table, Card, Button, Space, Tag, Typography,
-  message, Popconfirm, Spin, Input, Select
+  message, Popconfirm, Spin, Input, Select, Modal,
+  InputNumber, Form, Row, Col
 } from 'antd';
 import {
-  PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined
+  PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined,
+  TeamOutlined, GiftOutlined, CalendarOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
+import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import { useCurrency } from '../../context/CurrencyContext';
+import usePayrollLabels from '../../hooks/usePayrollLabels';
 
 const { Title } = Typography;
 const { Option } = Select;
@@ -20,8 +24,16 @@ const paymentMethodDisplay = {
   cash: 'Espèces'
 };
 
+const maritalLabels = {
+  single: 'Célibataire',
+  married: 'Marié(e)',
+  divorced: 'Divorcé(e)',
+  widowed: 'Veuf/Veuve',
+};
+
 const EmployeePayrollList = () => {
   const { currencySymbol, currencyCode } = useCurrency();
+  const labels = usePayrollLabels();
   const [employeePayrolls, setEmployeePayrolls] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({
@@ -37,8 +49,19 @@ const EmployeePayrollList = () => {
   const [contractTypes, setContractTypes] = useState([]);
   const navigate = useNavigate();
 
+  // ── Modales ─────────────────────────────────────
+  const [familyModal, setFamilyModal] = useState({ open: false, record: null });
+  const [familyForm] = Form.useForm();
+
+  const [primeModal, setPrimeModal] = useState({ open: false, record: null });
+  const [primeForm] = Form.useForm();
+  const [primeComponents, setPrimeComponents] = useState([]);
+
+  const [leaveModal, setLeaveModal] = useState({ open: false, record: null });
+  const [leaveForm] = Form.useForm();
+  const [periods, setPeriods] = useState([]);
+
   useEffect(() => {
-    // Charger les types de contrat pour le filtre
     const fetchContractTypes = async () => {
       try {
         const response = await axios.get('/api/payroll/contract-types/');
@@ -47,11 +70,6 @@ const EmployeePayrollList = () => {
         }
       } catch (error) {
         console.error('Erreur lors du chargement des types de contrat:', error);
-        setContractTypes([
-          { id: 1, name: 'CDI' },
-          { id: 2, name: 'CDD' },
-          { id: 3, name: 'ANAPEC' }
-        ]);
       }
     };
 
@@ -59,126 +77,49 @@ const EmployeePayrollList = () => {
     fetchData(pagination.current, pagination.pageSize, filters);
   }, []);
 
-  const fetchData = async (page = 1, pageSize = 10, filters = {}) => {
+  const fetchData = async (page = 1, pageSize = 10, currentFilters = {}) => {
     setLoading(true);
     try {
       let url = `/api/payroll/employee-payrolls/?page=${page}&page_size=${pageSize}`;
-
-      if (filters.search) {
-        url += `&search=${filters.search}`;
-      }
-
-      if (filters.contract_type) {
-        url += `&contract_type=${filters.contract_type}`;
-      }
-
-      if (filters.payment_method) {
-        url += `&payment_method=${filters.payment_method}`;
-      }
+      if (currentFilters.search) url += `&search=${currentFilters.search}`;
+      if (currentFilters.contract_type) url += `&contract_type=${currentFilters.contract_type}`;
+      if (currentFilters.payment_method) url += `&payment_method=${currentFilters.payment_method}`;
 
       const response = await axios.get(url);
-
       if (response.data.results) {
         setEmployeePayrolls(response.data.results);
-        setPagination({
-          ...pagination,
-          current: page,
-          total: response.data.count
-        });
+        setPagination(prev => ({ ...prev, current: page, total: response.data.count }));
       } else {
         setEmployeePayrolls([]);
-        message.error('Format de réponse inattendu');
       }
     } catch (error) {
       console.error('Erreur lors du chargement des données de paie:', error);
       message.error('Erreur lors du chargement des données de paie');
-      // Données de démo en cas d'erreur
-      setEmployeePayrolls([
-        {
-          id: 1,
-          employee: { id: 1, first_name: 'Mohammed', last_name: 'Alami' },
-          employee_name: 'Mohammed Alami',
-          contract_type: { id: 1, name: 'CDI' },
-          contract_type_name: 'CDI',
-          base_salary: 12000,
-          hourly_rate: 75,
-          cnss_number: 'CN12345678',
-          bank_account: '011780000123456789012345',
-          bank_name: 'Banque Populaire',
-          payment_method: 'bank_transfer',
-          payment_method_display: 'Virement bancaire',
-          transport_allowance: 1000,
-          meal_allowance: 600
-        },
-        {
-          id: 2,
-          employee: { id: 2, first_name: 'Fatima', last_name: 'Benani' },
-          employee_name: 'Fatima Benani',
-          contract_type: { id: 1, name: 'CDI' },
-          contract_type_name: 'CDI',
-          base_salary: 8000,
-          hourly_rate: 50,
-          cnss_number: 'CN87654321',
-          bank_account: '011780000987654321012345',
-          bank_name: 'Attijariwafa Bank',
-          payment_method: 'bank_transfer',
-          payment_method_display: 'Virement bancaire',
-          transport_allowance: 800,
-          meal_allowance: 500
-        },
-        {
-          id: 3,
-          employee: { id: 3, first_name: 'Karim', last_name: 'Zidane' },
-          employee_name: 'Karim Zidane',
-          contract_type: { id: 2, name: 'CDD' },
-          contract_type_name: 'CDD',
-          base_salary: 10000,
-          hourly_rate: 60,
-          cnss_number: 'CN45678901',
-          bank_account: '011780000456789012345',
-          bank_name: 'BMCE Bank',
-          payment_method: 'bank_transfer',
-          payment_method_display: 'Virement bancaire',
-          transport_allowance: 900,
-          meal_allowance: 550
-        }
-      ]);
-      setPagination({
-        ...pagination,
-        current: page,
-        total: 3
-      });
     } finally {
       setLoading(false);
     }
   };
 
-  const handleTableChange = (pagination, filters, sorter) => {
-    fetchData(pagination.current, pagination.pageSize, filters);
+  const handleTableChange = (pag) => {
+    fetchData(pag.current, pag.pageSize, filters);
   };
 
   const handleSearch = value => {
-    setFilters({
-      ...filters,
-      search: value
-    });
-    fetchData(1, pagination.pageSize, { ...filters, search: value });
+    const newFilters = { ...filters, search: value };
+    setFilters(newFilters);
+    fetchData(1, pagination.pageSize, newFilters);
   };
 
   const handleContractTypeChange = value => {
-    setFilters({
-      ...filters,
-      contract_type: value
-    });
-    fetchData(1, pagination.pageSize, { ...filters, contract_type: value });
+    const newFilters = { ...filters, contract_type: value };
+    setFilters(newFilters);
+    fetchData(1, pagination.pageSize, newFilters);
   };
 
   const handlePaymentMethodChange = value => {
-    setFilters({
-      ...filters,
-      payment_method: value
-    });
-    fetchData(1, pagination.pageSize, { ...filters, payment_method: value });
+    const newFilters = { ...filters, payment_method: value };
+    setFilters(newFilters);
+    fetchData(1, pagination.pageSize, newFilters);
   };
 
   const handleDelete = async (id) => {
@@ -187,11 +128,107 @@ const EmployeePayrollList = () => {
       message.success('Données de paie supprimées avec succès');
       fetchData(pagination.current, pagination.pageSize, filters);
     } catch (error) {
-      console.error('Erreur lors de la suppression des données de paie:', error);
-      message.error('Erreur lors de la suppression des données de paie');
+      handleApiError(error, null, 'Erreur lors de la suppression.');
     }
   };
 
+  // ── Action 1 : Situation familiale ──────────────
+  const openFamilyModal = (record) => {
+    setFamilyModal({ open: true, record });
+    familyForm.setFieldsValue({
+      marital_status: record.marital_status || 'single',
+      dependent_children: record.dependent_children ?? 0,
+    });
+  };
+
+  const handleFamilySubmit = async () => {
+    try {
+      const values = await familyForm.validateFields();
+      await axios.post(
+        `/api/payroll/employee-payrolls/${familyModal.record.id}/update_family_status/`,
+        values
+      );
+      message.success('Situation familiale mise à jour');
+      setFamilyModal({ open: false, record: null });
+      fetchData(pagination.current, pagination.pageSize, filters);
+    } catch (error) {
+      if (error.errorFields) return; // validation frontend
+      handleApiError(error, familyForm, 'Erreur lors de la mise à jour.');
+    }
+  };
+
+  // ── Action 2 : Prime exceptionnelle ─────────────
+  const openPrimeModal = async (record) => {
+    setPrimeModal({ open: true, record });
+    primeForm.resetFields();
+    // Charger les composants éligibles (brut ou non_soumise, hors système)
+    try {
+      const systemCodes = ['SALBASE', 'HS25', 'HS50', 'HS100', 'ANCIENNETE', 'TRANSPORT', 'REPAS', 'ACOMPTE', 'CNSS_EMP', 'CN_EMP', 'AMO_EMP', 'IR'];
+      const r = await axios.get('/api/payroll/components/?is_active=true');
+      const all = r.data.results || r.data || [];
+      setPrimeComponents(
+        all.filter(c =>
+          (c.component_type === 'brut' || c.component_type === 'non_soumise') &&
+          !systemCodes.includes(c.code)
+        )
+      );
+    } catch (error) {
+      console.error('Erreur chargement composants:', error);
+    }
+  };
+
+  const handlePrimeSubmit = async () => {
+    try {
+      const values = await primeForm.validateFields();
+      await axios.post('/api/payroll/employee-allowances/', {
+        employee_payroll: primeModal.record.id,
+        component: values.component,
+        amount: values.amount,
+        is_active: true,
+      });
+      message.success('Prime ajoutée avec succès');
+      setPrimeModal({ open: false, record: null });
+      fetchData(pagination.current, pagination.pageSize, filters);
+    } catch (error) {
+      if (error.errorFields) return;
+      handleApiError(error, primeForm, "Erreur lors de l'ajout de la prime.");
+    }
+  };
+
+  // ── Action 3 : Congés période ───────────────────
+  const openLeaveModal = async (record) => {
+    setLeaveModal({ open: true, record });
+    leaveForm.resetFields();
+    leaveForm.setFieldsValue({ paid_leave_days: 0, unpaid_leave_days: 0 });
+    // Charger les périodes non clôturées
+    try {
+      const r = await axios.get('/api/payroll/periods/?is_closed=false');
+      const list = r.data.results || r.data || [];
+      setPeriods(list);
+      if (list.length > 0) {
+        leaveForm.setFieldValue('period_id', list[0].id);
+      }
+    } catch (error) {
+      console.error('Erreur chargement périodes:', error);
+    }
+  };
+
+  const handleLeaveSubmit = async () => {
+    try {
+      const values = await leaveForm.validateFields();
+      await axios.post(
+        `/api/payroll/employee-payrolls/${leaveModal.record.id}/declare_leave_days/`,
+        values
+      );
+      message.success('Jours de congé déclarés avec succès');
+      setLeaveModal({ open: false, record: null });
+    } catch (error) {
+      if (error.errorFields) return;
+      handleApiError(error, leaveForm, 'Erreur lors de la déclaration des congés.');
+    }
+  };
+
+  // ── Colonnes ────────────────────────────────────
   const columns = [
     {
       title: 'Employé',
@@ -204,19 +241,16 @@ const EmployeePayrollList = () => {
       title: 'Type de contrat',
       dataIndex: 'contract_type_name',
       key: 'contract_type_name',
-      sorter: (a, b) => a.contract_type_name.localeCompare(b.contract_type_name),
-      filters: contractTypes.map(ct => ({ text: ct.name, value: ct.id })),
-      onFilter: (value, record) => record.contract_type.id === value,
     },
     {
       title: 'Salaire de base',
       dataIndex: 'base_salary',
       key: 'base_salary',
-      render: value => `${value.toLocaleString()} ${currencySymbol}`,
+      render: value => `${parseFloat(value).toLocaleString()} ${currencySymbol}`,
       sorter: (a, b) => a.base_salary - b.base_salary,
     },
     {
-      title: 'Numéro CNSS',
+      title: labels.social_number_short,
       dataIndex: 'cnss_number',
       key: 'cnss_number',
     },
@@ -224,33 +258,28 @@ const EmployeePayrollList = () => {
       title: 'Banque',
       dataIndex: 'bank_name',
       key: 'bank_name',
-      sorter: (a, b) => (a.bank_name || '').localeCompare(b.bank_name || ''),
     },
     {
       title: 'Méthode de paiement',
       dataIndex: 'payment_method_display',
       key: 'payment_method_display',
-      sorter: (a, b) => a.payment_method_display.localeCompare(b.payment_method_display),
-      filters: Object.entries(paymentMethodDisplay).map(([key, value]) => ({ text: value, value: key })),
-      onFilter: (value, record) => record.payment_method === value,
     },
     {
       title: 'Indemnité de transport',
       dataIndex: 'transport_allowance',
       key: 'transport_allowance',
-      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
-      sorter: (a, b) => (a.transport_allowance || 0) - (b.transport_allowance || 0),
+      render: value => value ? `${parseFloat(value).toLocaleString()} ${currencySymbol}` : '-',
     },
     {
       title: 'Prime de panier',
       dataIndex: 'meal_allowance',
       key: 'meal_allowance',
-      render: value => value ? `${value.toLocaleString()} ${currencySymbol}` : '-',
-      sorter: (a, b) => (a.meal_allowance || 0) - (b.meal_allowance || 0),
+      render: value => value ? `${parseFloat(value).toLocaleString()} ${currencySymbol}` : '-',
     },
     {
       title: 'Actions',
       key: 'actions',
+      width: 200,
       render: (_, record) => (
         <Space size="small">
           <Button
@@ -260,14 +289,35 @@ const EmployeePayrollList = () => {
             onClick={() => navigate(`/payroll/employee-payrolls/${record.id}`)}
             title="Modifier"
           />
+          <Button
+            icon={<TeamOutlined />}
+            size="small"
+            onClick={() => openFamilyModal(record)}
+            title="Situation familiale"
+            style={{ color: '#6366F1', borderColor: '#6366F1' }}
+          />
+          <Button
+            icon={<GiftOutlined />}
+            size="small"
+            onClick={() => openPrimeModal(record)}
+            title="Prime exceptionnelle"
+            style={{ color: '#F59E0B', borderColor: '#F59E0B' }}
+          />
+          <Button
+            icon={<CalendarOutlined />}
+            size="small"
+            onClick={() => openLeaveModal(record)}
+            title="Congés période"
+            style={{ color: '#10B981', borderColor: '#10B981' }}
+          />
           <Popconfirm
-            title="Êtes-vous sûr de vouloir supprimer ces données de paie?"
+            title="Êtes-vous sûr de vouloir supprimer ces données de paie ?"
             onConfirm={() => handleDelete(record.id)}
             okText="Oui"
             cancelText="Non"
           >
             <Button
-              type="danger"
+              danger
               icon={<DeleteOutlined />}
               size="small"
               title="Supprimer"
@@ -322,7 +372,7 @@ const EmployeePayrollList = () => {
         </div>
       </Card>
 
-      {/* Table des données de paie */}
+      {/* Table */}
       <Card>
         <Spin spinning={loading}>
           <Table
@@ -334,6 +384,110 @@ const EmployeePayrollList = () => {
           />
         </Spin>
       </Card>
+
+      {/* ── Modale Situation familiale ──────────── */}
+      <Modal
+        title={`Situation familiale — ${familyModal.record?.employee_name || ''}`}
+        open={familyModal.open}
+        onCancel={() => setFamilyModal({ open: false, record: null })}
+        onOk={handleFamilySubmit}
+        okText="Enregistrer"
+        cancelText="Annuler"
+      >
+        <Form form={familyForm} layout="vertical">
+          <Form.Item
+            name="marital_status"
+            label="Statut matrimonial"
+            rules={[{ required: true, message: 'Champ requis' }]}
+          >
+            <Select>
+              {Object.entries(maritalLabels).map(([key, label]) => (
+                <Option key={key} value={key}>{label}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="dependent_children"
+            label="Enfants à charge"
+            rules={[{ required: true, message: 'Champ requis' }]}
+          >
+            <InputNumber min={0} max={20} style={{ width: '100%' }} />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* ── Modale Prime exceptionnelle ─────────── */}
+      <Modal
+        title={`Prime exceptionnelle — ${primeModal.record?.employee_name || ''}`}
+        open={primeModal.open}
+        onCancel={() => setPrimeModal({ open: false, record: null })}
+        onOk={handlePrimeSubmit}
+        okText="Ajouter"
+        cancelText="Annuler"
+      >
+        <Form form={primeForm} layout="vertical">
+          <Form.Item
+            name="component"
+            label="Composant de salaire"
+            rules={[{ required: true, message: 'Sélectionnez un composant' }]}
+          >
+            <Select placeholder="Sélectionner" showSearch optionFilterProp="children">
+              {primeComponents.map(c => (
+                <Option key={c.id} value={c.id}>{c.name}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item
+            name="amount"
+            label="Montant"
+            rules={[{ required: true, message: 'Saisissez le montant' }]}
+          >
+            <InputNumber
+              min={0}
+              step={1000}
+              style={{ width: '100%' }}
+              formatter={v => `${v} ${currencySymbol}`}
+              parser={v => v.replace(/[^\d.-]/g, '')}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* ── Modale Congés période ──────────────── */}
+      <Modal
+        title={`Congés période — ${leaveModal.record?.employee_name || ''}`}
+        open={leaveModal.open}
+        onCancel={() => setLeaveModal({ open: false, record: null })}
+        onOk={handleLeaveSubmit}
+        okText="Déclarer"
+        cancelText="Annuler"
+      >
+        <Form form={leaveForm} layout="vertical">
+          <Form.Item
+            name="period_id"
+            label="Période"
+            rules={[{ required: true, message: 'Sélectionnez une période' }]}
+          >
+            <Select placeholder="Sélectionner la période">
+              {periods.map(p => (
+                <Option key={p.id} value={p.id}>{p.name}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="paid_leave_days" label="Jours de congés payés">
+                <InputNumber min={0} max={30} step={0.5} style={{ width: '100%' }} addonAfter="j" />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="unpaid_leave_days" label="Jours de congés sans solde">
+                <InputNumber min={0} max={30} step={0.5} style={{ width: '100%' }} addonAfter="j" />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+      </Modal>
     </div>
   );
 };

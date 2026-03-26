@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import axios from '../../utils/axiosConfig';
 import { useCurrency } from '../../context/CurrencyContext';
+import usePayrollLabels from '../../hooks/usePayrollLabels';
 
 const { Title, Text } = Typography;
 const { TabPane } = Tabs;
@@ -31,6 +32,7 @@ const statusColors = {
 
 const Dashboard = () => {
   const { currencySymbol, currencyCode } = useCurrency();
+  const labels = usePayrollLabels();
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
 
@@ -421,19 +423,19 @@ const Dashboard = () => {
                       render: value => `${value} ${currencySymbol}`
                     },
                     {
-                      title: 'CNSS',
+                      title: labels.social_organism,
                       dataIndex: 'total_cnss',
                       key: 'total_cnss',
                       render: value => `${value} ${currencySymbol}`
                     },
                     {
-                      title: 'AMO',
+                      title: labels.health,
                       dataIndex: 'total_amo',
                       key: 'total_amo',
                       render: value => `${value} ${currencySymbol}`
                     },
                     {
-                      title: 'IR',
+                      title: labels.tax_short,
                       dataIndex: 'total_ir',
                       key: 'total_ir',
                       render: value => `${value} ${currencySymbol}`

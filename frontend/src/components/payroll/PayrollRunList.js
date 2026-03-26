@@ -6,7 +6,7 @@ import {
 } from 'antd';
 import {
   PlusOutlined, EyeOutlined, DeleteOutlined, CalculatorOutlined,
-  CheckCircleOutlined, DollarOutlined, SearchOutlined
+  CheckCircleOutlined, DollarOutlined, SearchOutlined, ThunderboltOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import { handleApiError } from '../../utils/apiUtils';
@@ -215,6 +215,17 @@ const PayrollRunList = () => {
     }
   };
 
+  const handleGenerate = async (id) => {
+    try {
+      const response = await axios.post(`/api/payroll/payroll-runs/${id}/generate_payslips/`);
+      const count = response.data.payslips_count || 0;
+      message.success(`${count} bulletins générés avec succès`);
+      fetchData(pagination.current, pagination.pageSize, filters);
+    } catch (error) {
+      handleApiError(error, null, 'Erreur lors de la génération des bulletins.');
+    }
+  };
+
   const handleCalculate = async (id) => {
     try {
       await axios.post(`/api/payroll/payroll-runs/${id}/calculate_payslips/`);
@@ -311,6 +322,17 @@ const PayrollRunList = () => {
             onClick={() => navigate(`/payroll/runs/${record.id}`)}
             title="Voir"
           />
+
+          {record.status === 'draft' && record.payslips_count === 0 && (
+            <Button
+              type="default"
+              icon={<ThunderboltOutlined />}
+              size="small"
+              onClick={() => handleGenerate(record.id)}
+              title="Générer les bulletins"
+              style={{ color: '#10B981', borderColor: '#10B981' }}
+            />
+          )}
 
           {record.status === 'draft' && (
             <Popconfirm

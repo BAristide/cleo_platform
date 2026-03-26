@@ -154,8 +154,25 @@ def employee_post_save(sender, instance, created, **kwargs):
     - Synchronise is_active si mise à jour
     """
     if created:
-        if instance.email and not instance.user:
-            _create_or_link_user(instance)
+        if instance.email:
+            # Vérifier que le user_id existant (s'il y en a un) correspond bien
+            # à un User avec le même email — sinon forcer la création/liaison
+            needs_user = True
+            if instance.user_id:
+                from django.contrib.auth import get_user_model as _gum
+
+                _User = _gum()
+                if _User.objects.filter(
+                    pk=instance.user_id, email=instance.email
+                ).exists():
+                    needs_user = False
+                else:
+                    logger.warning(
+                        f'Employé {instance.email} — user_id={instance.user_id} invalide '
+                        f'(email non concordant ou user inexistant), réinitialisation.'
+                    )
+            if needs_user:
+                _create_or_link_user(instance)
     else:
         # Synchronisation statut actif
         _sync_user_active_status(instance)

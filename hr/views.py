@@ -842,12 +842,7 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
     ordering = ['-year', 'employee__last_name']
 
     def perform_create(self, serializer):
-        user = self.request.user
-        try:
-            employee = Employee.objects.get(user=user)
-            serializer.save(created_by=employee)
-        except Employee.DoesNotExist:
-            serializer.save()
+        serializer.save()
 
     @action(detail=True, methods=['get'])
     def items(self, request, pk=None):

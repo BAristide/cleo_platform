@@ -22,6 +22,7 @@ import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils
 const { Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
+const { TextArea } = Input;
 
 const OrderList = () => {
   const [loading, setLoading] = useState(true);
@@ -33,6 +34,9 @@ const OrderList = () => {
   const [createDepositModal, setCreateDepositModal] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState(null);
   const [depositPercentage, setDepositPercentage] = useState(30);
+  const [emailModal, setEmailModal] = useState(false);
+  const [emailRecord, setEmailRecord] = useState(null);
+  const [emailForm] = Form.useForm();
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -173,15 +177,32 @@ const OrderList = () => {
     }
   };
 
-  const handleSendByEmail = async (id) => {
+  const showEmailModal = async (record) => {
+    setEmailRecord(record);
+    emailForm.resetFields();
+    if (record.contact) {
+      try {
+        const res = await axios.get(`/api/crm/contacts/${record.contact}/`);
+        if (res.data.email) {
+          emailForm.setFieldsValue({ recipient_email: res.data.email });
+        }
+      } catch (e) {
+        console.error('Erreur récupération contact:', e);
+      }
+    }
+    setEmailModal(true);
+  };
+
+  const handleSendEmail = async (values) => {
+    if (!emailRecord) return;
     setActionLoading(true);
     try {
-      await axios.post(`/api/sales/orders/${id}/send_by_email/`);
+      await axios.post(`/api/sales/orders/${emailRecord.id}/send_by_email/`, values);
       message.success('Commande envoyée par email avec succès');
+      setEmailModal(false);
       fetchOrders();
     } catch (error) {
       handleApiError(error, null, "Impossible d'envoyer la commande par email.");
-      navigate(`/sales/orders/${id}`);
     } finally {
       setActionLoading(false);
     }
@@ -300,7 +321,7 @@ const OrderList = () => {
           </Button>
 
           <Button size="small" icon={<MailOutlined />}
-            onClick={() => handleSendByEmail(record.id)} loading={actionLoading}>
+            onClick={() => showEmailModal(record)} loading={actionLoading}>
             Email
           </Button>
         </Space>
@@ -389,6 +410,7 @@ const OrderList = () => {
         />
       </Card>
 
+      {/* Modal acompte */}
       <Modal
         title="Créer une facture d'acompte"
         open={createDepositModal}
@@ -417,6 +439,39 @@ const OrderList = () => {
             />
           </div>
         )}
+      </Modal>
+
+      {/* Modal envoi email */}
+      <Modal
+        title="Envoyer la commande par email"
+        open={emailModal}
+        onCancel={() => setEmailModal(false)}
+        footer={null}
+      >
+        <Form form={emailForm} layout="vertical" onFinish={handleSendEmail}>
+          <Form.Item
+            name="recipient_email"
+            label="Email du destinataire"
+            rules={[
+              { required: true, message: "Veuillez saisir l'email du destinataire" },
+              { type: 'email', message: "Format d'email invalide" }
+            ]}
+          >
+            <Input placeholder="exemple@domaine.com" />
+          </Form.Item>
+          <Form.Item name="subject" label="Objet">
+            <Input placeholder={emailRecord ? `Commande ${emailRecord.number} - ECINTELLIGENCE` : ''} />
+          </Form.Item>
+          <Form.Item name="message" label="Message additionnel">
+            <TextArea rows={4} placeholder="Votre message personnalisé (optionnel)" />
+          </Form.Item>
+          <Form.Item>
+            <div style={{ textAlign: 'right' }}>
+              <Button onClick={() => setEmailModal(false)} style={{ marginRight: 8 }}>Annuler</Button>
+              <Button type="primary" htmlType="submit" loading={actionLoading}>Envoyer</Button>
+            </div>
+          </Form.Item>
+        </Form>
       </Modal>
     </div>
   );

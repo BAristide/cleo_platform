@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Table, Button, Space, Input, Card, Tag, Typography, message, Popconfirm, Select,
-  DatePicker, Row, Col, Badge, Drawer, Form
+  DatePicker, Row, Col, Badge, Drawer, Form, Modal
 } from 'antd';
 import {
   SearchOutlined,
@@ -19,11 +19,12 @@ import {
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
 import { useCurrency } from '../../context/CurrencyContext';
-import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
 
 const { Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
+const { TextArea } = Input;
 
 const QuoteList = () => {
   const [loading, setLoading] = useState(true);
@@ -36,8 +37,11 @@ const QuoteList = () => {
   const [showCreateDrawer, setShowCreateDrawer] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [quoteForm] = Form.useForm();
+  const [emailForm] = Form.useForm();
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [contactOptions, setContactOptions] = useState([]);
+  const [emailModal, setEmailModal] = useState(false);
+  const [emailRecord, setEmailRecord] = useState(null);
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -244,23 +248,32 @@ const QuoteList = () => {
     }
   };
 
-  const handleSendByEmail = async (id) => {
+  const showEmailModal = async (record) => {
+    setEmailRecord(record);
+    emailForm.resetFields();
+    if (record.contact) {
+      try {
+        const res = await axios.get(`/api/crm/contacts/${record.contact}/`);
+        if (res.data.email) {
+          emailForm.setFieldsValue({ recipient_email: res.data.email });
+        }
+      } catch (e) {
+        console.error('Erreur récupération contact:', e);
+      }
+    }
+    setEmailModal(true);
+  };
+
+  const handleSendEmail = async (values) => {
+    if (!emailRecord) return;
     setActionLoading(true);
     try {
-      const quote = quotes.find(q => q.id === id);
-      const contact = quote && quote.contact_id ? contacts.find(c => c.id === quote.contact_id) : null;
-      if (contact && contact.email) {
-        await axios.post(`/api/sales/quotes/${id}/send_by_email/`, { recipient_email: contact.email });
-        message.success('Devis envoyé par email avec succès');
-      } else {
-        message.warning("Aucune adresse email de contact trouvée. Veuillez l'ajouter manuellement.");
-        navigate(`/sales/quotes/${id}`);
-        return;
-      }
+      await axios.post(`/api/sales/quotes/${emailRecord.id}/send_by_email/`, values);
+      message.success('Devis envoyé par email avec succès');
+      setEmailModal(false);
       fetchQuotes();
     } catch (error) {
-      console.error("Erreur lors de l'envoi du devis par email:", error);
-      message.error("Impossible d'envoyer le devis par email");
+      handleApiError(error, null, "Impossible d'envoyer le devis par email.");
     } finally {
       setActionLoading(false);
     }
@@ -371,7 +384,7 @@ const QuoteList = () => {
 
           {['draft', 'sent', 'accepted'].includes(record.status) && (
             <Button size="small" icon={<MailOutlined />}
-              onClick={() => handleSendByEmail(record.id)} loading={actionLoading}>
+              onClick={() => showEmailModal(record)} loading={actionLoading}>
               Email
             </Button>
           )}
@@ -559,6 +572,39 @@ const QuoteList = () => {
           </Form.Item>
         </Form>
       </Drawer>
+
+      {/* Modal envoi email */}
+      <Modal
+        title="Envoyer le devis par email"
+        open={emailModal}
+        onCancel={() => setEmailModal(false)}
+        footer={null}
+      >
+        <Form form={emailForm} layout="vertical" onFinish={handleSendEmail}>
+          <Form.Item
+            name="recipient_email"
+            label="Email du destinataire"
+            rules={[
+              { required: true, message: "Veuillez saisir l'email du destinataire" },
+              { type: 'email', message: "Format d'email invalide" }
+            ]}
+          >
+            <Input placeholder="exemple@domaine.com" />
+          </Form.Item>
+          <Form.Item name="subject" label="Objet">
+            <Input placeholder={emailRecord ? `Devis ${emailRecord.number} - ECINTELLIGENCE` : ''} />
+          </Form.Item>
+          <Form.Item name="message" label="Message additionnel">
+            <TextArea rows={4} placeholder="Votre message personnalisé (optionnel)" />
+          </Form.Item>
+          <Form.Item>
+            <div style={{ textAlign: 'right' }}>
+              <Button onClick={() => setEmailModal(false)} style={{ marginRight: 8 }}>Annuler</Button>
+              <Button type="primary" htmlType="submit" loading={actionLoading}>Envoyer</Button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

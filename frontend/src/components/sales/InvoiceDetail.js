@@ -66,7 +66,6 @@ const InvoiceDetail = () => {
   const [contacts, setContacts] = useState([]);
   const [loadingAction, setLoadingAction] = useState(false);
   const [sendEmailModal, setSendEmailModal] = useState(false);
-  const [noContactModal, setNoContactModal] = useState(false);
   const [addPaymentModal, setAddPaymentModal] = useState(false);
   const [createCreditNoteModal, setCreateCreditNoteModal] = useState(false);
   const [emailForm] = Form.useForm();
@@ -191,18 +190,16 @@ const InvoiceDetail = () => {
   };
 
   const showSendEmailModal = async () => {
-    if (!invoice.contact) {
-      setNoContactModal(true);
-      return;
-    }
     emailForm.resetFields();
-    try {
-      const res = await axios.get(`/api/crm/contacts/${invoice.contact}/`);
-      if (res.data.email) {
-        emailForm.setFieldsValue({ recipient_email: res.data.email });
+    if (invoice.contact) {
+      try {
+        const res = await axios.get(`/api/crm/contacts/${invoice.contact}/`);
+        if (res.data.email) {
+          emailForm.setFieldsValue({ recipient_email: res.data.email });
+        }
+      } catch (e) {
+        console.error('Erreur récupération contact:', e);
       }
-    } catch (e) {
-      console.error('Erreur récupération contact:', e);
     }
     setSendEmailModal(true);
   };
@@ -678,23 +675,17 @@ const InvoiceDetail = () => {
         </Card>
       )}
 
-      {/* Modal contact manquant */}
-      <Modal
-        title="Contact manquant"
-        open={noContactModal}
-        onCancel={() => setNoContactModal(false)}
-        onOk={() => setNoContactModal(false)}
-        cancelButtonProps={{ style: { display: 'none' } }}
-        okText="Compris"
-      >
-        <p>Aucun contact n'est renseigné sur cette facture.</p>
-        <p>Veuillez d'abord associer un contact avant d'envoyer un email.</p>
-      </Modal>
-
       {/* Modal pour l'envoi d'email */}
       <Modal title="Envoyer la facture par email" open={sendEmailModal} onCancel={() => setSendEmailModal(false)} footer={null}>
         <Form form={emailForm} layout="vertical" onFinish={handleSendEmail}>
-          <Form.Item name="recipient_email" label="Email du destinataire" rules={[{ required: true, message: "Veuillez saisir l'email du destinataire" }, { type: 'email', message: "Format d'email invalide" }]}>
+          <Form.Item
+            name="recipient_email"
+            label="Email du destinataire"
+            rules={[
+              { required: true, message: "Veuillez saisir l'email du destinataire" },
+              { type: 'email', message: "Format d'email invalide" }
+            ]}
+          >
             <Input placeholder="exemple@domaine.com" />
           </Form.Item>
           <Form.Item name="subject" label="Objet">

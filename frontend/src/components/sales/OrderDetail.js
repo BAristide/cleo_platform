@@ -1,3 +1,4 @@
+// src/components/sales/OrderDetail.js
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
@@ -61,7 +62,6 @@ const OrderDetail = () => {
   const [contacts, setContacts] = useState([]);
   const [loadingAction, setLoadingAction] = useState(false);
   const [sendEmailModal, setSendEmailModal] = useState(false);
-  const [noContactModal, setNoContactModal] = useState(false);
   const [createDepositInvoiceModal, setCreateDepositInvoiceModal] = useState(false);
   const [depositPercentage, setDepositPercentage] = useState(30);
   const [relatedInvoices, setRelatedInvoices] = useState([]);
@@ -192,18 +192,16 @@ const OrderDetail = () => {
   };
 
   const showSendEmailModal = async () => {
-    if (!order.contact) {
-      setNoContactModal(true);
-      return;
-    }
     emailForm.resetFields();
-    try {
-      const res = await axios.get(`/api/crm/contacts/${order.contact}/`);
-      if (res.data.email) {
-        emailForm.setFieldsValue({ recipient_email: res.data.email });
+    if (order.contact) {
+      try {
+        const res = await axios.get(`/api/crm/contacts/${order.contact}/`);
+        if (res.data.email) {
+          emailForm.setFieldsValue({ recipient_email: res.data.email });
+        }
+      } catch (e) {
+        console.error('Erreur récupération contact:', e);
       }
-    } catch (e) {
-      console.error('Erreur récupération contact:', e);
     }
     setSendEmailModal(true);
   };
@@ -533,19 +531,6 @@ const OrderDetail = () => {
           </TabPane>
         </Tabs>
       </Card>
-
-      {/* Modal contact manquant */}
-      <Modal
-        title="Contact manquant"
-        open={noContactModal}
-        onCancel={() => setNoContactModal(false)}
-        onOk={() => setNoContactModal(false)}
-        cancelButtonProps={{ style: { display: 'none' } }}
-        okText="Compris"
-      >
-        <p>Aucun contact n'est renseigné sur cette commande.</p>
-        <p>Veuillez d'abord associer un contact avant d'envoyer un email.</p>
-      </Modal>
 
       {/* Modal pour l'envoi d'email */}
       <Modal

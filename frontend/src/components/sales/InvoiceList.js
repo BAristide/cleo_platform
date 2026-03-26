@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Table, Button, Space, Typography, Card, Input, Select,
-  DatePicker, Tag, Popconfirm, message, Badge, Row, Col, Alert
+  DatePicker, Tag, Popconfirm, message, Badge, Row, Col, Alert, Modal, Form
 } from 'antd';
 import {
   PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined,
@@ -16,6 +16,7 @@ import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils
 const { Title } = Typography;
 const { Option } = Select;
 const { RangePicker } = DatePicker;
+const { TextArea } = Input;
 
 const InvoiceList = () => {
   const [invoices, setInvoices] = useState([]);
@@ -25,6 +26,9 @@ const InvoiceList = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [dateRange, setDateRange] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [emailModal, setEmailModal] = useState(false);
+  const [emailRecord, setEmailRecord] = useState(null);
+  const [emailForm] = Form.useForm();
   const [pagination, setPagination] = useState({
     current: 1,
     pageSize: 10,
@@ -124,15 +128,32 @@ const InvoiceList = () => {
     }
   };
 
-  const handleSendByEmail = async (id) => {
+  const showEmailModal = async (record) => {
+    setEmailRecord(record);
+    emailForm.resetFields();
+    if (record.contact) {
+      try {
+        const res = await axios.get(`/api/crm/contacts/${record.contact}/`);
+        if (res.data.email) {
+          emailForm.setFieldsValue({ recipient_email: res.data.email });
+        }
+      } catch (e) {
+        console.error('Erreur récupération contact:', e);
+      }
+    }
+    setEmailModal(true);
+  };
+
+  const handleSendEmail = async (values) => {
+    if (!emailRecord) return;
     setActionLoading(true);
     try {
-      await axios.post(`/api/sales/invoices/${id}/send_by_email/`);
+      await axios.post(`/api/sales/invoices/${emailRecord.id}/send_by_email/`, values);
       message.success('Facture envoyée par email avec succès');
+      setEmailModal(false);
       fetchInvoices();
     } catch (error) {
       handleApiError(error, null, "Impossible d'envoyer la facture par email.");
-      navigate(`/sales/invoices/${id}`);
     } finally {
       setActionLoading(false);
     }
@@ -254,7 +275,7 @@ const InvoiceList = () => {
           </Button>
 
           <Button size="small" icon={<MailOutlined />}
-            onClick={() => handleSendByEmail(record.id)} loading={actionLoading}>
+            onClick={() => showEmailModal(record)} loading={actionLoading}>
             Email
           </Button>
 
@@ -367,6 +388,39 @@ const InvoiceList = () => {
           }}
         />
       </Card>
+
+      {/* Modal envoi email */}
+      <Modal
+        title="Envoyer la facture par email"
+        open={emailModal}
+        onCancel={() => setEmailModal(false)}
+        footer={null}
+      >
+        <Form form={emailForm} layout="vertical" onFinish={handleSendEmail}>
+          <Form.Item
+            name="recipient_email"
+            label="Email du destinataire"
+            rules={[
+              { required: true, message: "Veuillez saisir l'email du destinataire" },
+              { type: 'email', message: "Format d'email invalide" }
+            ]}
+          >
+            <Input placeholder="exemple@domaine.com" />
+          </Form.Item>
+          <Form.Item name="subject" label="Objet">
+            <Input placeholder={emailRecord ? `Facture ${emailRecord.number} - ECINTELLIGENCE` : ''} />
+          </Form.Item>
+          <Form.Item name="message" label="Message additionnel">
+            <TextArea rows={4} placeholder="Votre message personnalisé (optionnel)" />
+          </Form.Item>
+          <Form.Item>
+            <div style={{ textAlign: 'right' }}>
+              <Button onClick={() => setEmailModal(false)} style={{ marginRight: 8 }}>Annuler</Button>
+              <Button type="primary" htmlType="submit" loading={actionLoading}>Envoyer</Button>
+            </div>
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };

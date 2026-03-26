@@ -18,26 +18,51 @@ logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender=Employee)
 def create_employee_payroll(sender, instance, created, **kwargs):
-    """Crée automatiquement les informations de paie pour un nouvel employé."""
+    """
+    Crée automatiquement la fiche de paie pour un nouvel employé.
+    Pré-remplit depuis les données RH de l'employé (contract_type).
+    Pack-agnostique : pas de valeur nationale hardcodée.
+    """
     if not created:
         return
     if hasattr(instance, 'payroll_info'):
         return
 
-    # Pack-indépendant : premier type de contrat actif, sans hardcoding
-    default_contract = ContractType.objects.filter(is_active=True).first()
-    if not default_contract:
+    # Priorité 1 : type de contrat déjà renseigné sur l'employé RH
+    # Priorité 2 : premier type de contrat actif disponible (fallback)
+    contract_type = None
+    if instance.contract_type_id:
+        try:
+            contract_type = ContractType.objects.get(
+                pk=instance.contract_type_id, is_active=True
+            )
+        except ContractType.DoesNotExist:
+            logger.warning(
+                f'Type de contrat id={instance.contract_type_id} inactif ou inexistant '
+                f'pour {instance} — fallback sur premier actif.'
+            )
+
+    if contract_type is None:
+        contract_type = ContractType.objects.filter(is_active=True).first()
+
+    if not contract_type:
         logger.warning(
             f'Aucun type de contrat actif — EmployeePayroll non créé pour {instance}'
         )
         return
 
-    EmployeePayroll.objects.create(
-        employee=instance,
-        contract_type=default_contract,
-        base_salary=0,
-        payment_method='bank_transfer',
-    )
+    try:
+        EmployeePayroll.objects.create(
+            employee=instance,
+            contract_type=contract_type,
+            base_salary=0,
+            payment_method='bank_transfer',
+        )
+        logger.info(
+            f'EmployeePayroll créé pour {instance} (contrat: {contract_type.name})'
+        )
+    except Exception:
+        logger.exception(f'Échec création EmployeePayroll pour {instance}')
 
 
 @receiver(pre_save, sender=PayrollRun)

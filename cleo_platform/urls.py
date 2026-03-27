@@ -112,6 +112,12 @@ urlpatterns = [
         'settings/<path:path>',
         login_required(TemplateView.as_view(template_name='index.html')),
     ),
+    # Module Espace Employé (v3.35.0)
+    path('my-space/', login_required(TemplateView.as_view(template_name='index.html'))),
+    path(
+        'my-space/<path:path>',
+        login_required(TemplateView.as_view(template_name='index.html')),
+    ),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

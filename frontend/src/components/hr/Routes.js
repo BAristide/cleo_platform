@@ -33,7 +33,6 @@ import TrainingPlanDetail from './TrainingPlanDetail';
 import TrainingPlanForm from './forms/TrainingPlanForm';
 
 // Portail et communication
-import EmployeePortal from './EmployeePortal';
 import AnnouncementFeed from './AnnouncementFeed';
 import AnnouncementForm from './AnnouncementForm';
 import WorkCertificateList from './WorkCertificateList';
@@ -103,7 +102,6 @@ const HRRoutes = () => {
         <Route path="/training-plans/:id/edit" element={<TrainingPlanForm />} />
 
         {/* Portail employé */}
-        <Route path="/portal" element={<EmployeePortal />} />
 
         {/* Annonces */}
         <Route path="/announcements" element={<AnnouncementFeed />} />

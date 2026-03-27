@@ -68,6 +68,7 @@ class ModulePermission(models.Model):
         ('crm', _('CRM')),
         ('sales', _('Ventes')),
         ('hr', _('Ressources Humaines')),
+        ('employee', _('Espace Employé')),
         ('payroll', _('Paie')),
         ('accounting', _('Comptabilité')),
         ('inventory', _('Stocks')),

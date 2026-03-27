@@ -9,6 +9,7 @@ import {
   LogoutOutlined,
   BellOutlined,
   SettingOutlined,
+  HomeOutlined,
 } from '@ant-design/icons';
 import { AuthContext } from '../../context/AuthContext';
 import NotificationBell from '../notifications/NotificationBell';
@@ -63,6 +64,7 @@ const UserMenu = () => {
     { type: 'divider' },
     { key: 'profile', icon: <UserOutlined />, label: 'Mon profil', onClick: () => navigate('/profile') },
     { key: 'password', icon: <KeyOutlined />, label: 'Changer mot de passe', onClick: () => navigate('/profile/password') },
+    { key: 'my-space', icon: <HomeOutlined />, label: 'Mon espace', onClick: () => navigate('/my-space') },
     { key: 'notifications', icon: <BellOutlined />, label: 'Notifications', onClick: () => navigate('/notifications') },
     ...(isAdmin
       ? [

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import {
-  DashboardOutlined, HomeOutlined, CalendarOutlined, WalletOutlined,
+  DashboardOutlined, CalendarOutlined, WalletOutlined,
   SafetyCertificateOutlined, ExclamationCircleOutlined, TrophyOutlined,
   IdcardOutlined, BranchesOutlined, UsergroupAddOutlined,
   NotificationOutlined, CarOutlined, ScheduleOutlined,
@@ -16,25 +16,6 @@ const menuItems = [
     key: 'dashboard',
     icon: <DashboardOutlined />,
     label: <Link to="/hr">Tableau de bord</Link>,
-  },
-  {
-    type: 'group',
-    label: 'Espace personnel',
-    children: [
-      { key: 'portal',       icon: <HomeOutlined />,              label: <Link to="/hr/portal">Mon espace</Link> },
-      {
-        key: 'leaves',
-        icon: <CalendarOutlined />,
-        label: 'Congés',
-        children: [
-          { key: 'leaves-list',     label: <Link to="/hr/leaves">Mes congés</Link> },
-          { key: 'leaves-calendar', label: <Link to="/hr/leaves/calendar">Calendrier équipe</Link> },
-        ],
-      },
-      { key: 'expenses',     icon: <WalletOutlined />,            label: <Link to="/hr/expenses">Notes de frais</Link> },
-      { key: 'certificates', icon: <SafetyCertificateOutlined />, label: <Link to="/hr/certificates">Attestations</Link> },
-      { key: 'complaints',   icon: <ExclamationCircleOutlined />, label: <Link to="/hr/complaints">Doléances</Link> },
-    ],
   },
   {
     type: 'group',
@@ -72,15 +53,24 @@ const menuItems = [
   },
   {
     type: 'group',
+    label: 'Gestion des demandes',
+    children: [
+      { key: 'leaves',       icon: <CalendarOutlined />,          label: <Link to="/hr/leaves">Congés (tous)</Link> },
+      { key: 'expenses',     icon: <WalletOutlined />,            label: <Link to="/hr/expenses">Notes de frais (tous)</Link> },
+      { key: 'certificates', icon: <SafetyCertificateOutlined />, label: <Link to="/hr/certificates">Attestations (toutes)</Link> },
+      { key: 'complaints',   icon: <ExclamationCircleOutlined />, label: <Link to="/hr/complaints">Doléances (toutes)</Link> },
+    ],
+  },
+  {
+    type: 'group',
     label: 'Configuration',
     children: [
-      { key: 'public-holidays', icon: <SettingOutlined />, label: <Link to="/hr/public-holidays">Jours feries</Link> },
+      { key: 'public-holidays', icon: <SettingOutlined />, label: <Link to="/hr/public-holidays">Jours fériés</Link> },
     ],
   },
 ];
 
 const breadcrumbMap = {
-  portal:             'Mon espace',
   leaves:             'Congés',
   'leaves/calendar':  'Calendrier équipe',
   expenses:           'Notes de frais',
@@ -96,7 +86,7 @@ const breadcrumbMap = {
   'training-courses': 'Formations',
   'training-plans':   'Plans de formation',
   announcements:      'Annonces',
-  'public-holidays':  'Jours feries',
+  'public-holidays':  'Jours fériés',
 };
 
 const HRLayout = ({ children }) => (

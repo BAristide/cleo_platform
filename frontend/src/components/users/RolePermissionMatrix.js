@@ -23,6 +23,7 @@ const MODULE_LABELS = {
   crm: 'CRM',
   sales: 'Ventes',
   hr: 'Ressources Humaines',
+  employee: 'Espace Employé',
   payroll: 'Paie',
   accounting: 'Comptabilité',
   inventory: 'Stocks',
@@ -34,7 +35,7 @@ const MODULE_LABELS = {
 // Ordre d'affichage des modules
 const MODULE_ORDER = [
   'core', 'dashboard', 'crm', 'sales', 'accounting',
-  'hr', 'payroll', 'recruitment', 'inventory', 'purchasing',
+  'hr', 'employee', 'payroll', 'recruitment', 'inventory', 'purchasing',
 ];
 
 const RolePermissionMatrix = () => {

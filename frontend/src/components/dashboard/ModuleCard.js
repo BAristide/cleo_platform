@@ -2,18 +2,16 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import {
   TeamOutlined, ShoppingCartOutlined, ShoppingOutlined, UserOutlined,
-  DollarOutlined, BankOutlined, SolutionOutlined, InboxOutlined, ArrowRightOutlined, TagsOutlined,
+  DollarOutlined, BankOutlined, SolutionOutlined, InboxOutlined, ArrowRightOutlined, TagsOutlined, HomeOutlined,
 } from '@ant-design/icons';
-
 const ModuleCard = ({ title, icon, description, path, stats, colorClass, color }) => {
   const iconMap = {
     'team': <TeamOutlined />, 'shopping-cart': <ShoppingCartOutlined />, 'shopping': <ShoppingOutlined />,
     'user': <UserOutlined />, 'dollar': <DollarOutlined />, 'bank': <BankOutlined />,
     'solution': <SolutionOutlined />, 'inbox': <InboxOutlined />, 'tag': <TagsOutlined />,
+    'home': <HomeOutlined />,
   };
-
   const cardColor = color || '#3b82f6';
-
   return (
     <Link to={path} className={`module-card-v2 ${colorClass || ''}`} style={{ textDecoration: 'none' }}>
       <div className="module-strip" style={{ background: `linear-gradient(90deg, ${cardColor}, ${cardColor}80)` }} />
@@ -48,5 +46,4 @@ const ModuleCard = ({ title, icon, description, path, stats, colorClass, color }
     </Link>
   );
 };
-
 export default ModuleCard;

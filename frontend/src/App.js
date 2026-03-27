@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Spin, ConfigProvider } from 'antd';
+import { Spin, ConfigProvider, Alert } from 'antd';
 import frFR from 'antd/locale/fr_FR';
 import './App.css';
 import ExecutiveDashboard from './components/dashboard/ExecutiveDashboard';
@@ -8,6 +8,7 @@ import CRMRoutes from './components/crm/Routes';
 import SalesRoutes from './components/sales/Routes';
 import CatalogRoutes from './components/catalog/Routes';
 import HRRoutes from './components/hr/Routes';
+import EmployeeRoutes from './components/employee/Routes';
 import PayrollRoutes from './components/payroll/Routes';
 import AccountingRoutes from './components/accounting/Routes';
 import RecruitmentRoutes from './components/recruitment/Routes';
@@ -76,6 +77,63 @@ const CLEO_THEME = {
   },
 };
 
+
+const MODULE_PATHS = {
+  crm: '/crm',
+  sales: '/sales',
+  employee: '/my-space',
+  hr: '/hr',
+  payroll: '/payroll',
+  accounting: '/accounting',
+  inventory: '/inventory',
+  purchasing: '/purchasing',
+  recruitment: '/recruitment',
+};
+
+const SKIP_MODULES = ['core', 'notifications', 'dashboard'];
+
+const HomeRedirect = () => {
+  const { user } = React.useContext(
+    require('./context/AuthContext').AuthContext
+  );
+
+  if (!user) return <Spin size="large" />;
+
+  // Superuser → toujours le dashboard exécutif
+  if (user.isSuperuser) return <ExecutiveDashboard />;
+
+  const modulesAccess = user.modulesAccess || {};
+
+  // Modules fonctionnels accessibles (hors core, notifications, dashboard)
+  const accessibleModules = Object.entries(modulesAccess)
+    .filter(([mod, level]) => !SKIP_MODULES.includes(mod) && level !== 'no_access')
+    .map(([mod]) => mod);
+
+  // Un seul module → redirection directe
+  if (accessibleModules.length === 1) {
+    const target = MODULE_PATHS[accessibleModules[0]];
+    if (target) return <Navigate to={target} replace />;
+  }
+
+  // Dashboard accessible → dashboard exécutif
+  if (modulesAccess.dashboard && modulesAccess.dashboard !== 'no_access') {
+    return <ExecutiveDashboard />;
+  }
+
+  // Plusieurs modules mais pas dashboard → premier module
+  if (accessibleModules.length > 0) {
+    const target = MODULE_PATHS[accessibleModules[0]];
+    if (target) return <Navigate to={target} replace />;
+  }
+
+  // Aucun module → message
+  return (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+      <Alert message="Aucun module accessible" description="Contactez votre administrateur pour obtenir les accès nécessaires." type="info" showIcon />
+    </div>
+  );
+};
+
 function App() {
   const [setupStatus, setSetupStatus] = useState(null);
   const [checkingSetup, setCheckingSetup] = useState(true);
@@ -132,7 +190,7 @@ function App() {
             <Routes>
               <Route path="/" element={
                 <PrivateRoute>
-                  <ExecutiveDashboard />
+                  <HomeRedirect />
                 </PrivateRoute>
               } />
               <Route path="/profile" element={
@@ -177,6 +235,13 @@ function App() {
                 <PrivateRoute>
                   <PermissionRoute module="hr">
                     <HRRoutes />
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/my-space/*" element={
+                <PrivateRoute>
+                  <PermissionRoute module="employee">
+                    <EmployeeRoutes />
                   </PermissionRoute>
                 </PrivateRoute>
               } />

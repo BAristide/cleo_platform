@@ -5,7 +5,7 @@ from users.models import ModulePermission, UserRole
 
 
 class Command(BaseCommand):
-    help = 'Crée les rôles utilisateur par défaut avec permissions sur 10 modules'
+    help = 'Crée les rôles utilisateur par défaut avec permissions sur 12 modules'
 
     def handle(self, *args, **options):
         self.stdout.write('Création des rôles par défaut...')
@@ -19,6 +19,7 @@ class Command(BaseCommand):
                     'core': 'admin',
                     'crm': 'admin',
                     'sales': 'admin',
+                    'employee': 'admin',
                     'hr': 'admin',
                     'payroll': 'admin',
                     'accounting': 'admin',
@@ -36,6 +37,7 @@ class Command(BaseCommand):
                     'core': 'read',
                     'crm': 'read',
                     'sales': 'read',
+                    'employee': 'admin',
                     'hr': 'read',
                     'payroll': 'read',
                     'accounting': 'read',
@@ -53,7 +55,8 @@ class Command(BaseCommand):
                     'core': 'read',
                     'crm': 'admin',
                     'sales': 'admin',
-                    'hr': 'read',
+                    'employee': 'admin',
+                    'hr': 'no_access',
                     'payroll': 'no_access',
                     'accounting': 'read',
                     'inventory': 'read',
@@ -70,6 +73,7 @@ class Command(BaseCommand):
                     'core': 'read',
                     'crm': 'read',
                     'sales': 'read',
+                    'employee': 'admin',
                     'hr': 'admin',
                     'payroll': 'admin',
                     'accounting': 'read',
@@ -87,7 +91,8 @@ class Command(BaseCommand):
                     'core': 'read',
                     'crm': 'read',
                     'sales': 'read',
-                    'hr': 'read',
+                    'employee': 'admin',
+                    'hr': 'no_access',
                     'payroll': 'read',
                     'accounting': 'admin',
                     'inventory': 'read',
@@ -104,6 +109,7 @@ class Command(BaseCommand):
                     'core': 'read',
                     'crm': 'no_access',
                     'sales': 'read',
+                    'employee': 'admin',
                     'hr': 'no_access',
                     'payroll': 'no_access',
                     'accounting': 'no_access',
@@ -116,18 +122,19 @@ class Command(BaseCommand):
             },
             {
                 'name': 'Employé',
-                'description': 'Accès de base pour tous les employés',
+                'description': 'Accès au module Espace Employé uniquement',
                 'permissions': {
                     'core': 'read',
-                    'crm': 'read',
-                    'sales': 'read',
-                    'hr': 'read',
-                    'payroll': 'read',
+                    'crm': 'no_access',
+                    'sales': 'no_access',
+                    'employee': 'admin',
+                    'hr': 'no_access',
+                    'payroll': 'no_access',
                     'accounting': 'no_access',
-                    'inventory': 'read',
+                    'inventory': 'no_access',
                     'purchasing': 'no_access',
-                    'recruitment': 'read',
-                    'dashboard': 'read',
+                    'recruitment': 'no_access',
+                    'dashboard': 'no_access',
                     'notifications': 'read',
                 },
             },

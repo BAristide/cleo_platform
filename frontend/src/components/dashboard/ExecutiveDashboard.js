@@ -6,7 +6,7 @@ import { Link } from 'react-router-dom';
 import {
   DollarOutlined, RiseOutlined, FallOutlined, BankOutlined,
   TeamOutlined, ShoppingCartOutlined, InboxOutlined, WarningOutlined,
-  DashboardOutlined, IdcardOutlined, AccountBookOutlined,
+  DashboardOutlined, IdcardOutlined, AccountBookOutlined, HomeOutlined,
   SolutionOutlined, ShoppingOutlined, TagsOutlined,
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
@@ -83,6 +83,7 @@ const ExecutiveDashboard = () => {
     { key: 'sales', icon: <ShoppingCartOutlined />, label: <Link to="/sales">Ventes</Link>, module: 'sales' },
     { key: 'inventory', icon: <InboxOutlined />, label: <Link to="/inventory">Stocks</Link>, module: 'inventory' },
     { key: 'purchasing', icon: <ShoppingOutlined />, label: <Link to="/purchasing">Achats</Link>, module: 'purchasing' },
+    { key: 'my-space', icon: <HomeOutlined />, label: <Link to="/my-space">Mon Espace</Link>, module: 'employee' },
     { key: 'hr', icon: <IdcardOutlined />, label: <Link to="/hr">Ressources Humaines</Link>, module: 'hr' },
     { key: 'accounting', icon: <AccountBookOutlined />, label: <Link to="/accounting">Comptabilité</Link>, module: 'accounting' },
     { key: 'payroll', icon: <DollarOutlined />, label: <Link to="/payroll">Paie</Link>, module: 'payroll' },
@@ -136,6 +137,8 @@ const ExecutiveDashboard = () => {
       stats: { count: moduleStats.inventory?.total_products || 0, recent: moduleStats.inventory?.alerts_count || 0 } },
     { title: 'Achats', module: 'purchasing', icon: 'shopping', description: 'Fournisseurs, commandes, réceptions', path: '/purchasing', colorClass: 'module-purchasing', color: '#f97316',
       stats: { count: moduleStats.purchasing?.suppliers_count || 0, recent: moduleStats.purchasing?.pending_orders || 0 } },
+    { title: 'Mon Espace', module: 'employee', icon: 'home', description: 'Congés, notes de frais, attestations', path: '/my-space', colorClass: 'module-employee', color: '#F59E0B',
+      stats: { count: 0, recent: 0 } },
     { title: 'RH', module: 'hr', icon: 'user', description: 'Employés, départements, missions', path: '/hr', colorClass: 'module-hr', color: '#f59e0b',
       stats: { count: moduleStats.hr?.general?.total_employees || 0, recent: moduleStats.hr?.missions?.upcoming?.length || 0 } },
     { title: 'Comptabilité', module: 'accounting', icon: 'bank', description: 'Plan comptable, journaux, écritures', path: '/accounting', colorClass: 'module-accounting', color: '#6366f1',

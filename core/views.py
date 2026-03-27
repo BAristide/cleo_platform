@@ -73,6 +73,41 @@ COUNTRY_PACKS = {
             'retirement_label': 'CNPS Retraite',
             'tax_short': 'ITS',
         },
+        'payroll_form_fields': {
+            'classification': [
+                {
+                    'key': 'professional_category',
+                    'label': 'Catégorie',
+                    'placeholder': 'Ex: P 1B, Cadre',
+                    'visible': True,
+                },
+                {
+                    'key': 'collective_agreement',
+                    'label': 'Convention collective',
+                    'placeholder': 'Ex: CCIPCI',
+                    'visible': True,
+                },
+                {
+                    'key': 'monthly_hours',
+                    'label': 'Horaire mensuel',
+                    'placeholder': '173',
+                    'visible': True,
+                },
+                {
+                    'key': 'igr_parts',
+                    'label': 'Parts IGR',
+                    'placeholder': '1 à 5',
+                    'visible': True,
+                },
+                {'key': 'coefficient', 'visible': False},
+                {'key': 'echelon', 'visible': False},
+                {'key': 'indice', 'visible': False},
+            ],
+            'social_ids': [
+                {'key': 'cimr_number', 'visible': False},
+                {'key': 'health_insurance_number', 'visible': False},
+            ],
+        },
     },
     'SN': {
         'code': 'SN',
@@ -93,6 +128,21 @@ COUNTRY_PACKS = {
             'social_organism': 'IPRES',
             'retirement_label': 'IPRES Retraite',
             'tax_short': 'IR',
+        },
+        'payroll_form_fields': {
+            'classification': [
+                {'key': 'professional_category', 'visible': True},
+                {'key': 'collective_agreement', 'visible': True},
+                {'key': 'monthly_hours', 'visible': True},
+                {'key': 'coefficient', 'visible': True},
+                {'key': 'echelon', 'visible': True},
+                {'key': 'indice', 'visible': True},
+                {'key': 'igr_parts', 'visible': False},
+            ],
+            'social_ids': [
+                {'key': 'cimr_number', 'visible': False},
+                {'key': 'health_insurance_number', 'visible': False},
+            ],
         },
     },
     'ML': {
@@ -115,6 +165,21 @@ COUNTRY_PACKS = {
             'retirement_label': 'INPS Retraite',
             'tax_short': 'ITS',
         },
+        'payroll_form_fields': {
+            'classification': [
+                {'key': 'professional_category', 'visible': True},
+                {'key': 'collective_agreement', 'visible': True},
+                {'key': 'monthly_hours', 'visible': True},
+                {'key': 'coefficient', 'visible': True},
+                {'key': 'echelon', 'visible': True},
+                {'key': 'indice', 'visible': True},
+                {'key': 'igr_parts', 'visible': False},
+            ],
+            'social_ids': [
+                {'key': 'cimr_number', 'visible': False},
+                {'key': 'health_insurance_number', 'visible': False},
+            ],
+        },
     },
     'BF': {
         'code': 'BF',
@@ -135,6 +200,21 @@ COUNTRY_PACKS = {
             'social_organism': 'CNSS',
             'retirement_label': 'CNSS Retraite',
             'tax_short': 'IUTS',
+        },
+        'payroll_form_fields': {
+            'classification': [
+                {'key': 'professional_category', 'visible': True},
+                {'key': 'collective_agreement', 'visible': True},
+                {'key': 'monthly_hours', 'visible': True},
+                {'key': 'coefficient', 'visible': True},
+                {'key': 'echelon', 'visible': True},
+                {'key': 'indice', 'visible': True},
+                {'key': 'igr_parts', 'visible': False},
+            ],
+            'social_ids': [
+                {'key': 'cimr_number', 'visible': False},
+                {'key': 'health_insurance_number', 'visible': False},
+            ],
         },
     },
     'TG': {
@@ -157,6 +237,21 @@ COUNTRY_PACKS = {
             'retirement_label': 'CNSS Retraite',
             'tax_short': 'IRPP',
         },
+        'payroll_form_fields': {
+            'classification': [
+                {'key': 'professional_category', 'visible': True},
+                {'key': 'collective_agreement', 'visible': True},
+                {'key': 'monthly_hours', 'visible': True},
+                {'key': 'coefficient', 'visible': True},
+                {'key': 'echelon', 'visible': True},
+                {'key': 'indice', 'visible': True},
+                {'key': 'igr_parts', 'visible': False},
+            ],
+            'social_ids': [
+                {'key': 'cimr_number', 'visible': False},
+                {'key': 'health_insurance_number', 'visible': False},
+            ],
+        },
     },
     'BJ': {
         'code': 'BJ',
@@ -177,6 +272,21 @@ COUNTRY_PACKS = {
             'social_organism': 'CNSS',
             'retirement_label': 'CNSS Retraite',
             'tax_short': 'ITS',
+        },
+        'payroll_form_fields': {
+            'classification': [
+                {'key': 'professional_category', 'visible': True},
+                {'key': 'collective_agreement', 'visible': True},
+                {'key': 'monthly_hours', 'visible': True},
+                {'key': 'coefficient', 'visible': True},
+                {'key': 'echelon', 'visible': True},
+                {'key': 'indice', 'visible': True},
+                {'key': 'igr_parts', 'visible': False},
+            ],
+            'social_ids': [
+                {'key': 'cimr_number', 'visible': False},
+                {'key': 'health_insurance_number', 'visible': False},
+            ],
         },
     },
     'NE': {
@@ -199,6 +309,21 @@ COUNTRY_PACKS = {
             'retirement_label': 'CNSS Retraite',
             'tax_short': 'IUTS',
         },
+        'payroll_form_fields': {
+            'classification': [
+                {'key': 'professional_category', 'visible': True},
+                {'key': 'collective_agreement', 'visible': True},
+                {'key': 'monthly_hours', 'visible': True},
+                {'key': 'coefficient', 'visible': True},
+                {'key': 'echelon', 'visible': True},
+                {'key': 'indice', 'visible': True},
+                {'key': 'igr_parts', 'visible': False},
+            ],
+            'social_ids': [
+                {'key': 'cimr_number', 'visible': False},
+                {'key': 'health_insurance_number', 'visible': False},
+            ],
+        },
     },
     'GN': {
         'code': 'GN',
@@ -219,6 +344,21 @@ COUNTRY_PACKS = {
             'social_organism': 'CNSS',
             'retirement_label': 'CNSS Retraite',
             'tax_short': 'ITS',
+        },
+        'payroll_form_fields': {
+            'classification': [
+                {'key': 'professional_category', 'visible': True},
+                {'key': 'collective_agreement', 'visible': True},
+                {'key': 'monthly_hours', 'visible': True},
+                {'key': 'coefficient', 'visible': True},
+                {'key': 'echelon', 'visible': True},
+                {'key': 'indice', 'visible': True},
+                {'key': 'igr_parts', 'visible': False},
+            ],
+            'social_ids': [
+                {'key': 'cimr_number', 'visible': False},
+                {'key': 'health_insurance_number', 'visible': False},
+            ],
         },
     },
     'MA': {

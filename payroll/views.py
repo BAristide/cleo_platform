@@ -874,6 +874,119 @@ class AdvanceSalaryViewSet(viewsets.ModelViewSet):
 
 @api_view(['GET'])
 @permission_classes([permissions.IsAuthenticated])
+def pack_config(request):
+    """GET /api/payroll/pack-config/ — Configuration UI complète du pays actif."""
+    defaults = {
+        'country_code': '',
+        'labels': {},
+        'form_sections': {
+            'classification': {
+                'title': 'Classification professionnelle',
+                'fields': [
+                    {
+                        'key': 'professional_category',
+                        'label': 'Catégorie professionnelle',
+                        'placeholder': 'Ex: Cadre, Agent de maîtrise',
+                        'type': 'text',
+                        'visible': True,
+                    },
+                    {
+                        'key': 'coefficient',
+                        'label': 'Coefficient',
+                        'type': 'number',
+                        'visible': True,
+                    },
+                    {
+                        'key': 'echelon',
+                        'label': 'Échelon',
+                        'placeholder': 'Ex: E1, E2',
+                        'type': 'text',
+                        'visible': True,
+                    },
+                    {
+                        'key': 'indice',
+                        'label': 'Indice',
+                        'type': 'number',
+                        'visible': True,
+                    },
+                    {
+                        'key': 'collective_agreement',
+                        'label': 'Convention collective',
+                        'placeholder': 'Ex: Convention Collective Interprofessionnelle',
+                        'type': 'text',
+                        'visible': True,
+                    },
+                    {
+                        'key': 'monthly_hours',
+                        'label': 'Horaire mensuel',
+                        'placeholder': '173.33',
+                        'type': 'number',
+                        'visible': True,
+                    },
+                    {
+                        'key': 'igr_parts',
+                        'label': 'Parts IGR',
+                        'placeholder': '1 à 5',
+                        'type': 'number',
+                        'visible': False,
+                    },
+                ],
+            },
+            'social_ids': {
+                'title': 'Identifiants sociaux',
+                'fields': [
+                    {
+                        'key': 'cimr_number',
+                        'label': 'N° C.I.M.R',
+                        'placeholder': 'Numéro CIMR',
+                        'type': 'text',
+                        'visible': False,
+                    },
+                    {
+                        'key': 'health_insurance_number',
+                        'label': 'N° Assurance Maladie',
+                        'placeholder': 'Numéro assurance maladie',
+                        'type': 'text',
+                        'visible': False,
+                    },
+                ],
+            },
+        },
+    }
+    try:
+        from core.models import CompanySetup
+        from core.views import COUNTRY_PACKS
+
+        setup = CompanySetup.objects.first()
+        if setup and setup.country_code:
+            pack = COUNTRY_PACKS.get(setup.country_code, {})
+            labels = pack.get('payroll_labels', {})
+            form_fields = pack.get('payroll_form_fields', {})
+
+            config = {
+                'country_code': setup.country_code,
+                'labels': labels,
+                'form_sections': defaults['form_sections'],
+            }
+
+            # Appliquer les overrides de visibilité/label par pays
+            for section_key, overrides in form_fields.items():
+                if section_key in config['form_sections']:
+                    section = config['form_sections'][section_key]
+                    for field_override in overrides:
+                        for field in section['fields']:
+                            if field['key'] == field_override.get('key'):
+                                field.update(field_override)
+                                break
+
+            return Response(config)
+    except Exception:
+        pass
+    return Response(defaults)
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
 def payroll_labels(request):
     """GET /api/payroll/labels/ — Labels dynamiques selon le pack actif."""
     defaults = {

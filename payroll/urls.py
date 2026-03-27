@@ -24,5 +24,6 @@ urlpatterns = [
     path('', include(router.urls)),
     # Labels dynamiques (pack-agnostique)Route du tableau de bord
     path('labels/', views.payroll_labels, name='labels'),
+    path('pack-config/', views.pack_config, name='pack-config'),
     path('dashboard/', views.payroll_dashboard, name='dashboard'),
 ]

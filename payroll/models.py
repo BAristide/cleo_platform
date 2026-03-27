@@ -287,6 +287,27 @@ class EmployeePayroll(models.Model):
         help_text=_('Ex: 173.33 pour 40h/semaine'),
     )
 
+    # Champs spécifiques par pays (v3.34.0 — EVO-PAIE-03)
+    # Visibilité contrôlée par /api/payroll/pack-config/ — jamais par un if country_code
+    cimr_number = models.CharField(
+        _('N° C.I.M.R'),
+        max_length=30,
+        blank=True,
+        help_text=_('Caisse Interprofessionnelle Marocaine de Retraites (Maroc)'),
+    )
+    health_insurance_number = models.CharField(
+        _('N° Assurance Maladie'),
+        max_length=30,
+        blank=True,
+        help_text=_('Numéro assurance maladie complémentaire (Maroc)'),
+    )
+    igr_parts = models.PositiveSmallIntegerField(
+        _('Parts IGR'),
+        null=True,
+        blank=True,
+        help_text=_("Nombre de parts pour le calcul fiscal (Côte d'Ivoire)"),
+    )
+
     # Métadonnées
     created_at = models.DateTimeField(_('Créé le'), auto_now_add=True)
     updated_at = models.DateTimeField(_('Modifié le'), auto_now=True)

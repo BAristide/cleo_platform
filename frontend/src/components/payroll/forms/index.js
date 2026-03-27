@@ -196,6 +196,7 @@ export const PayrollRunForm = () => {
 export const EmployeePayrollForm = () => {
   const { currencySymbol } = useCurrency();
   const payrollLabels = usePayrollLabels();
+  const [packConfig, setPackConfig] = React.useState(null);
   const [form] = Form.useForm();
   const navigate = useNavigate();
   const { id } = useParams();
@@ -215,6 +216,10 @@ export const EmployeePayrollForm = () => {
   };
 
   React.useEffect(() => {
+    axios.get('/api/payroll/pack-config/')
+      .then(r => setPackConfig(r.data))
+      .catch(() => {});
+
     axios.get('/api/hr/employees/')
       .then(r => setEmployees(r.data.results || []))
       .catch(() => message.error('Erreur lors du chargement des employés'));
@@ -387,12 +392,6 @@ export const EmployeePayrollForm = () => {
                 parser={v => v.replace(/[^\d.-]/g, '')} />
             </Form.Item>
           </Col>
-          <Col xs={24} md={8}>
-            <Form.Item name="monthly_hours" label="Horaire mensuel">
-              <InputNumber style={{ width: '100%' }} min={0} step={0.01}
-                addonAfter="h" placeholder="Ex: 173.33" />
-            </Form.Item>
-          </Col>
         </Row>
 
         {/* ── Section 2 : Infos RH (lecture seule) ────────── */}
@@ -471,35 +470,45 @@ export const EmployeePayrollForm = () => {
           </Col>
         </Row>
 
-        {/* ── Section 4 : Classification professionnelle ──── */}
-        {sectionTitle('Classification professionnelle')}
+        {/* ── Section 4 : Classification professionnelle (adaptatif) ──── */}
+        {sectionTitle(packConfig?.form_sections?.classification?.title || 'Classification professionnelle')}
         <Row gutter={16}>
-          <Col xs={24} md={8}>
-            <Form.Item name="professional_category" label="Catégorie professionnelle">
-              <Input placeholder="Ex: Cadre, Agent de maîtrise, P.18" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={8}>
-            <Form.Item name="coefficient" label="Coefficient">
-              <InputNumber style={{ width: '100%' }} min={0} step={1} />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={8}>
-            <Form.Item name="echelon" label="Échelon">
-              <Input placeholder="Ex: E1, E2" />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={8}>
-            <Form.Item name="indice" label="Indice">
-              <InputNumber style={{ width: '100%' }} min={0} step={1} />
-            </Form.Item>
-          </Col>
-          <Col xs={24} md={16}>
-            <Form.Item name="collective_agreement" label="Convention collective">
-              <Input placeholder="Ex: Convention Collective Interprofessionnelle" />
-            </Form.Item>
-          </Col>
+          {(packConfig?.form_sections?.classification?.fields || [
+            {key: 'professional_category', label: 'Catégorie professionnelle', placeholder: 'Ex: Cadre, Agent de maîtrise', type: 'text', visible: true},
+            {key: 'coefficient', label: 'Coefficient', type: 'number', visible: true},
+            {key: 'echelon', label: 'Échelon', placeholder: 'Ex: E1, E2', type: 'text', visible: true},
+            {key: 'indice', label: 'Indice', type: 'number', visible: true},
+            {key: 'collective_agreement', label: 'Convention collective', placeholder: 'Ex: Convention Collective Interprofessionnelle', type: 'text', visible: true},
+            {key: 'monthly_hours', label: 'Horaire mensuel', placeholder: '173.33', type: 'number', visible: true},
+          ]).filter(f => f.visible !== false).map(field => (
+            <Col xs={24} md={field.key === 'collective_agreement' ? 16 : 8} key={field.key}>
+              <Form.Item name={field.key} label={field.label}>
+                {field.type === 'number' ? (
+                  <InputNumber style={{ width: '100%' }} min={0} step={field.key === 'monthly_hours' ? 0.01 : 1}
+                    placeholder={field.placeholder || ''} />
+                ) : (
+                  <Input placeholder={field.placeholder || ''} />
+                )}
+              </Form.Item>
+            </Col>
+          ))}
         </Row>
+
+        {/* ── Section : Identifiants sociaux spécifiques pays ── */}
+        {packConfig?.form_sections?.social_ids?.fields?.some(f => f.visible) && (
+          <>
+            {sectionTitle(packConfig?.form_sections?.social_ids?.title || 'Identifiants sociaux')}
+            <Row gutter={16}>
+              {packConfig.form_sections.social_ids.fields.filter(f => f.visible).map(field => (
+                <Col xs={24} md={8} key={field.key}>
+                  <Form.Item name={field.key} label={field.label}>
+                    <Input placeholder={field.placeholder || ''} />
+                  </Form.Item>
+                </Col>
+              ))}
+            </Row>
+          </>
+        )}
 
         {/* ── Section 5 : Indemnités fixes ────────────────── */}
         {sectionTitle('Indemnités fixes')}

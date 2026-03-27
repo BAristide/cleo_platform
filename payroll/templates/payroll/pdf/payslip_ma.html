@@ -83,7 +83,7 @@
         <tr>
             <td class="label">Nom</td>
             <td colspan="2"><strong>{{ employee.last_name|upper }}</strong></td>
-            <td class="label" style="width: 10%;">Prenom</td>
+            <td class="label">Prénom</td>
             <td colspan="2"><strong>{{ employee.first_name }}</strong></td>
         </tr>
     </table>
@@ -95,16 +95,41 @@
         </tr>
     </table>
 
+    <!-- ══ DATES + IDENTIFIANTS SOCIAUX (style Attijari — 6 colonnes fixes) ══ -->
     <table class="info-table">
+        <colgroup>
+            <col style="width: 16%;">
+            <col style="width: 17%;">
+            <col style="width: 16%;">
+            <col style="width: 17%;">
+            <col style="width: 16%;">
+            <col style="width: 18%;">
+        </colgroup>
         <tr>
-            <td class="label" style="width: 14%;">Date Naissance</td>
-            <td style="width: 14%;">{% if employee.birth_date %}{{ employee.birth_date|date:"d/m/Y" }}{% endif %}</td>
-            <td class="label" style="width: 14%;">Date d'embauche</td>
-            <td style="width: 14%;">{{ employee.hire_date|date:"d/m/Y" }}</td>
-            <td class="label" style="width: 10%;">N° C.N.S.S</td>
-            <td style="width: 14%;">{{ payroll_info.cnss_number }}</td>
-            <td class="label" style="width: 14%;">Anc. Bancaire</td>
+            <td class="label">Date Naissance</td>
+            <td>{% if employee.birth_date %}{{ employee.birth_date|date:"d/m/Y" }}{% endif %}</td>
+            <td class="label">Date d'embauche</td>
+            <td>{{ employee.hire_date|date:"d/m/Y" }}</td>
+            <td class="label">N° C.N.S.S</td>
+            <td>{{ payroll_info.cnss_number }}</td>
+        </tr>
+        <tr>
+            <td class="label">Anc. Bancaire</td>
             <td>{{ seniority_display }}</td>
+            {% if cimr_number %}
+            <td class="label">N° C.I.M.R</td>
+            <td>{{ cimr_number }}</td>
+            {% else %}
+            <td></td>
+            <td></td>
+            {% endif %}
+            {% if health_insurance_number %}
+            <td class="label">N° Assur. Maladie</td>
+            <td>{{ health_insurance_number }}</td>
+            {% else %}
+            <td></td>
+            <td></td>
+            {% endif %}
         </tr>
     </table>
 
@@ -213,7 +238,7 @@
             <td style="width: 28%;">{{ payroll_info.bank_account }}</td>
             <td class="label" style="width: 15%;">Date de Valeur</td>
             <td style="width: 15%;">{{ generation_date|date:"d/m/Y" }}</td>
-            <td class="label" style="width: 10%;">Net a Payer :</td>
+            <td class="label" style="width: 10%;">Net à Payer :</td>
             <td class="net-cell">{{ payslip.net_salary|fmt }}</td>
         </tr>
     </table>
@@ -223,7 +248,7 @@
         <thead>
             <tr>
                 <th style="width: 10%;"></th>
-                <th>NJ.Paye</th>
+                <th>NJ.Payé</th>
                 <th>Brut</th>
                 <th>{{ label_social }}</th>
                 <th>{{ label_health }}</th>
@@ -270,7 +295,7 @@
         </tbody>
     </table>
 
-    <!-- ══ CHARGES PATRONALES (detail) ══ -->
+    <!-- ══ CHARGES PATRONALES (détail) ══ -->
     {% if employer_lines %}
     <table class="cumuls-table" style="width: 70%;">
         <thead>
@@ -302,7 +327,7 @@
 
     <div class="footer">
         <p>{{ company.name }} — {{ company.rc }}{% if company.tax_id %} | IF : {{ company.tax_id }}{% endif %}{% if company.ice %} | ICE : {{ company.ice }}{% endif %}</p>
-        <p>Généré par Cleo ERP le {{ generation_date|date:"d/m/Y a H:i" }}</p>
+        <p>Généré par Cleo ERP le {{ generation_date|date:"d/m/Y à H:i" }}</p>
     </div>
 </body>
 </html>

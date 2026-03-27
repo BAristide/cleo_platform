@@ -20,7 +20,7 @@
         .info-grid .label { font-weight: bold; background: #f5f5f5; width: 13%; }
         .info-grid .value { width: 20%; }
 
-        /* Company + Employée block */
+        /* Company + Employee block */
         .identity-block { border: 1px solid #000; margin-bottom: 4px; overflow: hidden; padding: 4px 6px; }
         .identity-block .company { float: left; width: 38%; }
         .identity-block .employee { float: right; width: 58%; border-left: 1px solid #ccc; padding-left: 8px; }
@@ -63,7 +63,7 @@
         </div>
     </div>
 
-    <!-- ══ GRILLE INFORMATIONS ══ -->
+    <!-- ══ GRILLE INFORMATIONS — STYLE GOS ══ -->
     <table class="info-grid">
         <tr>
             <td class="label">Matricule</td>
@@ -76,7 +76,6 @@
             <td class="value">{{ payroll_info.cnss_number }}</td>
         </tr>
         <tr>
-            {% if classification_visible %}
             <td class="label">Catégorie</td>
             <td class="value">{{ payroll_info.professional_category }}</td>
             <td class="label">Emploi occupé</td>
@@ -85,25 +84,20 @@
             <td class="value">{% if payroll_info.monthly_hours %}{{ payroll_info.monthly_hours }}{% endif %}</td>
             <td class="label">Département</td>
             <td class="value">{% if employee.department %}{{ employee.department.name }}{% endif %}</td>
-            {% else %}
-            <td class="label">Emploi</td>
-            <td class="value">{% if employee.job_title %}{{ employee.job_title.name }}{% endif %}</td>
-            <td class="label">Département</td>
-            <td class="value" colspan="2">{% if employee.department %}{{ employee.department.name }}{% endif %}</td>
-            <td class="label">Contrat</td>
-            <td class="value">{{ contract_type_display }}</td>
-            {% endif %}
         </tr>
-        {% if classification_visible %}
         <tr>
             <td class="label">Convention</td>
             <td class="value" colspan="3">{{ payroll_info.collective_agreement }}</td>
+            {% if igr_parts %}
+            <td class="label">Parts IGR</td>
+            <td class="value">{{ igr_parts }}</td>
+            {% else %}
             <td class="label">Coefficient</td>
             <td class="value">{% if payroll_info.coefficient %}{{ payroll_info.coefficient }}{% endif %}</td>
+            {% endif %}
             <td class="label">Echelon</td>
             <td class="value">{{ payroll_info.echelon }}</td>
         </tr>
-        {% endif %}
     </table>
 
     <!-- ══ IDENTITE SOCIETE / EMPLOYE ══ -->
@@ -151,7 +145,7 @@
             <!-- ── Gains ── -->
             {% for line in gain_lines %}
             <tr>
-                <td>{{ forloop.counter }}0</td>
+                <td>{{ line.display_order }}</td>
                 <td>{{ line.component.name }}</td>
                 <td class="r">{% if line.quantity %}{{ line.quantity }}{% endif %}</td>
                 <td class="r">{% if line.base_amount %}{{ line.base_amount|fmt }}{% endif %}</td>
@@ -177,10 +171,10 @@
                 <td></td>
             </tr>
 
-            <!-- ── Cotisations salariales + patronales ── -->
+            <!-- ── Cotisations salariales ── -->
             {% for line in deduction_lines %}
             <tr>
-                <td>4{{ forloop.counter0 }}0</td>
+                <td>{{ line.display_order }}</td>
                 <td>{{ line.component.name }}</td>
                 <td class="r"></td>
                 <td class="r">{% if line.base_amount %}{{ line.base_amount|fmt }}{% endif %}</td>
@@ -193,9 +187,10 @@
             </tr>
             {% endfor %}
 
+            <!-- ── Cotisations patronales ── -->
             {% for line in employer_lines %}
             <tr>
-                <td>4{{ forloop.counter }}0</td>
+                <td>{{ line.display_order }}</td>
                 <td>{{ line.component.name }}</td>
                 <td class="r"></td>
                 <td class="r">{% if line.base_amount %}{{ line.base_amount|fmt }}{% endif %}</td>
@@ -293,8 +288,8 @@
     {% endif %}
 
     <div class="footer">
-        <p>Pour vous aider a faire valoir vos droits, conservez ce bulletin de paie sans limitation de durée.</p>
-        <p>Généré par Cleo ERP le {{ generation_date|date:"d/m/Y a H:i" }} — {{ payslip.number }}</p>
+        <p>Pour vous aider à faire valoir vos droits, conservez ce bulletin de paie sans limitation de durée.</p>
+        <p>Généré par Cleo ERP le {{ generation_date|date:"d/m/Y à H:i" }} — {{ payslip.number }}</p>
     </div>
 </body>
 </html>

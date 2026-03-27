@@ -36,6 +36,10 @@ class PayrollPDFGenerator:
             'health': 'Cotisation complémentaire',
             'tax': 'Impôt sur le revenu',
             'social_number': 'N° immatriculation sociale',
+            'social_number_short': 'N° immatriculation',
+            'social_organism': 'Organisme social',
+            'retirement_label': 'Retraite',
+            'tax_short': 'Impôt',
         }
         try:
             from core.models import CompanySetup
@@ -255,6 +259,16 @@ class PayrollPDFGenerator:
             'label_tax': payroll_labels.get('tax', 'Impôt sur le revenu'),
             'label_social_number': payroll_labels.get(
                 'social_number', 'N° immatriculation sociale'
+            ),
+            'label_social_organism': payroll_labels.get(
+                'social_organism', 'Organisme social'
+            ),
+            'label_retirement': payroll_labels.get('retirement_label', 'Retraite'),
+            'label_tax_short': payroll_labels.get('tax_short', 'Impôt'),
+            'igr_parts': getattr(payroll_info, 'igr_parts', None),
+            'cimr_number': getattr(payroll_info, 'cimr_number', ''),
+            'health_insurance_number': getattr(
+                payroll_info, 'health_insurance_number', ''
             ),
             'leave_allocations': leave_allocations,
             'classification_visible': classification_visible,

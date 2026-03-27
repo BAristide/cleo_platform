@@ -1,6 +1,6 @@
 // src/components/users/UserList.js
 import React, { useState, useEffect } from 'react';
-import { Layout, Table, Card, Button, Input, Tag, Avatar, Space, Typography, message, Modal, Form, Popconfirm } from 'antd';
+import { Layout, Table, Card, Button, Input, Tag, Avatar, Space, Typography, message, Modal, Form, Popconfirm, Tooltip } from 'antd';
 import {
   PlusOutlined,
   SearchOutlined,
@@ -11,7 +11,7 @@ import {
   CheckCircleOutlined,
   ArrowLeftOutlined,
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { handleApiError } from '../../utils/apiUtils';
 import axios from '../../utils/axiosConfig';
 import UserMenu from '../common/UserMenu';
@@ -49,10 +49,38 @@ const UserList = () => {
   const [resetPasswordModal, setResetPasswordModal] = useState({ visible: false, user: null });
   const [resetForm] = Form.useForm();
   const navigate = useNavigate();
+  const [allRoles, setAllRoles] = useState([]);
 
   useEffect(() => {
     fetchUsers();
+    fetchRoles();
   }, []);
+
+  const fetchRoles = async () => {
+    try {
+      const res = await axios.get('/api/users/roles/?page_size=50');
+      const data = res.data.results || res.data || [];
+      setAllRoles(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Erreur chargement rôles:', error);
+    }
+  };
+
+  // Labels modules pour les tooltips
+  const MODULE_LABELS = {
+    core: 'Core', dashboard: 'Tableau de bord', crm: 'CRM',
+    sales: 'Ventes', accounting: 'Comptabilité', hr: 'Ressources Humaines',
+    employee: 'Espace Employé', payroll: 'Paie', recruitment: 'Recrutement',
+    inventory: 'Stocks', purchasing: 'Achats', notifications: 'Notifications',
+  };
+
+  const getModulesForRole = (roleName) => {
+    const role = allRoles.find(r => r.name === roleName);
+    if (!role || !role.module_permissions) return [];
+    return role.module_permissions
+      .filter(p => p.access_level !== 'no_access')
+      .map(p => MODULE_LABELS[p.module] || p.module);
+  };
 
   const fetchUsers = async (search = '') => {
     setLoading(true);
@@ -128,7 +156,17 @@ const UserList = () => {
       key: 'groups',
       render: (groups) =>
         groups && groups.length > 0
-          ? groups.map((g) => <Tag color="purple" key={g}>{g}</Tag>)
+          ? groups.map((g) => {
+              const modules = getModulesForRole(g);
+              const tooltipContent = modules.length > 0
+                ? `Modules : ${modules.join(', ')}`
+                : 'Aucun module accessible';
+              return (
+                <Tooltip title={tooltipContent} key={g}>
+                  <Tag color="purple" style={{ cursor: 'pointer' }}>{g}</Tag>
+                </Tooltip>
+              );
+            })
           : <Text type="secondary">—</Text>,
     },
     {
@@ -144,7 +182,9 @@ const UserList = () => {
       key: 'employee',
       render: (_, record) =>
         record.employee_detail ? (
-          <Text>{record.employee_detail.full_name}</Text>
+          <Link to={`/hr/employees/${record.employee_detail.id}`}>
+            {record.employee_detail.full_name}
+          </Link>
         ) : (
           <Text type="secondary">—</Text>
         ),
@@ -212,22 +252,24 @@ const UserList = () => {
               style={{ width: 350 }}
               prefix={<SearchOutlined />}
             />
-            <Button
-              type="primary"
-              icon={<PlusOutlined />}
-              onClick={() => {
-                setEditingUser(null);
-                setFormVisible(true);
-              }}
-            >
-            <Button
-              icon={<SafetyCertificateOutlined />}
-              onClick={() => navigate("/users/roles")}
-            >
-              Matrice des rôles
-            </Button>
-              Nouvel utilisateur
-            </Button>
+            <Space>
+              <Button
+                icon={<SafetyCertificateOutlined />}
+                onClick={() => navigate("/users/roles")}
+              >
+                Matrice des rôles
+              </Button>
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setEditingUser(null);
+                  setFormVisible(true);
+                }}
+              >
+                Nouvel utilisateur
+              </Button>
+            </Space>
           </div>
           <Table
             columns={columns}

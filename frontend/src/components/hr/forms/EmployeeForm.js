@@ -9,7 +9,7 @@ import axios from '../../../utils/axiosConfig';
 import { extractResultsFromResponse, handleApiError } from '../../../utils/apiUtils';
 import dayjs from 'dayjs';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
@@ -310,22 +310,30 @@ const EmployeeForm = () => {
           </Col>
         </Row>
 
-        <Title level={4} style={{ marginTop: 24 }}>Statut et rôles</Title>
+        <Title level={4} style={{ marginTop: 24 }}>Statut</Title>
         <Row gutter={16}>
           <Col xs={24} sm={8}>
             <Form.Item name="is_active" label="Actif" valuePropName="checked">
               <Switch />
             </Form.Item>
           </Col>
-          <Col xs={24} sm={8}>
-            <Form.Item name="is_hr" label="Rôle RH" valuePropName="checked"
-              tooltip="Peut approuver les demandes RH">
+        </Row>
+
+        <Title level={4} style={{ marginTop: 24 }}>Habilitations workflow</Title>
+        <Text type="secondary" style={{ display: 'block', marginBottom: 16 }}>
+          Ces habilitations déterminent le rôle de cet employé dans les chaînes d'approbation
+          (congés, notes de frais, attestations, missions). Elles ne contrôlent pas l'accès aux modules.
+        </Text>
+        <Row gutter={16}>
+          <Col xs={24} sm={12}>
+            <Form.Item name="is_hr" label="Approbateur RH" valuePropName="checked"
+              tooltip="Habilité à approuver les demandes de congés (étape 2), attestations et doléances">
               <Switch />
             </Form.Item>
           </Col>
-          <Col xs={24} sm={8}>
-            <Form.Item name="is_finance" label="Rôle Finance" valuePropName="checked"
-              tooltip="Peut approuver les demandes financières">
+          <Col xs={24} sm={12}>
+            <Form.Item name="is_finance" label="Approbateur Finance" valuePropName="checked"
+              tooltip="Habilité à approuver les notes de frais (étape 2) et les missions (étape 3)">
               <Switch />
             </Form.Item>
           </Col>

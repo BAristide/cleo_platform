@@ -32,10 +32,13 @@ import {
   BookOutlined,
   BankOutlined,
   IdcardOutlined,
-  ArrowLeftOutlined
+  ArrowLeftOutlined,
+  KeyOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse } from '../../utils/apiUtils';
+import { useModuleAccess } from '../common/PermissionRoute';
+import EmployeeAccessTab from './EmployeeAccessTab';
 import { useCurrency } from '../../context/CurrencyContext';
 
 const { Title, Text } = Typography;
@@ -53,6 +56,7 @@ const EmployeeDetail = () => {
   const [skillGaps, setSkillGaps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [subordinates, setSubordinates] = useState([]);
+  const { hasAccess } = useModuleAccess();
 
   useEffect(() => {
     const fetchEmployeeData = async () => {
@@ -368,8 +372,8 @@ const EmployeeDetail = () => {
                   <Tag color="green">Actif</Tag> :
                   <Tag color="red">Inactif</Tag>
                 }
-                {employee.is_hr && <Tag color="blue">RH</Tag>}
-                {employee.is_finance && <Tag color="green">Finance</Tag>}
+                {employee.is_hr && <Tag color="blue">Approbateur RH</Tag>}
+                {employee.is_finance && <Tag color="green">Approbateur Finance</Tag>}
                 {(employee.subordinates && employee.subordinates.length > 0) &&
                   <Tag color="purple">Manager</Tag>
                 }
@@ -592,6 +596,17 @@ const EmployeeDetail = () => {
                     columns={subordinatesColumns}
                     rowKey="id"
                     pagination={{ pageSize: 10 }}
+                  />
+                </TabPane>
+              )}
+              {hasAccess('core', 'admin') && (
+                <TabPane
+                  tab={<span><KeyOutlined /> Accès modules</span>}
+                  key="access"
+                >
+                  <EmployeeAccessTab
+                    employeeId={id}
+                    userId={employee.user ? employee.user.id : null}
                   />
                 </TabPane>
               )}

@@ -243,7 +243,6 @@ class EmployeePayrollViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Chercher un bulletin existant pour cet employé dans cette période
         payslip = PaySlip.objects.filter(
             payroll_run__period_id=period_id,
             employee=employee,
@@ -328,7 +327,6 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
 
         logger = logging.getLogger(__name__)
 
-        # created_by est une FK vers Employee, pas User
         try:
             employee = Employee.objects.get(user=self.request.user)
         except Employee.DoesNotExist:
@@ -336,7 +334,6 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
 
         payroll_run = serializer.save(created_by=employee)
 
-        # Auto-génération des bulletins à la création
         try:
             count = self._generate_payslips_for_run(payroll_run)
             logger.info(
@@ -388,8 +385,6 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
             except EmployeePayroll.DoesNotExist:
                 continue
 
-            # Vérifier si un bulletin existe déjà pour cet employé sur cette période
-            # (dans n'importe quel run) — empêche le double paiement
             if PaySlip.objects.filter(
                 payroll_run__period=period, employee=employee
             ).exists():
@@ -475,10 +470,8 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Récupérer tous les bulletins du lancement
         payslips = PaySlip.objects.filter(payroll_run=payroll_run, status='draft')
 
-        # Calculer chaque bulletin
         calculated_count = 0
         errors = []
 
@@ -495,7 +488,6 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
                     }
                 )
 
-        # Mettre à jour le statut du lancement si tous les bulletins sont calculés
         if not PaySlip.objects.filter(payroll_run=payroll_run, status='draft').exists():
             payroll_run.status = 'calculated'
             payroll_run.calculated_date = timezone.now()
@@ -522,7 +514,6 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Vérifier que tous les bulletins sont calculés
         if (
             PaySlip.objects.filter(payroll_run=payroll_run)
             .exclude(status='calculated')
@@ -533,7 +524,6 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Mettre à jour le statut du lancement
         payroll_run.status = 'validated'
         payroll_run.validated_date = timezone.now()
         try:
@@ -542,10 +532,8 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
             payroll_run.validated_by = None
         payroll_run.save(update_fields=['status', 'validated_date', 'validated_by'])
 
-        # Mettre à jour les bulletins
         PaySlip.objects.filter(payroll_run=payroll_run).update(status='validated')
 
-        # Générer l'écriture comptable automatiquement
         accounting_error = None
         try:
             from accounting.services.journal_entry_service import JournalEntryService
@@ -579,12 +567,10 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
 
         payment_reference = request.data.get('payment_reference', '')
 
-        # Mettre à jour le statut du lancement
         payroll_run.status = 'paid'
         payroll_run.paid_date = timezone.now()
         payroll_run.save(update_fields=['status', 'paid_date'])
 
-        # Mettre à jour les bulletins
         PaySlip.objects.filter(payroll_run=payroll_run).update(
             status='paid',
             is_paid=True,
@@ -646,7 +632,6 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
         ws = wb.active
         ws.title = 'Recapitulatif paie'
 
-        # En-tete
         header_font = Font(bold=True, color='FFFFFF', size=10)
         header_fill = PatternFill(
             start_color='1A1A2E', end_color='1A1A2E', fill_type='solid'
@@ -669,7 +654,6 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
             cell.fill = header_fill
             cell.alignment = Alignment(horizontal='center')
 
-        # Donnees
         num_fmt = '#,##0.00'
         for row_idx, ps in enumerate(payslips_qs, 2):
             ws.cell(row=row_idx, column=1, value=ps.employee.employee_id)
@@ -691,7 +675,6 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
                 cell = ws.cell(row=row_idx, column=col, value=val)
                 cell.number_format = num_fmt
 
-        # Totaux
         total_row = payslips_qs.count() + 2
         ws.cell(row=total_row, column=1, value='TOTAL').font = Font(bold=True)
         for col in range(5, 11):
@@ -704,7 +687,6 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
             cell.font = Font(bold=True)
             cell.number_format = num_fmt
 
-        # Largeurs colonnes
         for col, w in [
             (1, 12),
             (2, 18),
@@ -719,7 +701,6 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
         ]:
             ws.column_dimensions[get_column_letter(col)].width = w
 
-        # Reponse HTTP
         output = io.BytesIO()
         wb.save(output)
         output.seek(0)
@@ -759,6 +740,30 @@ class PaySlipViewSet(viewsets.ModelViewSet):
     ]
     ordering = ['-payroll_run__period__start_date', 'employee__last_name']
 
+    def get_permissions(self):
+        """Consultation et téléchargement PDF accessibles à tout employé authentifié."""
+        if self.action in ('list', 'retrieve', 'download_pdf'):
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
+
+    def get_queryset(self):
+        """Filtre : employé voit ses bulletins, RH/Finance/superuser voient tout."""
+        user = self.request.user
+        qs = PaySlip.objects.select_related(
+            'payroll_run', 'payroll_run__period', 'employee'
+        )
+        if user.is_superuser:
+            return qs
+        try:
+            from hr.models import Employee
+
+            emp = Employee.objects.get(user=user)
+            if emp.is_hr or emp.is_finance:
+                return qs
+            return qs.filter(employee=emp)
+        except Exception:
+            return qs
+
     @action(detail=True, methods=['post'])
     def calculate(self, request, pk=None):
         """Calcule ou recalcule un bulletin de paie."""
@@ -795,7 +800,6 @@ class PaySlipViewSet(viewsets.ModelViewSet):
         payslip = self.get_object()
 
         if not payslip.pdf_file:
-            # Générer le PDF s'il n'existe pas
             try:
                 pdf_path = PayrollPDFGenerator.generate_payslip_pdf(payslip)
             except Exception as e:
@@ -969,7 +973,6 @@ def pack_config(request):
                 'form_sections': defaults['form_sections'],
             }
 
-            # Appliquer les overrides de visibilité/label par pays
             for section_key, overrides in form_fields.items():
                 if section_key in config['form_sections']:
                     section = config['form_sections'][section_key]
@@ -1010,7 +1013,6 @@ def payroll_labels(request):
                     'payroll_labels', defaults
                 )
             )
-            # Clés dérivées automatiques
             labels.setdefault(
                 'social_employer',
                 f'{labels.get("social", "Cotisations sociales")} employeur',
@@ -1019,7 +1021,6 @@ def payroll_labels(request):
                 'health_employer',
                 f'{labels.get("health", "Cotisation complémentaire")} employeur',
             )
-            # Fallback sur les valeurs par défaut pour les clés manquantes
             for key, default_val in defaults.items():
                 labels.setdefault(key, default_val)
             return Response(labels)
@@ -1035,24 +1036,20 @@ def payroll_labels(request):
 @module_permission_required('payroll')
 def payroll_dashboard(request):
     """Tableau de bord du module Paie."""
-    # Période en cours
     current_period = (
         PayrollPeriod.objects.filter(is_closed=False).order_by('-start_date').first()
     )
 
-    # Statistiques sur les lancements de paie
     payroll_runs = PayrollRun.objects.all()
     runs_by_status = (
         payroll_runs.values('status').annotate(count=Count('id')).order_by('status')
     )
 
-    # Statistiques sur les bulletins
     payslips = PaySlip.objects.all()
     payslips_by_status = (
         payslips.values('status').annotate(count=Count('id')).order_by('status')
     )
 
-    # Statistiques sur les acomptes
     advances = AdvanceSalary.objects.all()
     advances_by_period = (
         advances.values('period__name')
@@ -1060,7 +1057,6 @@ def payroll_dashboard(request):
         .order_by('-period__start_date')[:6]
     )
 
-    # Période actuelle
     if current_period:
         current_period_data = {
             'id': current_period.id,
@@ -1087,15 +1083,12 @@ def payroll_dashboard(request):
     else:
         current_period_data = None
 
-    # Récupérer les derniers bulletins
     recent_payslips = PaySlip.objects.all().order_by('-created_at')[:10]
     recent_payslips_data = PaySlipSerializer(recent_payslips, many=True).data
 
-    # Récupérer les derniers acomptes
     recent_advances = AdvanceSalary.objects.all().order_by('-created_at')[:10]
     recent_advances_data = AdvanceSalarySerializer(recent_advances, many=True).data
 
-    # Montants par département pour le mois en cours
     if current_period:
         department_stats = (
             PaySlip.objects.filter(payroll_run__period=current_period)

@@ -131,6 +131,12 @@ class DepartmentViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name', 'code']
     ordering = ['name']
 
+    def get_permissions(self):
+        """Consultation des départements accessible à tout employé authentifié."""
+        if self.action in ('list', 'retrieve'):
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
+
     @action(detail=True, methods=['get'])
     def employees(self, request, pk=None):
         """Récupérer tous les employés d'un département."""
@@ -204,6 +210,18 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         'job_title__name',
     ]
     ordering = ['last_name', 'first_name']
+
+    def get_permissions(self):
+        """Actions self-service accessibles à tout employé authentifié."""
+        if self.action in (
+            'me',
+            'missions',
+            'availabilities',
+            'training_plans',
+            'subordinates',
+        ):
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
 
     def get_serializer_class(self):
         if self.action in ('retrieve', 'create', 'update', 'partial_update'):
@@ -1163,6 +1181,12 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
     search_fields = ['title', 'content']
     ordering = ['-is_pinned', '-created_at']
 
+    def get_permissions(self):
+        """Consultation des annonces accessible à tout employé authentifié."""
+        if self.action in ('list', 'retrieve'):
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
+
     def get_queryset(self):
         """Filtre les annonces selon l'audience et l'expiration."""
         from django.utils import timezone
@@ -1385,6 +1409,12 @@ class RewardViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, HasModulePermission]
     module_name = 'hr'
 
+    def get_permissions(self):
+        """Consultation du tableau des récompenses accessible à tout employé authentifié."""
+        if self.action in ('board',):
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
+
     def get_queryset(self):
         if self.action == 'board':
             return Reward.objects.filter(is_public=True)
@@ -1529,6 +1559,12 @@ class LeaveTypeViewSet(viewsets.ModelViewSet):
     module_name = 'hr'
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'code']
+
+    def get_permissions(self):
+        """Consultation des types de congés accessible à tout employé authentifié."""
+        if self.action in ('list', 'retrieve'):
+            return [permissions.IsAuthenticated()]
+        return [permissions.IsAuthenticated(), HasModulePermission()]
 
 
 class LeaveAllocationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -1926,7 +1962,6 @@ class ExpenseReportViewSet(viewsets.ModelViewSet):
         report.finance_notes = request.data.get('notes', '')
         report.status = 'approved_finance'
         report.save(update_fields=['approved_by_finance', 'finance_notes', 'status'])
-        return Response({'success': True, 'message': 'Note approuvée par la Finance.'})
 
         # Générer l'écriture comptable (non-bloquant)
         accounting_message = ''
@@ -2004,14 +2039,12 @@ class ExpenseReportViewSet(viewsets.ModelViewSet):
                 status=http_status.HTTP_400_BAD_REQUEST,
             )
 
-        # Générer le PDF si absent
         if not report.pdf_file:
             report.pdf_file = PDFGenerator.generate_expense_report_pdf(report)
             report.save(update_fields=['pdf_file'])
 
         pdf_path = os.path.join(settings.MEDIA_ROOT, report.pdf_file)
         if not os.path.exists(pdf_path):
-            # Regénérer si le fichier a disparu
             report.pdf_file = PDFGenerator.generate_expense_report_pdf(report)
             report.save(update_fields=['pdf_file'])
             pdf_path = os.path.join(settings.MEDIA_ROOT, report.pdf_file)

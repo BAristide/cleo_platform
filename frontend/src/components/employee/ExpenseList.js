@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Table, Tag, Button, Space, Select, Row, Col,
-  Typography, Modal, Input, message, Tabs,
+  Typography, Modal, Input, message, Tabs, Switch,
 } from 'antd';
 import { PlusOutlined, CheckOutlined, CloseOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +23,8 @@ const STATUS_CONFIG = {
   cancelled:        { label: 'Annulée',            color: 'default' },
 };
 
+const ACTIVE_STATUSES = ['draft', 'submitted', 'approved_manager', 'approved_finance'];
+
 const ExpenseList = () => {
   const navigate = useNavigate();
   const [reports, setReports] = useState([]);
@@ -32,6 +34,7 @@ const ExpenseList = () => {
   const [employeeInfo, setEmployeeInfo] = useState(null);
   const [actionModal, setActionModal] = useState({ open: false, action: null, record: null });
   const [notes, setNotes] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
 
   const isManager = (employeeInfo?.subordinates?.length || 0) > 0;
   const isFinance = employeeInfo?.is_finance;
@@ -40,7 +43,11 @@ const ExpenseList = () => {
     setLoading(true);
     try {
       const params = {};
-      if (statusVal) params.status = statusVal;
+      if (statusVal) {
+        params.status = statusVal;
+      } else if (!showHistory) {
+        params.status__in = ACTIVE_STATUSES.join(',');
+      }
       const resp = await axios.get('/api/hr/expense-reports/', { params });
       setReports(extractResultsFromResponse(resp));
     } catch {
@@ -48,7 +55,7 @@ const ExpenseList = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showHistory]);
 
   const fetchPending = useCallback(async () => {
     try {
@@ -174,6 +181,12 @@ const ExpenseList = () => {
         <Col><Title level={3} style={{ margin: 0 }}>Notes de frais</Title></Col>
         <Col>
           <Space>
+            <Switch
+              checked={showHistory}
+              onChange={setShowHistory}
+              checkedChildren="Historique"
+              unCheckedChildren="Actives"
+            />
             <Select placeholder="Filtrer par statut" allowClear style={{ width: 220 }}
               value={statusFilter || undefined} onChange={v => setStatusFilter(v || '')}>
               {Object.entries(STATUS_CONFIG).map(([k, v]) => (<Option key={k} value={k}>{v.label}</Option>))}

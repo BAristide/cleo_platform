@@ -16,6 +16,9 @@ import ComplaintForm from './ComplaintForm';
 import PaySlipList from './PaySlipList';
 import AnnouncementFeed from './AnnouncementFeed';
 import RewardBoard from './RewardBoard';
+import TrainingRequestList from './TrainingRequestList';
+import TrainingRequestForm from './TrainingRequestForm';
+import ApprovalDashboard from '../common/ApprovalDashboard';
 
 const EmployeeRoutes = () => {
   return (
@@ -35,6 +38,10 @@ const EmployeeRoutes = () => {
         <Route path="/payslips" element={<PaySlipList />} />
         <Route path="/announcements" element={<AnnouncementFeed />} />
         <Route path="/rewards" element={<RewardBoard />} />
+        <Route path="/training" element={<TrainingRequestList />} />
+        <Route path="/training/new" element={<TrainingRequestForm />} />
+        <Route path="/training/:id/edit" element={<TrainingRequestForm />} />
+        <Route path="/approvals" element={<ApprovalDashboard />} />
         <Route path="*" element={<Navigate to="/my-space" replace />} />
       </Routes>
     </Layout>

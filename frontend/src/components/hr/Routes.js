@@ -53,6 +53,7 @@ import PublicHolidayList from './PublicHolidayList';
 // Notes de frais — EVO-10
 import ExpenseList from './ExpenseList';
 import ExpenseReportForm from './forms/ExpenseReportForm';
+import ApprovalDashboard from '../common/ApprovalDashboard';
 
 const HRRoutes = () => {
   return (
@@ -118,6 +119,9 @@ const HRRoutes = () => {
         {/* Récompenses */}
         <Route path="/rewards" element={<RewardBoard />} />
         <Route path="/rewards/new" element={<RewardForm />} />
+
+        {/* Approbations */}
+        <Route path="/approvals" element={<ApprovalDashboard />} />
 
         {/* Congés — EVO-09 / EVO-11 */}
         <Route path="/leaves" element={<LeaveList />} />

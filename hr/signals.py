@@ -11,11 +11,9 @@ from .models import (
     Employee,
     EmployeeSkill,
     Mission,
-    TrainingPlan,
     TrainingPlanItem,
     TrainingSkill,
 )
-from .services.email_service import EmailService
 
 logger = logging.getLogger(__name__)
 
@@ -39,108 +37,6 @@ def mission_pre_save(sender, instance, **kwargs):
                     instance.status = 'completed'
         except Mission.DoesNotExist:
             pass
-
-
-@receiver(post_save, sender=Mission)
-def mission_post_save(sender, instance, created, **kwargs):
-    """
-    Signal déclenché après la sauvegarde d'une mission.
-    Envoie des notifications selon le statut de la mission.
-    """
-    # Si c'est une création, pas besoin d'envoyer des notifications
-    if created:
-        return
-
-    # Récupérer les champs modifiés
-    if (
-        hasattr(instance, 'get_dirty_fields')
-        and 'status' in instance.get_dirty_fields()
-    ):
-        old_status = instance.get_dirty_fields()['status']
-
-        # Si la mission vient d'être soumise, notifier le manager et les RH
-        if old_status == 'draft' and instance.status == 'submitted':
-            EmailService.send_mission_notification(
-                instance, to_employee=True, to_manager=True, to_hr=True
-            )
-
-        # Si la mission vient d'être approuvée par le manager, notifier les RH
-        elif old_status == 'submitted' and instance.status == 'approved_manager':
-            EmailService.send_mission_notification(
-                instance, to_employee=True, to_hr=True
-            )
-
-        # Si la mission vient d'être approuvée par les RH, notifier l'employé et le manager
-        elif old_status == 'approved_manager' and instance.status == 'approved_hr':
-            EmailService.send_mission_notification(
-                instance, to_employee=True, to_manager=True
-            )
-
-        # Si la mission vient d'être approuvée par les finances, notifier l'employé
-        elif old_status == 'approved_hr' and instance.status == 'approved_finance':
-            EmailService.send_mission_notification(
-                instance, to_employee=True, to_manager=True
-            )
-
-        # Si la mission vient d'être terminée (rapport soumis), notifier toutes les parties
-        elif old_status == 'approved_finance' and instance.status == 'completed':
-            EmailService.send_mission_notification(
-                instance, to_employee=True, to_manager=True, to_hr=True
-            )
-
-        # Si la mission vient d'être rejetée, notifier l'employé et le demandeur
-        elif instance.status == 'rejected':
-            EmailService.send_mission_notification(
-                instance, to_employee=True, to_manager=True
-            )
-
-
-@receiver(post_save, sender=TrainingPlan)
-def training_plan_post_save(sender, instance, created, **kwargs):
-    """
-    Signal déclenché après la sauvegarde d'un plan de formation.
-    Envoie des notifications selon le statut du plan.
-    """
-    # Si c'est une création, pas besoin d'envoyer des notifications
-    if created:
-        return
-
-    # Récupérer les champs modifiés
-    if (
-        hasattr(instance, 'get_dirty_fields')
-        and 'status' in instance.get_dirty_fields()
-    ):
-        old_status = instance.get_dirty_fields()['status']
-
-        # Si le plan vient d'être soumis, notifier le manager et les RH
-        if old_status == 'draft' and instance.status == 'submitted':
-            EmailService.send_training_plan_notification(
-                instance, to_employee=True, to_manager=True, to_hr=True
-            )
-
-        # Si le plan vient d'être approuvé par le manager, notifier les RH
-        elif old_status == 'submitted' and instance.status == 'approved_manager':
-            EmailService.send_training_plan_notification(
-                instance, to_employee=True, to_hr=True
-            )
-
-        # Si le plan vient d'être approuvé par les RH, notifier les finances
-        elif old_status == 'approved_manager' and instance.status == 'approved_hr':
-            EmailService.send_training_plan_notification(
-                instance, to_employee=True, to_manager=True
-            )
-
-        # Si le plan vient d'être complètement approuvé, notifier l'employé
-        elif old_status == 'approved_hr' and instance.status == 'approved_finance':
-            EmailService.send_training_plan_notification(
-                instance, to_employee=True, to_manager=True, to_hr=True
-            )
-
-        # Si le plan vient d'être rejeté, notifier l'employé
-        elif instance.status == 'rejected':
-            EmailService.send_training_plan_notification(
-                instance, to_employee=True, to_manager=True, to_hr=True
-            )
 
 
 @receiver(post_save, sender=Employee)

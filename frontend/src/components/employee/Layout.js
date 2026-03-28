@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import {
   DashboardOutlined, CalendarOutlined, WalletOutlined,
   SafetyCertificateOutlined, ExclamationCircleOutlined, TrophyOutlined,
-  NotificationOutlined, FileTextOutlined,
+  NotificationOutlined, FileTextOutlined, BookOutlined, CheckSquareOutlined,
 } from '@ant-design/icons';
 import ModuleLayout from '../common/ModuleLayout';
 
@@ -34,6 +34,20 @@ const menuItems = [
   },
   {
     type: 'group',
+    label: 'Développement',
+    children: [
+      { key: 'training', icon: <BookOutlined />, label: <Link to="/my-space/training">Formations</Link> },
+    ],
+  },
+  {
+    type: 'group',
+    label: 'Approbations',
+    children: [
+      { key: 'approvals', icon: <CheckSquareOutlined />, label: <Link to="/my-space/approvals">Mes approbations</Link> },
+    ],
+  },
+  {
+    type: 'group',
     label: 'Mes documents',
     children: [
       { key: 'payslips', icon: <FileTextOutlined />, label: <Link to="/my-space/payslips">Bulletins de paie</Link> },
@@ -55,6 +69,8 @@ const breadcrumbMap = {
   expenses: 'Notes de frais',
   certificates: 'Attestations',
   complaints: 'Doléances',
+  training: 'Formations',
+  approvals: 'Approbations',
   payslips: 'Bulletins de paie',
   announcements: 'Annonces',
   rewards: 'Récompenses',

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Layout, Card, Switch, Typography, Spin, message, Button, Descriptions } from 'antd';
-import { HomeOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { HomeOutlined, ArrowLeftOutlined, SettingOutlined } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import UserMenu from '../common/UserMenu';
-import NotificationBell from './NotificationBell';
+import GlobalSearch from '../common/GlobalSearch';
 
 const { Header, Content } = Layout;
 const { Title } = Typography;
@@ -50,14 +50,22 @@ const NotificationPreferences = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ background: '#fff', padding: '0 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #f0f0f0' }}>
+    <Layout style={{ minHeight: '100vh', background: '#F8FAFC' }}>
+      <Header style={{
+          background: '#FFFFFF', padding: '0 24px', display: 'flex',
+          justifyContent: 'space-between', alignItems: 'center',
+          borderBottom: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(15,23,42,0.06)', height: 64,
+        }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Link to="/" style={{ color: '#1890ff' }}><HomeOutlined /> Accueil</Link>
-          <Title level={4} style={{ margin: 0 }}>Preferences de Notification</Title>
+          <Link to="/" style={{ color: '#64748B', fontSize: 14 }}><HomeOutlined /> Accueil</Link>
+          <span style={{ color: '#E5E7EB' }}>|</span>
+          <Title level={4} style={{ margin: 0, color: '#0F172A' }}>
+            <SettingOutlined style={{ marginRight: 8, color: '#10B981' }} />
+            Préférences de Notification
+          </Title>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <NotificationBell />
+          <GlobalSearch />
           <UserMenu />
         </div>
       </Header>

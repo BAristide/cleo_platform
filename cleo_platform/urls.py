@@ -118,6 +118,20 @@ urlpatterns = [
         'my-space/<path:path>',
         login_required(TemplateView.as_view(template_name='index.html')),
     ),
+    # Routes SPA : notifications, profil (v3.37.0)
+    path(
+        'notifications/',
+        login_required(TemplateView.as_view(template_name='index.html')),
+    ),
+    path(
+        'notifications/<path:path>',
+        login_required(TemplateView.as_view(template_name='index.html')),
+    ),
+    path('profile/', login_required(TemplateView.as_view(template_name='index.html'))),
+    path(
+        'profile/<path:path>',
+        login_required(TemplateView.as_view(template_name='index.html')),
+    ),
 ]
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

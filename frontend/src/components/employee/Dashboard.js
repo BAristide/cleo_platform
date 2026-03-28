@@ -303,6 +303,12 @@ const EmployeeDashboard = () => {
         </TabPane>
 
         <TabPane tab={<span><BookOutlined /> Formations ({trainingPlans.length})</span>} key="training">
+          <div style={{ marginBottom: 16 }}>
+            <Button type="primary" icon={<PlusOutlined />}
+              onClick={() => navigate('/my-space/training/new')}>
+              Demander une formation
+            </Button>
+          </div>
           {trainingPlans.length === 0 ? (
             <Empty description="Aucun plan de formation" />
           ) : (

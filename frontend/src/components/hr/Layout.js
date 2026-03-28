@@ -6,7 +6,7 @@ import {
   SafetyCertificateOutlined, ExclamationCircleOutlined, TrophyOutlined,
   IdcardOutlined, BranchesOutlined, UsergroupAddOutlined,
   NotificationOutlined, CarOutlined, ScheduleOutlined,
-  ToolOutlined, BookOutlined, BankOutlined, SettingOutlined,
+  ToolOutlined, BookOutlined, BankOutlined, SettingOutlined, CheckSquareOutlined,
 } from '@ant-design/icons';
 import ModuleLayout from '../common/ModuleLayout';
 import './Layout.css';
@@ -53,6 +53,13 @@ const menuItems = [
   },
   {
     type: 'group',
+    label: 'Approbations',
+    children: [
+      { key: 'approvals', icon: <CheckSquareOutlined />, label: <Link to="/hr/approvals">Mes approbations</Link> },
+    ],
+  },
+  {
+    type: 'group',
     label: 'Gestion des demandes',
     children: [
       { key: 'leaves',       icon: <CalendarOutlined />,          label: <Link to="/hr/leaves">Congés (tous)</Link> },
@@ -71,6 +78,7 @@ const menuItems = [
 ];
 
 const breadcrumbMap = {
+  approvals:          'Approbations',
   leaves:             'Congés',
   'leaves/calendar':  'Calendrier équipe',
   expenses:           'Notes de frais',

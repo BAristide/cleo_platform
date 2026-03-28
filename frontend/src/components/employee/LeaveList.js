@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
   Table, Tag, Button, Space, Select, Row, Col,
-  Typography, Modal, Input, message, Tabs,
+  Typography, Modal, Input, message, Tabs, Switch,
 } from 'antd';
 import { PlusOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -22,6 +22,8 @@ const STATUS_CONFIG = {
   cancelled:        { label: 'Annulée',         color: 'default' },
 };
 
+const ACTIVE_STATUSES = ['draft', 'submitted', 'approved_manager'];
+
 const LeaveList = () => {
   const navigate = useNavigate();
   const [requests, setRequests] = useState([]);
@@ -31,6 +33,7 @@ const LeaveList = () => {
   const [employeeInfo, setEmployeeInfo] = useState(null);
   const [actionModal, setActionModal] = useState({ open: false, action: null, record: null });
   const [notes, setNotes] = useState('');
+  const [showHistory, setShowHistory] = useState(false);
 
   const isHR = employeeInfo?.is_hr;
   const isManager = (employeeInfo?.subordinates?.length || 0) > 0;
@@ -39,7 +42,11 @@ const LeaveList = () => {
     setLoading(true);
     try {
       const params = {};
-      if (statusVal) params.status = statusVal;
+      if (statusVal) {
+        params.status = statusVal;
+      } else if (!showHistory) {
+        params.status__in = ACTIVE_STATUSES.join(',');
+      }
       const resp = await axios.get('/api/hr/leave-requests/', { params });
       setRequests(extractResultsFromResponse(resp));
     } catch {
@@ -47,7 +54,7 @@ const LeaveList = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showHistory]);
 
   const fetchPending = useCallback(async () => {
     try {
@@ -196,6 +203,12 @@ const LeaveList = () => {
         <Col><Title level={3} style={{ margin: 0 }}>Congés</Title></Col>
         <Col>
           <Space>
+            <Switch
+              checked={showHistory}
+              onChange={setShowHistory}
+              checkedChildren="Historique"
+              unCheckedChildren="Actives"
+            />
             <Select
               placeholder="Filtrer par statut"
               allowClear

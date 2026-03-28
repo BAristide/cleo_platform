@@ -35,4 +35,9 @@ app_name = 'hr'
 urlpatterns = [
     path('', include(router.urls)),
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    path(
+        'pending-approvals-summary/',
+        views.pending_approvals_summary,
+        name='pending-approvals-summary',
+    ),
 ]

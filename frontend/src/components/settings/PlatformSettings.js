@@ -19,6 +19,7 @@ import {
 import { Link } from 'react-router-dom';
 import { Breadcrumb, Layout } from 'antd';
 import UserMenu from '../common/UserMenu';
+import GlobalSearch from '../common/GlobalSearch';
 import axios from '../../utils/axiosConfig';
 import { useCompany } from '../../context/CompanyContext';
 
@@ -956,7 +957,10 @@ const PlatformSettings = () => {
             <SettingOutlined style={{ marginRight: 8, color: '#64748B' }} /> Configuration
           </Title>
         </div>
-        <UserMenu />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <GlobalSearch />
+          <UserMenu />
+        </div>
       </Header>
 
       <Content style={{ margin: 24 }}>

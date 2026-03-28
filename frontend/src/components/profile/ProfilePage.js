@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
 import { AuthContext } from '../../context/AuthContext';
 import UserMenu from '../common/UserMenu';
+import GlobalSearch from '../common/GlobalSearch';
 
 const { Header, Content } = Layout;
 const { Title, Text } = Typography;
@@ -78,13 +79,24 @@ const ProfilePage = () => {
   }
 
   return (
-    <Layout style={{ minHeight: '100vh' }}>
-      <Header style={{ background: '#fff', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 24px' }}>
+    <Layout style={{ minHeight: '100vh', background: '#F8FAFC' }}>
+      <Header style={{
+          background: '#FFFFFF', padding: '0 24px', display: 'flex',
+          justifyContent: 'space-between', alignItems: 'center',
+          borderBottom: '1px solid #E5E7EB', boxShadow: '0 1px 3px rgba(15,23,42,0.06)', height: 64,
+        }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate(-1)}>Retour</Button>
-          <Title level={3} style={{ margin: 0 }}>Mon profil</Title>
+          <span style={{ color: '#E5E7EB' }}>|</span>
+          <Title level={4} style={{ margin: 0, color: '#0F172A' }}>
+            <UserOutlined style={{ marginRight: 8, color: '#10B981' }} />
+            Mon profil
+          </Title>
         </div>
-        <UserMenu />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <GlobalSearch />
+          <UserMenu />
+        </div>
       </Header>
       <Content style={{ padding: '24px', maxWidth: 800, margin: '0 auto', width: '100%' }}>
         <Row gutter={[24, 24]}>

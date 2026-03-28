@@ -304,3 +304,311 @@ def carry_over_annual_leave():
         f'carry_over_annual_leave: {count} allocations mises a jour pour {year}.'
     )
     return {'allocations_updated': count, 'year': year}
+
+
+@shared_task(name='hr.tasks.remind_pending_approvals')
+def remind_pending_approvals():
+    """
+    Relance quotidienne des approbateurs pour les demandes en attente
+    depuis plus de N jours.
+
+    Pack-independant : le seuil est lu depuis PayrollParameter
+    (WORKFLOW_REMINDER_DAYS, defaut 3 jours).
+
+    Idempotent : dedup_key base sur la date du jour.
+    Executee chaque jour ouvre a 09h00 UTC.
+    """
+    from datetime import timedelta
+
+    from notifications.tasks import _create_notification
+
+    from .models import ExpenseReport, LeaveRequest, Mission, TrainingPlan
+    from .services.workflow_notification_service import WorkflowNotificationService
+
+    today = date.today()
+
+    # Lire le seuil depuis PayrollParameter (pack-independant)
+    try:
+        from payroll.models import PayrollParameter
+
+        param = PayrollParameter.objects.filter(
+            code='WORKFLOW_REMINDER_DAYS',
+            is_active=True,
+        ).first()
+        threshold_days = int(param.value) if param else 3
+    except Exception:
+        threshold_days = 3
+
+    cutoff = today - timedelta(days=threshold_days)
+    reminders_sent = 0
+
+    # ── Conges ────────────────────────────────────────────────────
+    # submitted → relancer le N+1
+    for req in LeaveRequest.objects.filter(
+        status='submitted',
+        updated_at__date__lte=cutoff,
+    ).select_related('employee__manager__user', 'leave_type'):
+        mgr_user = WorkflowNotificationService._get_manager_user(req.employee)
+        if not mgr_user:
+            continue
+        dedup = f'reminder_leave_{req.pk}_{today.isoformat()}'
+        notif = _create_notification(
+            user=mgr_user,
+            level='warning',
+            title='Rappel : demande de conge en attente',
+            message=(
+                f'{req.employee.full_name} — {req.leave_type.name} '
+                f'du {req.start_date} au {req.end_date}. '
+                f'En attente depuis {threshold_days}+ jours.'
+            ),
+            module='hr',
+            link=WorkflowNotificationService._resolve_link(
+                mgr_user,
+                '/my-space/leaves',
+                '/hr/leaves',
+            ),
+            dedup_key=dedup,
+        )
+        if notif:
+            reminders_sent += 1
+
+    # approved_manager → relancer les RH
+    for req in LeaveRequest.objects.filter(
+        status='approved_manager',
+        updated_at__date__lte=cutoff,
+    ).select_related('employee', 'leave_type'):
+        for hr_user in WorkflowNotificationService._get_hr_users():
+            dedup = f'reminder_leave_hr_{req.pk}_{today.isoformat()}'
+            notif = _create_notification(
+                user=hr_user,
+                level='warning',
+                title='Rappel : conge en attente validation RH',
+                message=(
+                    f'{req.employee.full_name} — {req.leave_type.name}. '
+                    f'Approuve par N+1, en attente depuis {threshold_days}+ jours.'
+                ),
+                module='hr',
+                link=WorkflowNotificationService._resolve_link(
+                    hr_user,
+                    '/my-space/approvals',
+                    '/hr/approvals',
+                ),
+                dedup_key=dedup,
+            )
+            if notif:
+                reminders_sent += 1
+
+    # ── Notes de frais ────────────────────────────────────────────
+    for report in ExpenseReport.objects.filter(
+        status='submitted',
+        updated_at__date__lte=cutoff,
+    ).select_related('employee__manager__user'):
+        mgr_user = WorkflowNotificationService._get_manager_user(report.employee)
+        if not mgr_user:
+            continue
+        dedup = f'reminder_expense_{report.pk}_{today.isoformat()}'
+        notif = _create_notification(
+            user=mgr_user,
+            level='warning',
+            title='Rappel : note de frais en attente',
+            message=(
+                f'{report.employee.full_name} — {report.title}. '
+                f'En attente depuis {threshold_days}+ jours.'
+            ),
+            module='hr',
+            link=WorkflowNotificationService._resolve_link(
+                mgr_user,
+                '/my-space/expenses',
+                '/hr/expenses',
+            ),
+            dedup_key=dedup,
+        )
+        if notif:
+            reminders_sent += 1
+
+    for report in ExpenseReport.objects.filter(
+        status='approved_manager',
+        updated_at__date__lte=cutoff,
+    ).select_related('employee'):
+        for fin_user in WorkflowNotificationService._get_finance_users():
+            dedup = f'reminder_expense_fin_{report.pk}_{today.isoformat()}'
+            notif = _create_notification(
+                user=fin_user,
+                level='warning',
+                title='Rappel : note de frais en attente Finance',
+                message=(
+                    f'{report.employee.full_name} — {report.title}. '
+                    f'Approuvee par N+1, en attente depuis {threshold_days}+ jours.'
+                ),
+                module='hr',
+                link=WorkflowNotificationService._resolve_link(
+                    fin_user,
+                    '/my-space/approvals',
+                    '/hr/approvals',
+                ),
+                dedup_key=dedup,
+            )
+            if notif:
+                reminders_sent += 1
+
+    # ── Formations ────────────────────────────────────────────────
+    for plan in TrainingPlan.objects.filter(
+        status='submitted',
+        updated_at__date__lte=cutoff,
+    ).select_related('employee__manager__user'):
+        mgr_user = WorkflowNotificationService._get_manager_user(plan.employee)
+        if not mgr_user:
+            continue
+        dedup = f'reminder_training_{plan.pk}_{today.isoformat()}'
+        notif = _create_notification(
+            user=mgr_user,
+            level='warning',
+            title='Rappel : plan de formation en attente',
+            message=(
+                f'{plan.employee.full_name} — plan {plan.year}. '
+                f'En attente depuis {threshold_days}+ jours.'
+            ),
+            module='hr',
+            link=WorkflowNotificationService._resolve_link(
+                mgr_user,
+                '/my-space/approvals',
+                '/hr/approvals',
+            ),
+            dedup_key=dedup,
+        )
+        if notif:
+            reminders_sent += 1
+
+    for plan in TrainingPlan.objects.filter(
+        status='approved_manager',
+        updated_at__date__lte=cutoff,
+    ).select_related('employee'):
+        for hr_user in WorkflowNotificationService._get_hr_users():
+            dedup = f'reminder_training_hr_{plan.pk}_{today.isoformat()}'
+            notif = _create_notification(
+                user=hr_user,
+                level='warning',
+                title='Rappel : formation en attente RH',
+                message=(
+                    f'{plan.employee.full_name} — plan {plan.year}. '
+                    f'En attente depuis {threshold_days}+ jours.'
+                ),
+                module='hr',
+                link=WorkflowNotificationService._resolve_link(
+                    hr_user,
+                    '/my-space/approvals',
+                    '/hr/approvals',
+                ),
+                dedup_key=dedup,
+            )
+            if notif:
+                reminders_sent += 1
+
+    for plan in TrainingPlan.objects.filter(
+        status='approved_hr',
+        updated_at__date__lte=cutoff,
+    ).select_related('employee'):
+        for fin_user in WorkflowNotificationService._get_finance_users():
+            dedup = f'reminder_training_fin_{plan.pk}_{today.isoformat()}'
+            notif = _create_notification(
+                user=fin_user,
+                level='warning',
+                title='Rappel : formation en attente Finance',
+                message=(
+                    f'{plan.employee.full_name} — plan {plan.year}. '
+                    f'En attente depuis {threshold_days}+ jours.'
+                ),
+                module='hr',
+                link=WorkflowNotificationService._resolve_link(
+                    fin_user,
+                    '/my-space/approvals',
+                    '/hr/approvals',
+                ),
+                dedup_key=dedup,
+            )
+            if notif:
+                reminders_sent += 1
+
+    # ── Missions ──────────────────────────────────────────────────
+    for mission in Mission.objects.filter(
+        status='submitted',
+        updated_at__date__lte=cutoff,
+    ).select_related('employee__manager__user'):
+        mgr_user = WorkflowNotificationService._get_manager_user(mission.employee)
+        if not mgr_user:
+            continue
+        dedup = f'reminder_mission_{mission.pk}_{today.isoformat()}'
+        notif = _create_notification(
+            user=mgr_user,
+            level='warning',
+            title='Rappel : mission en attente',
+            message=(
+                f'{mission.employee.full_name} — {mission.title}. '
+                f'En attente depuis {threshold_days}+ jours.'
+            ),
+            module='hr',
+            link=WorkflowNotificationService._resolve_link(
+                mgr_user,
+                '/my-space/approvals',
+                '/hr/approvals',
+            ),
+            dedup_key=dedup,
+        )
+        if notif:
+            reminders_sent += 1
+
+    for mission in Mission.objects.filter(
+        status='approved_manager',
+        updated_at__date__lte=cutoff,
+    ).select_related('employee'):
+        for hr_user in WorkflowNotificationService._get_hr_users():
+            dedup = f'reminder_mission_hr_{mission.pk}_{today.isoformat()}'
+            notif = _create_notification(
+                user=hr_user,
+                level='warning',
+                title='Rappel : mission en attente RH',
+                message=(
+                    f'{mission.employee.full_name} — {mission.title}. '
+                    f'En attente depuis {threshold_days}+ jours.'
+                ),
+                module='hr',
+                link=WorkflowNotificationService._resolve_link(
+                    hr_user,
+                    '/my-space/approvals',
+                    '/hr/approvals',
+                ),
+                dedup_key=dedup,
+            )
+            if notif:
+                reminders_sent += 1
+
+    for mission in Mission.objects.filter(
+        status='approved_hr',
+        updated_at__date__lte=cutoff,
+    ).select_related('employee'):
+        for fin_user in WorkflowNotificationService._get_finance_users():
+            dedup = f'reminder_mission_fin_{mission.pk}_{today.isoformat()}'
+            notif = _create_notification(
+                user=fin_user,
+                level='warning',
+                title='Rappel : mission en attente Finance',
+                message=(
+                    f'{mission.employee.full_name} — {mission.title}. '
+                    f'En attente depuis {threshold_days}+ jours.'
+                ),
+                module='hr',
+                link=WorkflowNotificationService._resolve_link(
+                    fin_user,
+                    '/my-space/approvals',
+                    '/hr/approvals',
+                ),
+                dedup_key=dedup,
+            )
+            if notif:
+                reminders_sent += 1
+
+    logger.info(
+        f'remind_pending_approvals: {reminders_sent} rappels envoyes '
+        f'(seuil={threshold_days} jours)'
+    )
+    return {'reminders_sent': reminders_sent, 'threshold_days': threshold_days}

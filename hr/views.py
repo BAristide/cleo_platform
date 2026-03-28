@@ -70,6 +70,7 @@ from .serializers import (
     TrainingSkillSerializer,
     WorkCertificateRequestSerializer,
 )
+from .services.workflow_notification_service import WorkflowNotificationService
 
 
 # Filtres personnalisés
@@ -326,13 +327,23 @@ class EmployeeViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
             )
 
 
-class MissionViewSet(viewsets.ModelViewSet):
+class MissionViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les missions."""
 
     queryset = Mission.objects.all()
     serializer_class = MissionSerializer
     permission_classes = [permissions.IsAuthenticated, HasModulePermission]
     module_name = 'hr'
+    self_service_actions = [
+        'list',
+        'retrieve',
+        'submit',
+        'approve_manager',
+        'approve_hr',
+        'approve_finance',
+        'reject',
+        'submit_report',
+    ]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -380,6 +391,7 @@ class MissionViewSet(viewsets.ModelViewSet):
 
         mission.status = 'submitted'
         mission.save(update_fields=['status'])
+        WorkflowNotificationService.mission_submitted(mission)
 
         return Response(
             {'success': True, 'message': 'Mission soumise pour approbation.'}
@@ -399,6 +411,7 @@ class MissionViewSet(viewsets.ModelViewSet):
         notes = request.data.get('notes', '')
         mission.approve_manager(notes)
 
+        WorkflowNotificationService.mission_approved_manager(mission)
         return Response(
             {'success': True, 'message': 'Mission approuvée par le manager.'}
         )
@@ -417,6 +430,7 @@ class MissionViewSet(viewsets.ModelViewSet):
         notes = request.data.get('notes', '')
         mission.approve_hr(notes)
 
+        WorkflowNotificationService.mission_approved_hr(mission)
         return Response({'success': True, 'message': 'Mission approuvée par les RH.'})
 
     @action(detail=True, methods=['post'])
@@ -433,6 +447,7 @@ class MissionViewSet(viewsets.ModelViewSet):
         notes = request.data.get('notes', '')
         mission.approve_finance(notes)
 
+        WorkflowNotificationService.mission_approved_finance(mission)
         return Response(
             {'success': True, 'message': 'Mission approuvée par la Finance.'}
         )
@@ -452,6 +467,7 @@ class MissionViewSet(viewsets.ModelViewSet):
         rejected_by = request.data.get('rejected_by', '')
 
         mission.reject(notes, rejected_by)
+        WorkflowNotificationService.mission_rejected(mission)
 
         return Response({'success': True, 'message': 'Mission rejetée.'})
 
@@ -545,57 +561,6 @@ class MissionViewSet(viewsets.ModelViewSet):
             )
 
 
-def _notify_availability(availability, action_type):
-    """Envoie une notification in-app lors d'une action sur une disponibilité."""
-    from django.utils import timezone
-
-    from notifications.tasks import _create_notification
-
-    employee = availability.employee
-    if not employee or not employee.user:
-        return
-
-    today = timezone.now().date()
-
-    if action_type == 'approve_manager':
-        title = 'Disponibilité approuvée par votre N+1'
-        message = (
-            f'Votre demande de {availability.get_type_display()} '
-            f'du {availability.start_date} au {availability.end_date} '
-            f'a été approuvée par votre manager.'
-        )
-        level = 'success'
-    elif action_type == 'approve_hr':
-        title = 'Disponibilité approuvée par les RH'
-        message = (
-            f'Votre demande de {availability.get_type_display()} '
-            f'du {availability.start_date} au {availability.end_date} '
-            f'a été approuvée par les RH.'
-        )
-        level = 'success'
-    elif action_type == 'reject':
-        title = 'Disponibilité rejetée'
-        message = (
-            f'Votre demande de {availability.get_type_display()} '
-            f'du {availability.start_date} au {availability.end_date} '
-            f'a été rejetée.'
-        )
-        level = 'warning'
-    else:
-        return
-
-    dedup_key = f'avail_{availability.pk}_{action_type}_{today.isoformat()}'
-    _create_notification(
-        user=employee.user,
-        level=level,
-        title=title,
-        message=message,
-        module='hr',
-        link=f'/hr/availabilities/{availability.pk}',
-        dedup_key=dedup_key,
-    )
-
-
 class AvailabilityViewSet(viewsets.ModelViewSet):
     """API pour les mises en disponibilité."""
 
@@ -650,7 +615,7 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
             availability.status = 'approved'
             availability.save(update_fields=['status'])
 
-        _notify_availability(availability, 'approve_manager')
+        WorkflowNotificationService.availability_approved_manager(availability)
 
         return Response(
             {
@@ -678,7 +643,7 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
             availability.status = 'approved'
             availability.save(update_fields=['status'])
 
-        _notify_availability(availability, 'approve_hr')
+        WorkflowNotificationService.availability_approved_hr(availability)
 
         return Response(
             {
@@ -708,7 +673,7 @@ class AvailabilityViewSet(viewsets.ModelViewSet):
         availability.status = 'rejected'
         availability.save()
 
-        _notify_availability(availability, 'reject')
+        WorkflowNotificationService.availability_rejected(availability)
 
         return Response({'success': True, 'message': 'Mise en disponibilité rejetée.'})
 
@@ -784,13 +749,14 @@ class SkillViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class TrainingCourseViewSet(viewsets.ModelViewSet):
+class TrainingCourseViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les formations."""
 
     queryset = TrainingCourse.objects.all()
     serializer_class = TrainingCourseSerializer
     permission_classes = [permissions.IsAuthenticated, HasModulePermission]
     module_name = 'hr'
+    self_service_actions = ['list', 'retrieve']
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -837,13 +803,24 @@ class TrainingCourseViewSet(viewsets.ModelViewSet):
         return Response(result)
 
 
-class TrainingPlanViewSet(viewsets.ModelViewSet):
+class TrainingPlanViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les plans de formation."""
 
     queryset = TrainingPlan.objects.all()
     serializer_class = TrainingPlanSerializer
     permission_classes = [permissions.IsAuthenticated, HasModulePermission]
     module_name = 'hr'
+    self_service_actions = [
+        'create',
+        'list',
+        'retrieve',
+        'submit',
+        'cancel',
+        'approve_manager',
+        'approve_hr',
+        'approve_finance',
+        'reject',
+    ]
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -854,7 +831,26 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
     ordering_fields = ['year', 'employee__last_name', 'status']
     ordering = ['-year', 'employee__last_name']
 
+    def get_queryset(self):
+        user = self.request.user
+        qs = TrainingPlan.objects.select_related('employee')
+        try:
+            emp = Employee.objects.get(user=user)
+            if emp.is_hr or user.is_superuser:
+                return qs
+            return qs.filter(employee=emp)
+        except Employee.DoesNotExist:
+            return qs
+
     def perform_create(self, serializer):
+        """Auto-assigne l'employe connecte si non specifie."""
+        try:
+            emp = Employee.objects.get(user=self.request.user)
+            if not serializer.validated_data.get('employee'):
+                serializer.save(employee=emp)
+                return
+        except Employee.DoesNotExist:
+            pass
         serializer.save()
 
     @action(detail=True, methods=['get'])
@@ -884,6 +880,7 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
 
         plan.status = 'submitted'
         plan.save(update_fields=['status'])
+        WorkflowNotificationService.training_submitted(plan)
 
         return Response(
             {'success': True, 'message': 'Plan de formation soumis pour approbation.'}
@@ -906,6 +903,7 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
         plan.status = 'approved_manager'
         plan.save(update_fields=['approved_by_manager', 'manager_notes', 'status'])
 
+        WorkflowNotificationService.training_approved_manager(plan)
         return Response(
             {'success': True, 'message': 'Plan de formation approuvé par le manager.'}
         )
@@ -927,6 +925,7 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
         plan.status = 'approved_hr'
         plan.save(update_fields=['approved_by_hr', 'hr_notes', 'status'])
 
+        WorkflowNotificationService.training_approved_hr(plan)
         return Response(
             {'success': True, 'message': 'Plan de formation approuvé par les RH.'}
         )
@@ -948,6 +947,7 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
         plan.status = 'approved_finance'
         plan.save(update_fields=['approved_by_finance', 'finance_notes', 'status'])
 
+        WorkflowNotificationService.training_approved_finance(plan)
         return Response(
             {'success': True, 'message': 'Plan de formation approuvé par la Finance.'}
         )
@@ -975,8 +975,22 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
 
         plan.status = 'rejected'
         plan.save()
+        WorkflowNotificationService.training_rejected(plan)
 
         return Response({'success': True, 'message': 'Plan de formation rejeté.'})
+
+    @action(detail=True, methods=['post'])
+    def cancel(self, request, pk=None):
+        """Annuler un plan de formation (brouillon ou soumis uniquement)."""
+        plan = self.get_object()
+        if plan.status not in ['draft', 'submitted']:
+            return Response(
+                {'error': "Impossible d'annuler dans cet état."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        plan.status = 'rejected'
+        plan.save(update_fields=['status'])
+        return Response({'success': True, 'message': 'Plan de formation annulé.'})
 
     @action(detail=False, methods=['get'])
     def skills_gap_analysis(self, request):
@@ -1039,13 +1053,14 @@ class TrainingPlanViewSet(viewsets.ModelViewSet):
         return Response(results)
 
 
-class TrainingPlanItemViewSet(viewsets.ModelViewSet):
+class TrainingPlanItemViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les éléments des plans de formation."""
 
     queryset = TrainingPlanItem.objects.all()
     serializer_class = TrainingPlanItemSerializer
     permission_classes = [permissions.IsAuthenticated, HasModulePermission]
     module_name = 'hr'
+    self_service_actions = ['create', 'list', 'retrieve', 'update', 'destroy']
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,
@@ -1235,9 +1250,10 @@ class WorkCertificateRequestViewSet(SelfServicePermissionMixin, viewsets.ModelVi
     def perform_create(self, serializer):
         try:
             employee = Employee.objects.get(user=self.request.user)
-            serializer.save(employee=employee)
+            instance = serializer.save(employee=employee)
         except Employee.DoesNotExist:
-            serializer.save()
+            instance = serializer.save()
+        WorkflowNotificationService.certificate_requested(instance)
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
@@ -1265,18 +1281,7 @@ class WorkCertificateRequestViewSet(SelfServicePermissionMixin, viewsets.ModelVi
                 status=status.HTTP_200_OK,
             )
 
-        if cert.employee.user:
-            from notifications.tasks import _create_notification
-
-            _create_notification(
-                user=cert.employee.user,
-                level='success',
-                title='Attestation de travail disponible',
-                message='Votre attestation de travail a ete approuvee et est disponible au telechargement.',
-                module='hr',
-                link=f'/hr/certificates/{cert.pk}',
-                dedup_key=f'cert_approved_{cert.pk}',
-            )
+        WorkflowNotificationService.certificate_approved(cert)
 
         return Response(
             {'success': True, 'message': 'Attestation approuvee et PDF genere.'}
@@ -1295,6 +1300,7 @@ class WorkCertificateRequestViewSet(SelfServicePermissionMixin, viewsets.ModelVi
         cert.status = 'rejected'
         cert.hr_notes = notes
         cert.save(update_fields=['status', 'hr_notes'])
+        WorkflowNotificationService.certificate_rejected(cert)
         return Response({'success': True, 'message': 'Demande rejetee.'})
 
     @action(detail=True, methods=['get'])
@@ -1599,6 +1605,9 @@ class LeaveRequestViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
         'cancel',
         'pending_approvals',
         'team_calendar',
+        'approve_manager',
+        'approve_hr',
+        'reject',
     ]
 
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
@@ -1610,13 +1619,17 @@ class LeaveRequestViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
         qs = LeaveRequest.objects.select_related('employee', 'leave_type', 'allocation')
         try:
             emp = Employee.objects.get(user=user)
-            if emp.is_hr or user.is_superuser:
-                return qs
-            if emp.is_manager:
-                return qs.filter(Q(employee=emp) | Q(employee__manager=emp))
-            return qs.filter(employee=emp)
+            if not (emp.is_hr or user.is_superuser):
+                if emp.is_manager:
+                    qs = qs.filter(Q(employee=emp) | Q(employee__manager=emp))
+                else:
+                    qs = qs.filter(employee=emp)
         except Employee.DoesNotExist:
-            return qs
+            pass
+        status_in = self.request.query_params.get('status__in')
+        if status_in:
+            qs = qs.filter(status__in=status_in.split(','))
+        return qs
 
     def perform_create(self, serializer):
         from hr.services.leave_service import calculate_working_days
@@ -1650,6 +1663,7 @@ class LeaveRequestViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
             )
         req.status = 'submitted'
         req.save(update_fields=['status'])
+        WorkflowNotificationService.leave_submitted(req)
         return Response(
             {'success': True, 'message': 'Demande soumise pour approbation.'}
         )
@@ -1680,6 +1694,7 @@ class LeaveRequestViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
                 'allocation',
             ]
         )
+        WorkflowNotificationService.leave_approved_manager(req)
         return Response(
             {'success': True, 'message': 'Demande approuvée par le manager.'}
         )
@@ -1703,24 +1718,7 @@ class LeaveRequestViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
         req.hr_notes = request.data.get('notes', '')
         req.status = 'approved_hr'
         req.save(update_fields=['approved_by_hr', 'hr_notes', 'status'])
-        if req.employee.user:
-            try:
-                from notifications.tasks import _create_notification
-
-                _create_notification(
-                    user=req.employee.user,
-                    level='success',
-                    title='Congé approuvé',
-                    message=(
-                        f'Votre demande de {req.leave_type.name} '
-                        f'du {req.start_date} au {req.end_date} a été approuvée.'
-                    ),
-                    module='hr',
-                    link='/hr/leaves',
-                    dedup_key=f'leave_approved_{req.pk}',
-                )
-            except Exception:
-                pass
+        WorkflowNotificationService.leave_approved_hr(req)
         return Response({'success': True, 'message': 'Demande validée par les RH.'})
 
     @action(detail=True, methods=['post'])
@@ -1747,6 +1745,7 @@ class LeaveRequestViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
             req.hr_notes = notes
         req.status = 'rejected'
         req.save()
+        WorkflowNotificationService.leave_rejected(req)
         return Response({'success': True, 'message': 'Demande rejetée.'})
 
     @action(detail=True, methods=['post'])
@@ -1767,6 +1766,7 @@ class LeaveRequestViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
             req.allocation.save(update_fields=['pending_days'])
         req.status = 'cancelled'
         req.save(update_fields=['status'])
+        WorkflowNotificationService.leave_cancelled(req)
         return Response({'success': True, 'message': 'Demande annulée.'})
 
     @action(detail=False, methods=['get'])
@@ -1844,18 +1844,20 @@ class ExpenseReportViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
         qs = ExpenseReport.objects.select_related('employee')
         try:
             emp = Employee.objects.get(user=user)
-            if user.is_superuser or emp.is_hr:
-                return qs
-
-            visible = Q(employee=emp)
-            if emp.is_manager:
-                visible |= Q(status='submitted', employee__manager=emp)
-                visible |= Q(status='approved_manager', employee__manager=emp)
-            if emp.is_finance:
-                visible |= Q(status='approved_manager')
-            return qs.filter(visible).distinct()
+            if not (user.is_superuser or emp.is_hr):
+                visible = Q(employee=emp)
+                if emp.is_manager:
+                    visible |= Q(status='submitted', employee__manager=emp)
+                    visible |= Q(status='approved_manager', employee__manager=emp)
+                if emp.is_finance:
+                    visible |= Q(status='approved_manager')
+                qs = qs.filter(visible).distinct()
         except Employee.DoesNotExist:
-            return qs
+            pass
+        status_in = self.request.query_params.get('status__in')
+        if status_in:
+            qs = qs.filter(status__in=status_in.split(','))
+        return qs
 
     def perform_create(self, serializer):
         try:
@@ -1898,6 +1900,7 @@ class ExpenseReportViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
             )
         report.status = 'submitted'
         report.save(update_fields=['status'])
+        WorkflowNotificationService.expense_submitted(report)
         return Response({'success': True, 'message': 'Note soumise pour approbation.'})
 
     @action(detail=True, methods=['post'])
@@ -1913,6 +1916,7 @@ class ExpenseReportViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
         report.manager_notes = request.data.get('notes', '')
         report.status = 'approved_manager'
         report.save(update_fields=['approved_by_manager', 'manager_notes', 'status'])
+        WorkflowNotificationService.expense_approved_manager(report)
         return Response({'success': True, 'message': 'Note approuvée par le manager.'})
 
     @action(detail=True, methods=['post'])
@@ -1939,6 +1943,7 @@ class ExpenseReportViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
         except Exception as e:
             accounting_message = f'Écriture comptable non générée : {e}'
 
+        WorkflowNotificationService.expense_approved_finance(report)
         return Response(
             {
                 'success': True,
@@ -1957,6 +1962,7 @@ class ExpenseReportViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
             )
         report.status = 'reimbursed'
         report.save(update_fields=['status'])
+        WorkflowNotificationService.expense_reimbursed(report)
         return Response({'success': True, 'message': 'Note marquée comme remboursée.'})
 
     @action(detail=True, methods=['post'])
@@ -1981,6 +1987,7 @@ class ExpenseReportViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
             report.finance_notes = notes
         report.status = 'rejected'
         report.save()
+        WorkflowNotificationService.expense_rejected(report)
         return Response({'success': True, 'message': 'Note rejetée.'})
 
     @action(detail=True, methods=['get'])
@@ -2114,6 +2121,74 @@ class ExpenseItemViewSet(viewsets.ModelViewSet):
         if err:
             return err
         return super().destroy(request, *args, **kwargs)
+
+
+# ── Dashboard approbations ────────────────────────────────────────────────────
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def pending_approvals_summary(request):
+    """Compteurs d'approbations en attente pour l'utilisateur connecte."""
+    try:
+        emp = Employee.objects.get(user=request.user)
+    except Employee.DoesNotExist:
+        return Response(
+            {
+                'leaves': 0,
+                'expenses': 0,
+                'training': 0,
+                'missions': 0,
+                'total': 0,
+            }
+        )
+
+    leaves = 0
+    expenses = 0
+    training = 0
+    missions = 0
+
+    # Manager : demandes soumises par ses subordonnes
+    if emp.is_manager:
+        leaves += LeaveRequest.objects.filter(
+            status='submitted',
+            employee__manager=emp,
+        ).count()
+        expenses += ExpenseReport.objects.filter(
+            status='submitted',
+            employee__manager=emp,
+        ).count()
+        training += TrainingPlan.objects.filter(
+            status='submitted',
+            employee__manager=emp,
+        ).count()
+        missions += Mission.objects.filter(
+            status='submitted',
+            employee__manager=emp,
+        ).count()
+
+    # RH : conges approuves par N+1, formations et missions approuvees par N+1
+    if emp.is_hr or request.user.is_superuser:
+        leaves += LeaveRequest.objects.filter(status='approved_manager').count()
+        training += TrainingPlan.objects.filter(status='approved_manager').count()
+        missions += Mission.objects.filter(status='approved_manager').count()
+
+    # Finance : notes approuvees par N+1, formations et missions approuvees par RH
+    if emp.is_finance or request.user.is_superuser:
+        expenses += ExpenseReport.objects.filter(status='approved_manager').count()
+        training += TrainingPlan.objects.filter(status='approved_hr').count()
+        missions += Mission.objects.filter(status='approved_hr').count()
+
+    total = leaves + expenses + training + missions
+    return Response(
+        {
+            'leaves': leaves,
+            'expenses': expenses,
+            'training': training,
+            'missions': missions,
+            'total': total,
+        }
+    )
 
 
 # ── Jours feries ──────────────────────────────────────────────────────────────

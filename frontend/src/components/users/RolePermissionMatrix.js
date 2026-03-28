@@ -1,11 +1,19 @@
 // src/components/users/RolePermissionMatrix.js
-import React, { useState, useEffect } from 'react';
-import { Table, Tag, Card, Spin, Button, Typography, Tooltip, Space } from 'antd';
-import { ArrowLeftOutlined, LockOutlined, InfoCircleOutlined } from '@ant-design/icons';
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  Table, Tag, Card, Spin, Button, Typography, Tooltip, Space,
+  Select, message, Modal, Form, Input
+} from 'antd';
+import {
+  ArrowLeftOutlined, LockOutlined, InfoCircleOutlined,
+  PlusOutlined, DeleteOutlined, EditOutlined
+} from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from '../../utils/axiosConfig';
+import { handleApiError } from '../../utils/apiUtils';
 
 const { Title, Text } = Typography;
+const { TextArea } = Input;
 
 // Niveaux d'accès ordonnés
 const ACCESS_LEVELS = {
@@ -30,24 +38,36 @@ const MODULE_LABELS = {
   purchasing: 'Achats',
   recruitment: 'Recrutement',
   dashboard: 'Tableau de bord',
+  notifications: 'Notifications',
 };
 
 // Ordre d'affichage des modules
 const MODULE_ORDER = [
   'core', 'dashboard', 'crm', 'sales', 'accounting',
-  'hr', 'employee', 'payroll', 'recruitment', 'inventory', 'purchasing',
+  'hr', 'employee', 'payroll', 'recruitment', 'inventory',
+  'purchasing', 'notifications',
 ];
+
+// Noms des 7 rôles par défaut (non modifiables, non supprimables)
+const DEFAULT_ROLE_NAMES = [
+  'Administrateur', 'Directeur', 'Employé',
+  'Finance', 'Logistique', 'Ressources Humaines', 'Ventes',
+];
+
+const isDefaultRole = (role) => DEFAULT_ROLE_NAMES.includes(role.name);
 
 const RolePermissionMatrix = () => {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [roleToDelete, setRoleToDelete] = useState(null);
+  const [deleteUserCount, setDeleteUserCount] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
+  const [createForm] = Form.useForm();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    fetchRoles();
-  }, []);
-
-  const fetchRoles = async () => {
+  const fetchRoles = useCallback(async () => {
     try {
       const res = await axios.get('/api/users/roles/?page_size=50');
       const data = res.data.results || res.data || [];
@@ -57,7 +77,11 @@ const RolePermissionMatrix = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchRoles();
+  }, [fetchRoles]);
 
   // Construire la map permission pour un rôle : { module: access_level }
   const getPermMap = (role) => {
@@ -68,8 +92,84 @@ const RolePermissionMatrix = () => {
     return map;
   };
 
-  // Rendu d'une cellule de permission
-  const renderPermCell = (level) => {
+  // ── Modification des permissions (rôles personnalisés) ──────────
+
+  const handlePermissionChange = async (roleId, module, newLevel) => {
+    try {
+      const role = roles.find(r => r.id === roleId);
+      if (!role) return;
+      const permMap = getPermMap(role);
+      permMap[module] = newLevel;
+
+      const permissions = MODULE_ORDER.map(mod => ({
+        module: mod,
+        access_level: permMap[mod] || 'no_access',
+      }));
+
+      await axios.post(`/api/users/roles/${roleId}/set_module_permissions/`, {
+        permissions,
+      });
+      message.success('Permissions mises à jour');
+      fetchRoles();
+    } catch (error) {
+      handleApiError(error, null, 'Erreur lors de la mise à jour des permissions');
+    }
+  };
+
+  // ── Création de rôle ──────────────────────────────────────────
+
+  const handleCreateRole = async () => {
+    try {
+      const values = await createForm.validateFields();
+      setSubmitting(true);
+      await axios.post('/api/users/roles/', {
+        name: values.name.trim(),
+        description: values.description || '',
+      });
+      message.success(`Rôle « ${values.name} » créé. Configurez ses permissions dans la matrice.`);
+      setCreateModalOpen(false);
+      createForm.resetFields();
+      fetchRoles();
+    } catch (error) {
+      handleApiError(error, createForm, 'Erreur lors de la création du rôle');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ── Suppression de rôle ───────────────────────────────────────
+
+  const openDeleteModal = async (role) => {
+    setRoleToDelete(role);
+    try {
+      const res = await axios.get(`/api/users/roles/${role.id}/users/`);
+      const users = res.data.results || res.data || [];
+      setDeleteUserCount(Array.isArray(users) ? users.length : 0);
+    } catch {
+      setDeleteUserCount(0);
+    }
+    setDeleteModalOpen(true);
+  };
+
+  const handleDeleteRole = async () => {
+    if (!roleToDelete) return;
+    setSubmitting(true);
+    try {
+      await axios.delete(`/api/users/roles/${roleToDelete.id}/`);
+      message.success(`Rôle « ${roleToDelete.name} » supprimé`);
+      setDeleteModalOpen(false);
+      setRoleToDelete(null);
+      fetchRoles();
+    } catch (error) {
+      handleApiError(error, null, 'Erreur lors de la suppression');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // ── Rendu des cellules ────────────────────────────────────────
+
+  const renderPermTag = (level) => {
     const info = ACCESS_LEVELS[level] || ACCESS_LEVELS.no_access;
     return (
       <Tag
@@ -88,6 +188,11 @@ const RolePermissionMatrix = () => {
     );
   };
 
+  const selectOptions = Object.entries(ACCESS_LEVELS).map(([key, val]) => ({
+    value: key,
+    label: `${val.score} — ${val.label}`,
+  }));
+
   // Colonnes : Module + une colonne par rôle
   const columns = [
     {
@@ -104,19 +209,60 @@ const RolePermissionMatrix = () => {
     },
     ...roles.map((role) => ({
       title: (
-        <Tooltip title={role.description || role.name}>
-          <span style={{ fontSize: 13, fontWeight: 600 }}>
-            {role.name}
-          </span>
-        </Tooltip>
+        <Space direction="vertical" size={0} style={{ textAlign: 'center' }}>
+          <Space size={4}>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>
+              {role.name}
+            </span>
+            {isDefaultRole(role) ? (
+              <Tooltip title="Rôle par défaut — non modifiable">
+                <LockOutlined style={{ color: '#94A3B8', fontSize: 11 }} />
+              </Tooltip>
+            ) : (
+              <Tooltip title="Supprimer ce rôle">
+                <DeleteOutlined
+                  style={{ color: '#EF4444', fontSize: 11, cursor: 'pointer' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openDeleteModal(role);
+                  }}
+                />
+              </Tooltip>
+            )}
+          </Space>
+          {!isDefaultRole(role) && (
+            <Text type="secondary" style={{ fontSize: 10 }}>
+              <EditOutlined style={{ marginRight: 2 }} />personnalisé
+            </Text>
+          )}
+        </Space>
       ),
       key: `role_${role.id}`,
       align: 'center',
-      width: 130,
+      width: 140,
       render: (_, record) => {
         const permMap = getPermMap(role);
         const level = permMap[record.module] || 'no_access';
-        return renderPermCell(level);
+
+        if (isDefaultRole(role)) {
+          return (
+            <Tooltip title="Rôle par défaut — non modifiable">
+              {renderPermTag(level)}
+            </Tooltip>
+          );
+        }
+
+        // Rôle personnalisé — Select éditable
+        return (
+          <Select
+            size="small"
+            value={level}
+            onChange={(newLevel) => handlePermissionChange(role.id, record.module, newLevel)}
+            style={{ minWidth: 120 }}
+            options={selectOptions}
+            popupMatchSelectWidth={false}
+          />
+        );
       },
     })),
   ];
@@ -144,6 +290,13 @@ const RolePermissionMatrix = () => {
             Matrice des rôles et permissions
           </Title>
         </div>
+        <Button
+          type="primary"
+          icon={<PlusOutlined />}
+          onClick={() => setCreateModalOpen(true)}
+        >
+          Nouveau rôle
+        </Button>
       </div>
 
       {/* Légende */}
@@ -171,6 +324,8 @@ const RolePermissionMatrix = () => {
           <Text type="secondary" style={{ fontSize: 12 }}>
             La hiérarchie est cumulative : un niveau supérieur inclut les permissions des niveaux inférieurs.
             Par exemple, « Création » implique aussi « Lecture ».
+            Les rôles par défaut (<LockOutlined style={{ fontSize: 10 }} />) ne sont pas modifiables.
+            Cliquez sur les badges des rôles personnalisés pour les modifier.
           </Text>
         </div>
       </Card>
@@ -187,6 +342,67 @@ const RolePermissionMatrix = () => {
           rowClassName={(_, index) => (index % 2 === 0 ? '' : 'ant-table-row-light')}
         />
       </Card>
+
+      {/* Modale création de rôle */}
+      <Modal
+        title="Nouveau rôle"
+        open={createModalOpen}
+        onCancel={() => {
+          setCreateModalOpen(false);
+          createForm.resetFields();
+        }}
+        onOk={handleCreateRole}
+        confirmLoading={submitting}
+        okText="Créer"
+        cancelText="Annuler"
+      >
+        <Form form={createForm} layout="vertical">
+          <Form.Item
+            name="name"
+            label="Nom du rôle"
+            rules={[
+              { required: true, message: 'Veuillez saisir le nom du rôle' },
+              { max: 100, message: 'Maximum 100 caractères' },
+            ]}
+          >
+            <Input placeholder="Ex : Comptable externe" />
+          </Form.Item>
+          <Form.Item
+            name="description"
+            label="Description"
+          >
+            <TextArea
+              rows={3}
+              placeholder="Description optionnelle du rôle et de ses responsabilités"
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      {/* Modale confirmation suppression */}
+      <Modal
+        title={`Supprimer le rôle « ${roleToDelete?.name || ''} » ?`}
+        open={deleteModalOpen}
+        onCancel={() => {
+          setDeleteModalOpen(false);
+          setRoleToDelete(null);
+        }}
+        onOk={handleDeleteRole}
+        confirmLoading={submitting}
+        okText="Supprimer"
+        okButtonProps={{ danger: true }}
+        cancelText="Annuler"
+      >
+        <p>Cette action est irréversible.</p>
+        {deleteUserCount > 0 ? (
+          <p style={{ color: '#EF4444', fontWeight: 500 }}>
+            Ce rôle est attribué à {deleteUserCount} utilisateur{deleteUserCount > 1 ? 's' : ''}.
+            {deleteUserCount > 1 ? ' Ils perdront' : ' Il perdra'} les permissions correspondantes.
+          </p>
+        ) : (
+          <p>Aucun utilisateur n'est actuellement associé à ce rôle.</p>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -184,6 +184,17 @@ class UserViewSet(viewsets.ModelViewSet):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+DEFAULT_ROLE_NAMES = [
+    'Administrateur',
+    'Directeur',
+    'Employé',
+    'Finance',
+    'Logistique',
+    'Ressources Humaines',
+    'Ventes',
+]
+
+
 class UserRoleViewSet(viewsets.ModelViewSet):
     """API pour gérer les rôles utilisateur."""
 
@@ -197,6 +208,26 @@ class UserRoleViewSet(viewsets.ModelViewSet):
 
     # Définir le module pour les permissions
     module_name = 'core'
+
+    def perform_create(self, serializer):
+        """Crée le rôle et initialise toutes les permissions à no_access."""
+        role = serializer.save()
+        for module_code, _ in ModulePermission.MODULE_CHOICES:
+            ModulePermission.objects.get_or_create(
+                role=role,
+                module=module_code,
+                defaults={'access_level': 'no_access'},
+            )
+
+    def destroy(self, request, *args, **kwargs):
+        """Interdit la suppression des rôles par défaut."""
+        role = self.get_object()
+        if role.name in DEFAULT_ROLE_NAMES:
+            return Response(
+                {'error': 'Les rôles par défaut ne peuvent pas être supprimés.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'])
     def users(self, request, pk=None):

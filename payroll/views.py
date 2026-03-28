@@ -8,6 +8,7 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
+from users.mixins import SelfServicePermissionMixin
 from users.permissions import HasModulePermission, module_permission_required
 
 from .models import (
@@ -714,7 +715,7 @@ class PayrollRunViewSet(viewsets.ModelViewSet):
         return response
 
 
-class PaySlipViewSet(viewsets.ModelViewSet):
+class PaySlipViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les bulletins de paie."""
 
     queryset = PaySlip.objects.all()
@@ -739,12 +740,7 @@ class PaySlipViewSet(viewsets.ModelViewSet):
         'number',
     ]
     ordering = ['-payroll_run__period__start_date', 'employee__last_name']
-
-    def get_permissions(self):
-        """Consultation et téléchargement PDF accessibles à tout employé authentifié."""
-        if self.action in ('list', 'retrieve', 'download_pdf'):
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), HasModulePermission()]
+    self_service_actions = ['list', 'retrieve', 'download_pdf']
 
     def get_queryset(self):
         """Filtre : employé voit ses bulletins, RH/Finance/superuser voient tout."""

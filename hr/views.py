@@ -10,7 +10,12 @@ from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 
-from users.permissions import HasModulePermission, module_permission_required
+from users.mixins import SelfServicePermissionMixin
+from users.permissions import (
+    CanSubmitOwnCertificate,
+    HasModulePermission,
+    module_permission_required,
+)
 
 from .models import (
     Announcement,
@@ -119,7 +124,7 @@ class TrainingPlanFilter(django_filters.FilterSet):
         fields = ['employee', 'year', 'status']
 
 
-class DepartmentViewSet(viewsets.ModelViewSet):
+class DepartmentViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les départements."""
 
     queryset = Department.objects.all()
@@ -130,12 +135,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
     search_fields = ['name', 'code', 'description']
     ordering_fields = ['name', 'code']
     ordering = ['name']
-
-    def get_permissions(self):
-        """Consultation des départements accessible à tout employé authentifié."""
-        if self.action in ('list', 'retrieve'):
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), HasModulePermission()]
+    self_service_actions = ['list', 'retrieve']
 
     @action(detail=True, methods=['get'])
     def employees(self, request, pk=None):
@@ -188,7 +188,7 @@ class JobTitleViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class EmployeeViewSet(viewsets.ModelViewSet):
+class EmployeeViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les employés."""
 
     queryset = Employee.objects.all()
@@ -210,18 +210,13 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         'job_title__name',
     ]
     ordering = ['last_name', 'first_name']
-
-    def get_permissions(self):
-        """Actions self-service accessibles à tout employé authentifié."""
-        if self.action in (
-            'me',
-            'missions',
-            'availabilities',
-            'training_plans',
-            'subordinates',
-        ):
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), HasModulePermission()]
+    self_service_actions = [
+        'me',
+        'missions',
+        'availabilities',
+        'training_plans',
+        'subordinates',
+    ]
 
     def get_serializer_class(self):
         if self.action in ('retrieve', 'create', 'update', 'partial_update'):
@@ -1170,7 +1165,7 @@ class TrainingPlanItemViewSet(viewsets.ModelViewSet):
         )
 
 
-class AnnouncementViewSet(viewsets.ModelViewSet):
+class AnnouncementViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les annonces internes."""
 
     queryset = Announcement.objects.all()
@@ -1180,12 +1175,7 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'content']
     ordering = ['-is_pinned', '-created_at']
-
-    def get_permissions(self):
-        """Consultation des annonces accessible à tout employé authentifié."""
-        if self.action in ('list', 'retrieve'):
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), HasModulePermission()]
+    self_service_actions = ['list', 'retrieve']
 
     def get_queryset(self):
         """Filtre les annonces selon l'audience et l'expiration."""
@@ -1217,7 +1207,7 @@ class AnnouncementViewSet(viewsets.ModelViewSet):
             serializer.save()
 
 
-class WorkCertificateRequestViewSet(viewsets.ModelViewSet):
+class WorkCertificateRequestViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les demandes d attestation de travail."""
 
     queryset = WorkCertificateRequest.objects.all()
@@ -1227,17 +1217,11 @@ class WorkCertificateRequestViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['employee', 'status', 'purpose']
     ordering = ['-created_at']
-
-    def get_permissions(self):
-        """
-        create/list/retrieve : tout employe authentifie.
-        approve/reject/destroy/update : niveau HR requis.
-        """
-        from users.permissions import CanSubmitOwnCertificate
-
-        if self.action in ('create', 'list', 'retrieve'):
-            return [permissions.IsAuthenticated(), CanSubmitOwnCertificate()]
-        return [permissions.IsAuthenticated(), HasModulePermission()]
+    self_service_actions = ['create', 'list', 'retrieve']
+    self_service_permissions = [
+        permissions.IsAuthenticated,
+        CanSubmitOwnCertificate,
+    ]
 
     def get_queryset(self):
         try:
@@ -1338,21 +1322,21 @@ class WorkCertificateRequestViewSet(viewsets.ModelViewSet):
         return response
 
 
-class ComplaintViewSet(viewsets.ModelViewSet):
+class ComplaintViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les doleances."""
 
     queryset = Complaint.objects.all()
     serializer_class = ComplaintSerializer
+    permission_classes = [permissions.IsAuthenticated, HasModulePermission]
+    module_name = 'hr'
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['status', 'category']
     ordering = ['-created_at']
-
-    def get_permissions(self):
-        from users.permissions import CanSubmitOwnCertificate
-
-        if self.action in ('create', 'list', 'retrieve'):
-            return [permissions.IsAuthenticated(), CanSubmitOwnCertificate()]
-        return [permissions.IsAuthenticated(), HasModulePermission()]
+    self_service_actions = ['create', 'list', 'retrieve']
+    self_service_permissions = [
+        permissions.IsAuthenticated,
+        CanSubmitOwnCertificate,
+    ]
 
     def get_queryset(self):
         user = self.request.user
@@ -1401,19 +1385,14 @@ class RewardTypeViewSet(viewsets.ModelViewSet):
     module_name = 'hr'
 
 
-class RewardViewSet(viewsets.ModelViewSet):
+class RewardViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les recompenses."""
 
     queryset = Reward.objects.all()
     serializer_class = RewardSerializer
     permission_classes = [permissions.IsAuthenticated, HasModulePermission]
     module_name = 'hr'
-
-    def get_permissions(self):
-        """Consultation du tableau des récompenses accessible à tout employé authentifié."""
-        if self.action in ('board',):
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), HasModulePermission()]
+    self_service_actions = ['board']
 
     def get_queryset(self):
         if self.action == 'board':
@@ -1550,7 +1529,7 @@ def dashboard_view(request):
 # ── Congés ────────────────────────────────────────────────────────────────────
 
 
-class LeaveTypeViewSet(viewsets.ModelViewSet):
+class LeaveTypeViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les types de congés."""
 
     queryset = LeaveType.objects.filter(is_active=True)
@@ -1559,12 +1538,7 @@ class LeaveTypeViewSet(viewsets.ModelViewSet):
     module_name = 'hr'
     filter_backends = [filters.SearchFilter]
     search_fields = ['name', 'code']
-
-    def get_permissions(self):
-        """Consultation des types de congés accessible à tout employé authentifié."""
-        if self.action in ('list', 'retrieve'):
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), HasModulePermission()]
+    self_service_actions = ['list', 'retrieve']
 
 
 class LeaveAllocationViewSet(viewsets.ReadOnlyModelViewSet):
@@ -1608,7 +1582,7 @@ class LeaveAllocationViewSet(viewsets.ReadOnlyModelViewSet):
         return Response(serializer.data)
 
 
-class LeaveRequestViewSet(viewsets.ModelViewSet):
+class LeaveRequestViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """API pour les demandes de congé avec workflow manager → RH."""
 
     queryset = LeaveRequest.objects.select_related(
@@ -1617,19 +1591,15 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
     serializer_class = LeaveRequestSerializer
     permission_classes = [permissions.IsAuthenticated, HasModulePermission]
     module_name = 'hr'
-
-    def get_permissions(self):
-        if self.action in (
-            'create',
-            'list',
-            'retrieve',
-            'submit',
-            'cancel',
-            'pending_approvals',
-            'team_calendar',
-        ):
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), HasModulePermission()]
+    self_service_actions = [
+        'create',
+        'list',
+        'retrieve',
+        'submit',
+        'cancel',
+        'pending_approvals',
+        'team_calendar',
+    ]
 
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['employee', 'leave_type', 'status']
@@ -1845,7 +1815,7 @@ class ExpenseCategoryViewSet(viewsets.ReadOnlyModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 
-class ExpenseReportViewSet(viewsets.ModelViewSet):
+class ExpenseReportViewSet(SelfServicePermissionMixin, viewsets.ModelViewSet):
     """Notes de frais avec workflow Manager → Finance."""
 
     queryset = ExpenseReport.objects.select_related('employee')
@@ -1854,24 +1824,20 @@ class ExpenseReportViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_fields = ['status', 'employee']
     ordering = ['-created_at']
-
-    def get_permissions(self):
-        if self.action in (
-            'create',
-            'list',
-            'retrieve',
-            'update',
-            'partial_update',
-            'submit',
-            'cancel',
-            'pending_approvals',
-            'approve_manager',
-            'approve_finance',
-            'reimburse',
-            'reject',
-        ):
-            return [permissions.IsAuthenticated()]
-        return [permissions.IsAuthenticated(), HasModulePermission()]
+    self_service_actions = [
+        'create',
+        'list',
+        'retrieve',
+        'update',
+        'partial_update',
+        'submit',
+        'cancel',
+        'pending_approvals',
+        'approve_manager',
+        'approve_finance',
+        'reimburse',
+        'reject',
+    ]
 
     def get_queryset(self):
         user = self.request.user

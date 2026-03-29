@@ -2,6 +2,7 @@
 from datetime import timedelta
 from decimal import Decimal
 
+from dateutil.relativedelta import relativedelta
 from django.db.models import Count, F, Q, Sum
 from django.utils import timezone
 from rest_framework import permissions
@@ -18,23 +19,19 @@ def _parse_period(request):
 
     if period == 'year':
         start = now.replace(month=1, day=1, hour=0, minute=0, second=0, microsecond=0)
-        # Même période année précédente
-        prev_start = start.replace(year=start.year - 1)
-        prev_end = now.replace(year=now.year - 1)
+        prev_start = start - relativedelta(years=1)
+        prev_end = now - relativedelta(years=1)
     elif period == 'quarter':
         quarter_month = ((now.month - 1) // 3) * 3 + 1
         start = now.replace(
             month=quarter_month, day=1, hour=0, minute=0, second=0, microsecond=0
         )
-        prev_start = start.replace(year=start.year - 1)
-        prev_end = now.replace(year=now.year - 1)
+        prev_start = start - relativedelta(years=1)
+        prev_end = now - relativedelta(years=1)
     else:  # month (défaut)
         start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        if now.month == 1:
-            prev_start = start.replace(year=start.year - 1, month=12)
-        else:
-            prev_start = start.replace(month=start.month - 1)
-        prev_end = now.replace(year=prev_start.year, month=prev_start.month)
+        prev_start = start - relativedelta(months=1)
+        prev_end = now - relativedelta(months=1)
 
     return {
         'now': now,

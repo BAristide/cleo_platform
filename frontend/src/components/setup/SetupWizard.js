@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Steps, Button, Card, Radio, Input, Form, Space, Typography, Alert, Spin, Result, Divider, Tag, Row, Col, message } from 'antd';
-import { GlobalOutlined, BankOutlined, CheckCircleOutlined, ArrowRightOutlined, ArrowLeftOutlined, SettingOutlined } from '@ant-design/icons';
+import { GlobalOutlined, BankOutlined, CheckCircleOutlined, ArrowRightOutlined, ArrowLeftOutlined, SettingOutlined, LockOutlined } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 
 const { Title, Text, Paragraph } = Typography;
@@ -24,19 +24,63 @@ const SetupWizard = () => {
   const [installDemo, setInstallDemo] = useState(false);
   const [form] = Form.useForm();
 
+  /* ── Phase 4 SaaS : données pré-remplies ────────────────────
+     Si le tenant est provisionné via le portail SaaS, l'entrypoint
+     passe COMPANY_NAME, DEFAULT_COUNTRY et ADMIN_EMAIL.
+     L'endpoint /api/core/setup/status/ les expose au frontend.
+     Rétrocompatible : si aucune donnée prefill, wizard normal. */
+  const [prefill, setPrefill] = useState(null);
+  const [countryLocked, setCountryLocked] = useState(false);
+
   useEffect(() => {
-    const fetchCountries = async () => {
+    const fetchInitialData = async () => {
       try {
-        const res = await axios.get('/api/core/setup/packs/');
-        setCountries(res.data);
+        // 1. Charger les pays disponibles
+        const packsRes = await axios.get('/api/core/setup/packs/');
+        setCountries(packsRes.data);
+
+        // 2. Tenter de récupérer les données pré-remplies (SaaS)
+        try {
+          const statusRes = await axios.get('/api/core/setup/status/');
+          const data = statusRes.data;
+
+          // Extraire les données prefill si disponibles
+          const prefillData = data.prefill || data;
+          const prefillCountry = prefillData.country_code || prefillData.default_country || null;
+          const prefillCompany = prefillData.company_name || null;
+          const prefillEmail = prefillData.admin_email || null;
+
+          if (prefillCountry || prefillCompany) {
+            setPrefill({ country_code: prefillCountry, company_name: prefillCompany, email: prefillEmail });
+
+            // Pré-sélectionner le pays
+            if (prefillCountry) {
+              const validCountry = packsRes.data.find(c => c.code === prefillCountry);
+              if (validCountry) {
+                setSelectedCountry(prefillCountry);
+                setCountryLocked(true);
+              }
+            }
+
+            // Pré-remplir le formulaire entreprise
+            const formValues = {};
+            if (prefillCompany) formValues.company_name = prefillCompany;
+            if (prefillEmail) formValues.email = prefillEmail;
+            if (Object.keys(formValues).length > 0) {
+              form.setFieldsValue(formValues);
+            }
+          }
+        } catch (statusErr) {
+          // Endpoint non disponible ou pas de données prefill — mode self-hosted normal
+        }
       } catch (err) {
         message.error('Impossible de charger la liste des pays');
       } finally {
         setLoading(false);
       }
     };
-    fetchCountries();
-  }, []);
+    fetchInitialData();
+  }, [form]);
 
   useEffect(() => {
     if (selectedCountry) {
@@ -185,10 +229,24 @@ const SetupWizard = () => {
           <Paragraph type="secondary" style={{ marginBottom: 24 }}>
             Détermine le plan comptable, les taxes, la paie, la devise et les identifiants légaux applicables.
           </Paragraph>
+
+          {/* Phase 4 SaaS : indicateur pays verrouillé */}
+          {countryLocked && (
+            <Alert
+              type="info"
+              showIcon
+              icon={<LockOutlined />}
+              message="Pays pré-configuré par votre abonnement SaaS"
+              description={`Le pays ${countryInfo?.name || selectedCountry} a été sélectionné lors de votre inscription. Ce choix n'est pas modifiable.`}
+              style={{ marginBottom: 16 }}
+            />
+          )}
+
           <Radio.Group
             value={selectedCountry}
-            onChange={e => setSelectedCountry(e.target.value)}
+            onChange={e => { if (!countryLocked) setSelectedCountry(e.target.value); }}
             style={{ width: '100%' }}
+            disabled={countryLocked}
           >
             <Space direction="vertical" style={{ width: '100%' }} size={12}>
               {countries.map(country => {
@@ -198,6 +256,7 @@ const SetupWizard = () => {
                   <Radio.Button
                     key={country.code}
                     value={country.code}
+                    disabled={countryLocked && country.code !== selectedCountry}
                     style={{
                       width: '100%',
                       height: 'auto',
@@ -206,6 +265,7 @@ const SetupWizard = () => {
                       borderColor: isSelected ? color : '#e0e0e0',
                       borderWidth: isSelected ? 2 : 1,
                       background: isSelected ? `${color}06` : '#fff',
+                      opacity: countryLocked && !isSelected ? 0.4 : 1,
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -239,6 +299,17 @@ const SetupWizard = () => {
           <Paragraph type="secondary" style={{ marginBottom: 24 }}>
             Ces informations apparaîtront sur vos documents commerciaux (devis, factures, bulletins de paie).
           </Paragraph>
+
+          {/* Phase 4 SaaS : indicateur données pré-remplies */}
+          {prefill && (
+            <Alert
+              type="success"
+              showIcon
+              message="Certains champs ont été pré-remplis depuis votre inscription"
+              style={{ marginBottom: 16 }}
+            />
+          )}
+
           <Form form={form} layout="vertical" requiredMark="optional" preserve={true}>
             <Form.Item
               name="company_name"

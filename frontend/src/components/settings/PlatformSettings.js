@@ -950,6 +950,7 @@ const EInvoiceTab = () => {
   const [pdpSecretIsSet, setPdpSecretIsSet] = useState(false);
   const [confirmProductionModal, setConfirmProductionModal] = useState(false);
   const [pendingMode, setPendingMode] = useState(null);
+  const [currentMode, setCurrentMode] = useState('disabled');
 
   const fetchConfig = useCallback(async () => {
     try {
@@ -957,6 +958,7 @@ const EInvoiceTab = () => {
       setConfigData(res.data);
       setApiKeyIsSet(res.data.api_key_is_set);
       setPdpSecretIsSet(res.data.pdp_client_secret_is_set);
+      setCurrentMode(res.data.mode || 'disabled');
       form.setFieldsValue({
         ...res.data,
         api_key: '',
@@ -976,11 +978,13 @@ const EInvoiceTab = () => {
       setPendingMode(val);
       setConfirmProductionModal(true);
     } else {
+      setCurrentMode(val);
       form.setFieldsValue({ mode: val });
     }
   };
 
   const confirmProduction = () => {
+    setCurrentMode('production');
     form.setFieldsValue({ mode: 'production' });
     setConfirmProductionModal(false);
   };
@@ -1024,10 +1028,7 @@ const EInvoiceTab = () => {
 
   if (loading) return <Spin tip="Chargement..." style={{ display: 'block', margin: '60px auto' }} />;
 
-  const currentMode = form.getFieldValue('mode') || configData?.mode || 'disabled';
   const isDisabled = currentMode === 'disabled';
-  const isCI = ['CI'].includes(configData?.country_code);
-  const isFR = ['FR'].includes(configData?.country_code);
 
   return (
     <div style={{ maxWidth: 900 }}>

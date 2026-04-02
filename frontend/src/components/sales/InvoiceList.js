@@ -7,7 +7,8 @@ import {
 } from 'antd';
 import {
   PlusOutlined, SearchOutlined, EditOutlined, DeleteOutlined,
-  MailOutlined, DollarOutlined, FileOutlined, FileTextOutlined
+  MailOutlined, DollarOutlined, FileOutlined, FileTextOutlined,
+  SafetyCertificateOutlined, CheckCircleOutlined, ExclamationCircleOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import moment from 'moment';
@@ -37,11 +38,22 @@ const InvoiceList = () => {
 
   const navigate = useNavigate();
   const [currencies, setCurrencies] = useState([]);
+  const [einvoiceMode, setEinvoiceMode] = useState('disabled');
 
   useEffect(() => {
     fetchInvoices();
     fetchCurrencies();
+    fetchEinvoiceMode();
   }, [statusFilter, typeFilter, pagination.current, pagination.pageSize]);
+
+  const fetchEinvoiceMode = async () => {
+    try {
+      const res = await axios.get('/api/sales/invoices/einvoice-config/');
+      setEinvoiceMode(res.data.mode || 'disabled');
+    } catch {
+      setEinvoiceMode('disabled');
+    }
+  };
 
   const fetchCurrencies = async () => {
     try {
@@ -250,6 +262,26 @@ const InvoiceList = () => {
         );
       },
     },
+    ...(einvoiceMode !== 'disabled' ? [{
+      title: 'E-Facture',
+      key: 'einvoice_status',
+      width: 130,
+      render: (_, record) => {
+        const st = record.einvoice_status;
+        if (!st || st === 'not_applicable') {
+          return <Tag color="default" style={{ fontSize: 11 }}>Non certifiée</Tag>;
+        }
+        const cfgMap = {
+          certified: { color: 'green', icon: <CheckCircleOutlined />, label: 'Certifiée' },
+          simulated: { color: 'cyan', icon: <SafetyCertificateOutlined />, label: 'Simulée' },
+          failed:    { color: 'red', icon: <ExclamationCircleOutlined />, label: 'Échec' },
+          pending:   { color: 'blue', label: 'En attente' },
+        };
+        const cfg = cfgMap[st];
+        if (!cfg) return null;
+        return <Tag color={cfg.color} icon={cfg.icon || null} style={{ fontSize: 11 }}>{cfg.label}</Tag>;
+      },
+    }] : []),
     {
       title: 'Actions',
       key: 'actions',

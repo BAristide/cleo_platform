@@ -46,3 +46,4 @@ zopfli==0.2.3.post1
 drf-spectacular
 djangorestframework-simplejwt
 pdfplumber>=0.10.0
+qrcode[pil]>=7.4.2

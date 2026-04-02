@@ -41,6 +41,7 @@ const CompanyForm = () => {
   const [addingIndustry, setAddingIndustry] = useState(false);
   const industryInputRef = useRef(null);
   const [company, setCompany] = useState(null);
+  const [taxIdLabel, setTaxIdLabel] = useState('Identifiant fiscal');
 
   const isEditMode = !!id;
 
@@ -48,6 +49,16 @@ const CompanyForm = () => {
     const fetchFormData = async () => {
       setLoading(true);
       try {
+        // Chargement du pack pays pour le label tax_id
+        try {
+          const companyRes = await axios.get('/api/core/company/');
+          const countryCode = companyRes.data?.country_code || '';
+          const labelMap = { CI: 'NCC (N° Compte Contribuable)', MA: 'ICE (Identifiant Commun Entreprise)', FR: 'SIREN', SN: 'NINEA', ML: 'NIF', BF: 'IFU', TG: 'NIF', BJ: 'IFU', NE: 'NIF', GN: 'NIF' };
+          setTaxIdLabel(labelMap[countryCode] || 'Identifiant fiscal');
+        } catch {
+          setTaxIdLabel('Identifiant fiscal');
+        }
+
         // Chargement des données de référence
         const [
           industriesResponse,
@@ -86,6 +97,7 @@ const CompanyForm = () => {
             annual_revenue: companyData.annual_revenue,
             employee_count: companyData.employee_count,
             score: companyData.score,
+            tax_id: companyData.tax_id || '',
             tag_ids: companyData.tags?.map(tag => tag.id) || []
           });
         } else {
@@ -166,6 +178,7 @@ const CompanyForm = () => {
         annual_revenue: values.annual_revenue,
         employee_count: values.employee_count,
         score: values.score,
+        tax_id: values.tax_id || '',
         tag_ids: values.tag_ids,
         assigned_to_id: 1
       };
@@ -386,6 +399,14 @@ const CompanyForm = () => {
             </Form.Item>
           </Col>
         </Row>
+
+        <Form.Item
+          name="tax_id"
+          label={taxIdLabel}
+          help="NCC (CI), ICE (MA), SIREN (FR) — requis pour la facturation électronique B2B"
+        >
+          <Input placeholder="Ex : CI2025012345678" style={{ maxWidth: 400 }} />
+        </Form.Item>
 
         <Form.Item
           name="description"

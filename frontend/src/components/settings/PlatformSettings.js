@@ -4,7 +4,7 @@ import {
   Tabs, Form, Input, InputNumber, Select, Switch, Button, Card,
   Typography, Spin, message, Tag, Row, Col, Divider, Descriptions,
   Space, Upload, Alert, Statistic, Progress, Tooltip, Table, Image,
-  DatePicker, Avatar,
+  DatePicker, Avatar, Modal,
 } from 'antd';
 import {
   BankOutlined, SettingOutlined, MailOutlined, InfoCircleOutlined,
@@ -930,6 +930,271 @@ const AuditTab = () => {
 };
 
 // ════════════════════════════════════════════════════════════════
+// Onglet 6 — Facturation électronique
+// ════════════════════════════════════════════════════════════════
+
+const EINVOICE_MODE_LABELS = {
+  disabled: 'Désactivé',
+  simulation: 'Simulation',
+  production: 'Production',
+};
+
+const EInvoiceTab = () => {
+  const [form] = Form.useForm();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
+  const [configData, setConfigData] = useState(null);
+  const [apiKeyIsSet, setApiKeyIsSet] = useState(false);
+  const [pdpSecretIsSet, setPdpSecretIsSet] = useState(false);
+  const [confirmProductionModal, setConfirmProductionModal] = useState(false);
+  const [pendingMode, setPendingMode] = useState(null);
+
+  const fetchConfig = useCallback(async () => {
+    try {
+      const res = await axios.get('/api/sales/invoices/einvoice-config/');
+      setConfigData(res.data);
+      setApiKeyIsSet(res.data.api_key_is_set);
+      setPdpSecretIsSet(res.data.pdp_client_secret_is_set);
+      form.setFieldsValue({
+        ...res.data,
+        api_key: '',
+        pdp_client_secret: '',
+      });
+    } catch (err) {
+      message.error('Impossible de charger la configuration e-invoicing');
+    } finally {
+      setLoading(false);
+    }
+  }, [form]);
+
+  useEffect(() => { fetchConfig(); }, [fetchConfig]);
+
+  const handleModeChange = (val) => {
+    if (val === 'production') {
+      setPendingMode(val);
+      setConfirmProductionModal(true);
+    } else {
+      form.setFieldsValue({ mode: val });
+    }
+  };
+
+  const confirmProduction = () => {
+    form.setFieldsValue({ mode: 'production' });
+    setConfirmProductionModal(false);
+  };
+
+  const handleSave = async () => {
+    try {
+      const values = await form.validateFields();
+      setSaving(true);
+      const payload = { ...values };
+      if (!payload.api_key) delete payload.api_key;
+      if (!payload.pdp_client_secret) delete payload.pdp_client_secret;
+      await axios.put('/api/sales/invoices/einvoice-config/', payload);
+      message.success('Configuration e-invoicing enregistrée');
+      setTestResult(null);
+      fetchConfig();
+    } catch (err) {
+      if (err.response) message.error(err.response.data?.error || 'Erreur lors de la sauvegarde');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTest = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      // Envoyer les valeurs courantes du formulaire directement au backend.
+      // Le backend teste avec ces valeurs sans les persister en DB.
+      const values = form.getFieldsValue();
+      const payload = { ...values };
+      if (!payload.api_key) delete payload.api_key;
+      if (!payload.pdp_client_secret) delete payload.pdp_client_secret;
+      const res = await axios.post('/api/sales/invoices/einvoice-test/', payload);
+      setTestResult(res.data);
+    } catch (err) {
+      setTestResult({ valid: false, message: err.response?.data?.error || 'Erreur de connexion' });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  if (loading) return <Spin tip="Chargement..." style={{ display: 'block', margin: '60px auto' }} />;
+
+  const currentMode = form.getFieldValue('mode') || configData?.mode || 'disabled';
+  const isDisabled = currentMode === 'disabled';
+  const isCI = ['CI'].includes(configData?.country_code);
+  const isFR = ['FR'].includes(configData?.country_code);
+
+  return (
+    <div style={{ maxWidth: 900 }}>
+      <Alert
+        type="info"
+        showIcon
+        message="Facturation électronique multi-pays"
+        description="Certifiez vos factures auprès des plateformes gouvernementales (FNE CI, DGI MA, PDP FR). Le mode Simulation permet de valider le flux complet sans appel réseau."
+        style={{ marginBottom: 24 }}
+      />
+
+      <Form form={form} layout="vertical">
+        {/* Mode */}
+        <Title level={5}>Mode de fonctionnement</Title>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Form.Item name="mode" label="Mode">
+              <Select onChange={handleModeChange} options={[
+                { value: 'disabled', label: 'Désactivé' },
+                { value: 'simulation', label: 'Simulation (aucun appel réseau)' },
+                { value: 'production', label: 'Production (appels réels vers la DGI)' },
+              ]} />
+            </Form.Item>
+          </Col>
+          <Col span={12}>
+            <Form.Item name="provider" label="Provider">
+              <Select disabled options={[
+                { value: 'auto', label: 'Automatique (selon le pack pays)' },
+                { value: 'fne_ci', label: "FNE — Côte d'Ivoire" },
+                { value: 'dgi_ma', label: 'DGI — Maroc' },
+                { value: 'pdp_fr', label: 'PDP — France' },
+              ]} />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {currentMode === 'simulation' && (
+          <Alert type="warning" showIcon
+            message="Mode Simulation actif — les factures certifiées portent le filigrane « SIMULATION — NON CERTIFIÉ » et n'ont aucune valeur fiscale légale."
+            style={{ marginBottom: 16 }} />
+        )}
+        {currentMode === 'production' && (
+          <Alert type="success" showIcon
+            message="Mode Production actif — les certifications sont envoyées à la plateforme gouvernementale et ont une valeur fiscale légale."
+            style={{ marginBottom: 16 }} />
+        )}
+
+        {/* Configuration API */}
+        <Title level={5} style={{ marginTop: 16 }}>Configuration API</Title>
+        <Card size="small" style={{ marginBottom: 16, opacity: isDisabled ? 0.5 : 1 }}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="api_url" label="URL API" rules={isDisabled ? [] : [{ type: 'url', message: 'URL invalide' }]}>
+                <Input placeholder="https://fne.dgi.gouv.ci/ws" disabled={isDisabled} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item
+                name="api_key"
+                label={
+                  <span>
+                    Clé API{' '}
+                    {apiKeyIsSet && (
+                      <Tooltip title="Une clé est configurée. Laissez vide pour la conserver.">
+                        <Tag color="green" style={{ marginLeft: 8 }}>Configurée</Tag>
+                      </Tooltip>
+                    )}
+                  </span>
+                }
+              >
+                <Input.Password
+                  placeholder={apiKeyIsSet ? '•••••• (laisser vide pour conserver)' : 'Clé API Bearer'}
+                  disabled={isDisabled}
+                />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Champs spécifiques CI */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="establishment" label="Établissement" help="Requis FNE CI">
+                <Input placeholder="Ex : Siège social Abidjan" disabled={isDisabled} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="point_of_sale" label="Point de vente" help="Requis FNE CI">
+                <Input placeholder="Ex : Caisse principale" disabled={isDisabled} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          {/* Champs spécifiques FR */}
+          <Row gutter={16}>
+            <Col span={12}>
+              <Form.Item name="pdp_name" label="Nom PDP" help="Requis France">
+                <Input placeholder="Ex : Chorus Pro" disabled={isDisabled} />
+              </Form.Item>
+            </Col>
+            <Col span={12}>
+              <Form.Item name="pdp_api_url" label="URL API PDP" help="Requis France">
+                <Input placeholder="https://api.pdp.fr" disabled={isDisabled} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Card>
+
+        {/* Rappels de conformité */}
+        <Title level={5} style={{ marginTop: 8 }}>Rappels de conformité</Title>
+        <Row gutter={16}>
+          <Col span={8}>
+            <Form.Item name="reminder_enabled" label="Rappels activés" valuePropName="checked">
+              <Switch checkedChildren="Activé" unCheckedChildren="Désactivé" disabled={isDisabled} />
+            </Form.Item>
+          </Col>
+          <Col span={8}>
+            <Form.Item name="reminder_hours" label="Délai avant rappel (heures)">
+              <InputNumber min={1} max={720} style={{ width: '100%' }} disabled={isDisabled} />
+            </Form.Item>
+          </Col>
+        </Row>
+
+        {/* Test de connexion */}
+        <Divider />
+        <Space size="middle" style={{ marginBottom: 16 }}>
+          <Button type="primary" icon={<SaveOutlined />} onClick={handleSave} loading={saving} size="large">
+            Enregistrer
+          </Button>
+          <Button icon={<SafetyCertificateOutlined />} onClick={handleTest} loading={testing} disabled={isDisabled} size="large">
+            Tester la connexion
+          </Button>
+        </Space>
+
+        {testResult && (
+          <Alert
+            type={testResult.valid ? 'success' : 'error'}
+            showIcon
+            message={testResult.message}
+            style={{ marginTop: 8, maxWidth: 600 }}
+          />
+        )}
+      </Form>
+
+      {/* Modale confirmation passage en Production */}
+      <Modal
+        title="Passage en mode Production"
+        open={confirmProductionModal}
+        onOk={confirmProduction}
+        onCancel={() => setConfirmProductionModal(false)}
+        okText="Confirmer"
+        cancelText="Annuler"
+        okButtonProps={{ danger: true }}
+      >
+        <Alert
+          type="warning"
+          showIcon
+          message="Attention"
+          description="Les prochaines certifications seront envoyées à la plateforme gouvernementale. Les factures certifiées auront une valeur fiscale légale et ne pourront pas être annulées simplement."
+          style={{ marginBottom: 12 }}
+        />
+        <p>Assurez-vous d'avoir validé votre configuration en mode Simulation avant de passer en Production.</p>
+      </Modal>
+    </div>
+  );
+};
+
+// ════════════════════════════════════════════════════════════════
 // Page principale — PlatformSettings
 // ════════════════════════════════════════════════════════════════
 
@@ -985,6 +1250,7 @@ const PlatformSettings = () => {
               { key: 'email', label: <span><MailOutlined /> Email</span>, children: <EmailTab /> },
               { key: 'system', label: <span><InfoCircleOutlined /> Système</span>, children: <SystemTab /> },
               { key: 'audit', label: <span><FileSearchOutlined /> Journal d'audit</span>, children: <AuditTab /> },
+              { key: 'einvoice', label: <span><SafetyCertificateOutlined /> Facturation électronique</span>, children: <EInvoiceTab /> },
             ]}
           />
         </Card>

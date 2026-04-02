@@ -731,12 +731,22 @@ class InvoiceSerializer(serializers.ModelSerializer):
             'pdf_file',
             'email_sent',
             'email_sent_date',
+            'einvoice_status',
+            'einvoice_reference',
+            'einvoice_verification_url',
+            'einvoice_external_id',
+            'einvoice_certified_at',
         ]
         read_only_fields = [
             'number',
             'subtotal',
             'tax_amount',
             'total',
+            'einvoice_status',
+            'einvoice_reference',
+            'einvoice_verification_url',
+            'einvoice_external_id',
+            'einvoice_certified_at',
         ]
 
     def get_company_name(self, obj):
@@ -872,6 +882,11 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             'pdf_file',
             'email_sent',
             'email_sent_date',
+            'einvoice_status',
+            'einvoice_reference',
+            'einvoice_verification_url',
+            'einvoice_external_id',
+            'einvoice_certified_at',
         ]
         read_only_fields = [
             'number',
@@ -884,6 +899,11 @@ class InvoiceDetailSerializer(serializers.ModelSerializer):
             'pdf_file',
             'email_sent',
             'email_sent_date',
+            'einvoice_status',
+            'einvoice_reference',
+            'einvoice_verification_url',
+            'einvoice_external_id',
+            'einvoice_certified_at',
         ]
 
     def get_company_name(self, obj):

@@ -76,6 +76,15 @@ class Company(models.Model):
         default=0, help_text='Company qualification score (0-100)'
     )
 
+    # Identifiant fiscal (NCC pour CI, ICE pour MA, SIREN pour FR)
+    tax_id = models.CharField(
+        'Identifiant fiscal',
+        max_length=50,
+        blank=True,
+        default='',
+        help_text='NCC (CI), ICE (MA), SIREN (FR)',
+    )
+
     class Meta:
         verbose_name_plural = 'Companies'
         ordering = ['name']

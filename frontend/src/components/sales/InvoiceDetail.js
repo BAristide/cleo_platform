@@ -44,7 +44,11 @@ import {
   DollarOutlined,
   BankOutlined,
   PlusOutlined,
-  CloseOutlined
+  CloseOutlined,
+  SafetyCertificateOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  SyncOutlined
 } from '@ant-design/icons';
 import axios from '../../utils/axiosConfig';
 import { extractResultsFromResponse, handleApiError } from '../../utils/apiUtils';
@@ -77,6 +81,7 @@ const InvoiceDetail = () => {
   const [returnToStock, setReturnToStock] = useState(false);
   const [selectedCreditItems, setSelectedCreditItems] = useState([]);
   const [creditNotes, setCreditNotes] = useState([]);
+  const [certifyLoading, setCertifyLoading] = useState(false);
 
   useEffect(() => {
     fetchInvoiceDetails();
@@ -172,6 +177,42 @@ const InvoiceDetail = () => {
       handleApiError(error, null, "Impossible d'annuler la facture.");
     } finally {
       setLoadingAction(false);
+    }
+  };
+
+  const handleCertify = async () => {
+    setCertifyLoading(true);
+    try {
+      const res = await axios.post(`/api/sales/invoices/${id}/certify/`);
+      if (res.data.success) {
+        const modeLabel = res.data.mode === 'simulation' ? 'simulée' : 'certifiée';
+        message.success(`Facture ${modeLabel} — ${res.data.reference}`);
+      } else {
+        message.error(res.data.error || 'Erreur de certification');
+      }
+      fetchInvoiceDetails();
+    } catch (error) {
+      const errMsg = error.response?.data?.error || 'Erreur de certification';
+      message.error(errMsg);
+    } finally {
+      setCertifyLoading(false);
+    }
+  };
+
+  const handleCertifyCreditNote = async () => {
+    setCertifyLoading(true);
+    try {
+      const res = await axios.post(`/api/sales/invoices/${id}/certify-credit-note/`);
+      if (res.data.success) {
+        message.success(`Avoir certifié — ${res.data.reference}`);
+      } else {
+        message.error(res.data.error || 'Erreur de certification');
+      }
+      fetchInvoiceDetails();
+    } catch (error) {
+      message.error(error.response?.data?.error || 'Erreur de certification');
+    } finally {
+      setCertifyLoading(false);
     }
   };
 
@@ -318,6 +359,23 @@ const InvoiceDetail = () => {
     );
   };
 
+  const renderEInvoiceBadge = (einvoiceStatus) => {
+    if (!einvoiceStatus || einvoiceStatus === 'not_applicable') return null;
+    const badgeConfig = {
+      pending:    { color: '#1890ff', icon: <SyncOutlined spin />, text: 'En attente' },
+      certified:  { color: '#52c41a', icon: <CheckCircleOutlined />, text: 'Certifiée FNE' },
+      simulated:  { color: '#13c2c2', icon: <SafetyCertificateOutlined />, text: 'Simulée' },
+      failed:     { color: '#ff4d4f', icon: <ExclamationCircleOutlined />, text: 'Échec certification' },
+    };
+    const cfg = badgeConfig[einvoiceStatus];
+    if (!cfg) return null;
+    return (
+      <Tag color={cfg.color} icon={cfg.icon} style={{ marginLeft: 4 }}>
+        {cfg.text}
+      </Tag>
+    );
+  };
+
   const formatTypeTag = (type) => {
     const typeConfig = {
       'standard': { color: 'blue', text: 'Facture standard' },
@@ -413,6 +471,28 @@ const InvoiceDetail = () => {
             Envoyer par email
           </Button>
 
+          {invoice.type !== 'credit_note' && ['not_applicable', 'failed', 'pending'].includes(invoice.einvoice_status) && (
+            <Button
+              icon={<SafetyCertificateOutlined />}
+              onClick={handleCertify}
+              loading={certifyLoading}
+              style={{ backgroundColor: '#1a6640', borderColor: '#1a6640', color: '#fff' }}
+            >
+              {invoice.einvoice_status === 'failed' ? 'Réessayer certification' : 'Certifier'}
+            </Button>
+          )}
+
+          {invoice.type === 'credit_note' && invoice.parent_invoice && ['not_applicable', 'failed', 'pending'].includes(invoice.einvoice_status) && (
+            <Button
+              icon={<SafetyCertificateOutlined />}
+              onClick={handleCertifyCreditNote}
+              loading={certifyLoading}
+              style={{ backgroundColor: '#1a6640', borderColor: '#1a6640', color: '#fff' }}
+            >
+              Certifier l'avoir
+            </Button>
+          )}
+
           {(invoice.payment_status === 'unpaid' && invoice.type === 'standard') && (
             <Popconfirm title="Êtes-vous sûr de vouloir supprimer cette facture ?" onConfirm={handleDeleteInvoice} okText="Oui" cancelText="Non">
               <Button danger icon={<DeleteOutlined />} loading={loadingAction}>Supprimer</Button>
@@ -425,6 +505,7 @@ const InvoiceDetail = () => {
         <Space style={{ marginBottom: 16 }}>
           {formatTypeTag(invoice.type)}
           {formatStatusTag(invoice.payment_status)}
+          {renderEInvoiceBadge(invoice.einvoice_status)}
           {invoice.parent_invoice && (
             <Badge status="processing" text={<span>Avoir pour la facture <Link to={`/sales/invoices/${invoice.parent_invoice}`}>{invoice.parent_invoice_number}</Link></span>} />
           )}
@@ -481,6 +562,42 @@ const InvoiceDetail = () => {
                   <Card title="Information sur l'acompte" style={{ marginTop: 16 }}>
                     <p>Cette facture est un acompte de {invoice.deposit_percentage || 30}% sur la commande <Link to={`/sales/orders/${invoice.order}`}>{invoice.order_number}</Link>.</p>
                     {invoice.remaining_amount > 0 && <Alert message={`Reste à facturer: ${invoice.remaining_amount} ${invoice.currency_code}`} type="info" showIcon />}
+                  </Card>
+                )}
+
+                {invoice.einvoice_status && invoice.einvoice_status !== 'not_applicable' && (
+                  <Card
+                    title={<span><SafetyCertificateOutlined style={{ marginRight: 6 }} />Facturation électronique</span>}
+                    style={{ marginTop: 16 }}
+                    size="small"
+                  >
+                    <div>{renderEInvoiceBadge(invoice.einvoice_status)}</div>
+                    {invoice.einvoice_reference && (
+                      <div style={{ marginTop: 8, fontSize: 12 }}>
+                        <strong>Réf. fiscale :</strong> {invoice.einvoice_reference}
+                      </div>
+                    )}
+                    {invoice.einvoice_certified_at && (
+                      <div style={{ marginTop: 4, fontSize: 12 }}>
+                        <strong>Certifiée le :</strong>{' '}
+                        {new Date(invoice.einvoice_certified_at).toLocaleString('fr-FR')}
+                      </div>
+                    )}
+                    {invoice.einvoice_verification_url && !invoice.einvoice_verification_url.startsWith('#') && (
+                      <div style={{ marginTop: 4, fontSize: 12 }}>
+                        <a href={invoice.einvoice_verification_url} target="_blank" rel="noreferrer">
+                          Vérifier sur la plateforme DGI
+                        </a>
+                      </div>
+                    )}
+                    {invoice.einvoice_status === 'simulated' && (
+                      <Alert
+                        type="warning"
+                        message="Document de simulation — aucune valeur fiscale légale"
+                        style={{ marginTop: 8 }}
+                        showIcon
+                      />
+                    )}
                   </Card>
                 )}
               </Col>

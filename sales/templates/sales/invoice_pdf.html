@@ -123,6 +123,36 @@
         .footer-section { width: 33%; }
         .text-center { text-align: center; }
         .text-right { text-align: right; }
+
+        /* ── Bloc FNE ─────────────────────────────────────────────── */
+        .einvoice-block {
+            margin-top: 15px;
+            padding: 10px 12px;
+            border: 1px solid #2c7a5c;
+            border-radius: 4px;
+            background: #f0faf5;
+            font-size: 8pt;
+        }
+        .einvoice-block-sim {
+            margin-top: 15px;
+            padding: 10px 12px;
+            border: 2px dashed #aaa;
+            border-radius: 4px;
+            background: #fafafa;
+            font-size: 8pt;
+        }
+        .einvoice-simulation-watermark {
+            position: fixed;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-30deg);
+            font-size: 54pt;
+            color: rgba(180, 180, 180, 0.28);
+            pointer-events: none;
+            z-index: 9999;
+            white-space: nowrap;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -359,6 +389,45 @@
                 {% endif %}
             {% endif %}
         </div>
+
+        {% if einvoice_data %}
+            {% if einvoice_data.mode == 'simulation' %}
+            <div class="einvoice-simulation-watermark">SIMULATION — NON CERTIFIÉ</div>
+            <div class="einvoice-block-sim">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <img src="data:image/png;base64,{{ einvoice_data.qr_code_base64 }}"
+                         alt="QR Simulation" style="width: 70px; height: 70px; opacity: 0.5;" />
+                    <div>
+                        <p style="margin: 0; font-weight: bold; color: #888;">
+                            MODE SIMULATION — Ce document n'a pas de valeur fiscale légale
+                        </p>
+                        <p style="margin: 3px 0;">
+                            <strong>Référence simulée :</strong> {{ einvoice_data.reference }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="einvoice-block">
+                <div style="display: flex; align-items: center; gap: 14px;">
+                    <img src="data:image/png;base64,{{ einvoice_data.qr_code_base64 }}"
+                         alt="QR Code FNE" style="width: 75px; height: 75px;" />
+                    <div>
+                        <p style="margin: 0; font-weight: bold; color: #1a6640;">
+                            Facture certifiée — Facture Normalisée Électronique
+                        </p>
+                        <p style="margin: 3px 0;">
+                            <strong>N° fiscal :</strong> {{ einvoice_data.reference }}
+                        </p>
+                        <p style="margin: 3px 0;">
+                            <strong>Certifiée le :</strong>
+                            {{ einvoice_data.certified_at|date:"d/m/Y H:i" }}
+                        </p>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
 
         <div class="footer">
             <div class="footer-section">{{ company_info.name }}</div>

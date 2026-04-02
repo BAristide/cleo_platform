@@ -1145,6 +1145,48 @@ class Invoice(SalesDocument):
     # Pour les avoirs, stocker la raison de l'avoir
     credit_note_reason = models.TextField(_("Motif de l'avoir"), blank=True, null=True)
 
+    # ── Facturation électronique ──────────────────────────────────────
+    EINVOICE_STATUS_CHOICES = [
+        ('not_applicable', _('Non applicable')),
+        ('pending', _('En attente')),
+        ('certified', _('Certifiée')),
+        ('simulated', _('Simulée')),
+        ('failed', _('Échec')),
+    ]
+    einvoice_status = models.CharField(
+        _('Statut e-facture'),
+        max_length=20,
+        choices=EINVOICE_STATUS_CHOICES,
+        default='not_applicable',
+    )
+    einvoice_reference = models.CharField(
+        _('Référence fiscale e-facture'),
+        max_length=100,
+        blank=True,
+        default='',
+    )
+    einvoice_verification_url = models.URLField(
+        _('URL de vérification e-facture'),
+        blank=True,
+        default='',
+    )
+    einvoice_external_id = models.CharField(
+        _('ID externe e-facture'),
+        max_length=255,
+        blank=True,
+        default='',
+    )
+    einvoice_certified_at = models.DateTimeField(
+        _('Date de certification e-facture'),
+        null=True,
+        blank=True,
+    )
+    einvoice_raw_response = models.JSONField(
+        _('Réponse brute e-facture'),
+        null=True,
+        blank=True,
+    )
+
     class Meta:
         verbose_name = _('Facture')
         verbose_name_plural = _('Factures')
@@ -1556,6 +1598,8 @@ class Payment(models.Model):
             ('check', _('Chèque')),
             ('cash', _('Espèces')),
             ('credit_card', _('Carte de crédit')),
+            ('mobile_money', _('Mobile Money')),
+            ('deferred', _('Paiement à terme')),
             ('other', _('Autre')),
         ],
         default='bank_transfer',
@@ -1591,3 +1635,101 @@ class Payment(models.Model):
             self.invoice.save(
                 update_fields=['amount_paid', 'amount_due', 'payment_status']
             )
+
+
+# ── Facturation électronique — Configuration singleton ───────────────
+
+
+class EInvoiceConfig(models.Model):
+    """Configuration facturation électronique — Singleton (pk=1)."""
+
+    MODE_CHOICES = [
+        ('disabled', 'Désactivé'),
+        ('simulation', 'Simulation'),
+        ('production', 'Production'),
+    ]
+
+    PROVIDER_CHOICES = [
+        ('auto', 'Automatique (selon le pack pays)'),
+        ('fne_ci', "FNE — Côte d'Ivoire"),
+        ('dgi_ma', 'DGI — Maroc'),
+        ('pdp_fr', 'PDP — France'),
+    ]
+
+    mode = models.CharField(
+        _('Mode'),
+        max_length=20,
+        choices=MODE_CHOICES,
+        default='disabled',
+    )
+    provider = models.CharField(
+        _('Provider'),
+        max_length=20,
+        choices=PROVIDER_CHOICES,
+        default='auto',
+    )
+
+    # Credentials communs
+    api_url = models.URLField(_('URL API'), blank=True, default='')
+    api_key = models.CharField(_('Clé API'), max_length=255, blank=True, default='')
+
+    # FNE CI spécifique
+    establishment = models.CharField(
+        _('Établissement'),
+        max_length=200,
+        blank=True,
+        default='',
+        help_text="Nom de l'établissement (requis FNE CI)",
+    )
+    point_of_sale = models.CharField(
+        _('Point de vente'),
+        max_length=200,
+        blank=True,
+        default='',
+        help_text='Nom du point de vente (requis FNE CI)',
+    )
+
+    # France spécifique (futurs champs)
+    pdp_name = models.CharField(_('Nom PDP'), max_length=100, blank=True, default='')
+    pdp_api_url = models.URLField(_('URL API PDP'), blank=True, default='')
+    pdp_client_id = models.CharField(
+        _('Client ID PDP'), max_length=255, blank=True, default=''
+    )
+    pdp_client_secret = models.CharField(
+        _('Client Secret PDP'), max_length=255, blank=True, default=''
+    )
+
+    # Rappel de conformité
+    reminder_enabled = models.BooleanField(
+        _('Rappels activés'),
+        default=True,
+        help_text='Notifier si des factures ne sont pas certifiées dans le délai',
+    )
+    reminder_hours = models.PositiveIntegerField(
+        _('Délai de rappel (heures)'),
+        default=24,
+        help_text='Délai en heures avant rappel de certification',
+    )
+
+    # Audit
+    created_at = models.DateTimeField(_('Créé le'), auto_now_add=True)
+    updated_at = models.DateTimeField(_('Modifié le'), auto_now=True)
+
+    class Meta:
+        verbose_name = _('Configuration facturation électronique')
+        verbose_name_plural = _('Configurations facturation électronique')
+
+    def __str__(self):
+        return f'Configuration e-invoicing (mode: {self.mode})'
+
+    def save(self, *args, **kwargs):
+        self.pk = 1  # Singleton
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        pass  # Singleton — suppression interdite
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj

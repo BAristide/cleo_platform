@@ -64,6 +64,7 @@ class CompanyListSerializer(serializers.ModelSerializer):
             'city',
             'country',
             'score',
+            'tax_id',
             'assigned_to_name',
             'contact_count',
             'opportunity_count',

@@ -808,6 +808,7 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         instance = serializer.save()
         _generate_invoice_entry(instance, user=self.request.user)
 
+    @action(detail=True, methods=['post'])
     def generate_pdf(self, request, pk=None):
         """Générer un PDF pour une facture."""
         invoice = self.get_object()
@@ -1194,6 +1195,156 @@ class InvoiceViewSet(viewsets.ModelViewSet):
         ).order_by('-date')
         serializer = InvoiceSerializer(credit_notes, many=True)
         return Response(serializer.data)
+
+    # ── Facturation électronique ────────────────────────────────────────
+
+    @action(detail=False, methods=['get', 'put'], url_path='einvoice-config')
+    def einvoice_config(self, request):
+        """Lire ou mettre à jour la configuration e-invoicing (singleton)."""
+        from sales.models import EInvoiceConfig
+
+        config = EInvoiceConfig.load()
+
+        if request.method == 'GET':
+            return Response(
+                {
+                    'mode': config.mode,
+                    'provider': config.provider,
+                    'api_url': config.api_url,
+                    'api_key': '••••••••' if config.api_key else '',
+                    'establishment': config.establishment,
+                    'point_of_sale': config.point_of_sale,
+                    'pdp_name': config.pdp_name,
+                    'pdp_api_url': config.pdp_api_url,
+                    'pdp_client_id': config.pdp_client_id,
+                    'reminder_enabled': config.reminder_enabled,
+                    'reminder_hours': config.reminder_hours,
+                    'api_key_is_set': bool(config.api_key),
+                    'pdp_client_secret_is_set': bool(config.pdp_client_secret),
+                }
+            )
+
+        # PUT — mise à jour
+        data = request.data
+        allowed_fields = [
+            'mode',
+            'provider',
+            'api_url',
+            'establishment',
+            'point_of_sale',
+            'pdp_name',
+            'pdp_api_url',
+            'pdp_client_id',
+            'reminder_enabled',
+            'reminder_hours',
+        ]
+        for field in allowed_fields:
+            if field in data:
+                setattr(config, field, data[field])
+
+        # Mot de passe / clé API : ne mettre à jour que si fourni non vide
+        if data.get('api_key'):
+            config.api_key = data['api_key']
+        if data.get('pdp_client_secret'):
+            config.pdp_client_secret = data['pdp_client_secret']
+
+        config.save()
+        return Response(
+            {'success': True, 'message': 'Configuration e-invoicing mise à jour'}
+        )
+
+    @action(detail=False, methods=['post'], url_path='einvoice-test')
+    def einvoice_test(self, request):
+        """
+        Tester la connexion e-invoicing.
+
+        Accepte en body les valeurs du formulaire (non sauvegardées).
+        Si le body est vide, utilise la configuration persistée en DB.
+        Cela permet de tester sans obligation de sauvegarder au préalable.
+        """
+        from sales.services.einvoice.registry import get_country_code_from_setup
+        from sales.services.einvoice.service import EInvoiceService
+
+        country_code = get_country_code_from_setup()
+
+        if request.data:
+            # Construire un objet config temporaire depuis les valeurs du formulaire
+            # sans toucher à la DB — test pur, sans effet de bord
+            from sales.models import EInvoiceConfig
+
+            config = EInvoiceConfig()
+            config.mode = request.data.get('mode', 'disabled')
+            config.provider = request.data.get('provider', 'auto')
+            config.api_url = request.data.get('api_url', '')
+            # La clé API peut être masquée dans le formulaire :
+            # dans ce cas on la charge depuis la DB pour ne pas perdre la valeur réelle
+            submitted_key = request.data.get('api_key', '')
+            if submitted_key and not set(submitted_key).issubset({'•', ' '}):
+                config.api_key = submitted_key
+            else:
+                db_config = EInvoiceConfig.load()
+                config.api_key = db_config.api_key
+            config.establishment = request.data.get('establishment', '')
+            config.point_of_sale = request.data.get('point_of_sale', '')
+            config.pdp_name = request.data.get('pdp_name', '')
+            config.pdp_api_url = request.data.get('pdp_api_url', '')
+            config.pdp_client_id = request.data.get('pdp_client_id', '')
+            config.pdp_client_secret = request.data.get('pdp_client_secret', '')
+            config.reminder_enabled = request.data.get('reminder_enabled', True)
+            config.reminder_hours = request.data.get('reminder_hours', 24)
+        else:
+            # Aucun body → utiliser la config persistée
+            config = EInvoiceService.get_active_config()
+
+        result = EInvoiceService.test_connection(config)
+        result['country_code'] = country_code
+        result['mode_tested'] = config.mode
+        return Response(result)
+
+    @action(detail=True, methods=['post'], url_path='certify')
+    def certify(self, request, pk=None):
+        """Certifier une facture auprès de la plateforme e-invoicing."""
+        from sales.services.einvoice.service import EInvoiceService
+
+        invoice = self.get_object()
+        result = EInvoiceService.certify(invoice)
+
+        if result.get('success'):
+            return Response(result, status=status.HTTP_200_OK)
+        return Response(
+            {'error': result.get('error', 'Erreur de certification')},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    @action(detail=True, methods=['post'], url_path='certify-credit-note')
+    def certify_credit_note_action(self, request, pk=None):
+        """Certifier un avoir auprès de la plateforme e-invoicing."""
+        from sales.services.einvoice.service import EInvoiceService
+
+        credit_note = self.get_object()
+        result = EInvoiceService.certify_credit_note(credit_note)
+
+        if result.get('success'):
+            return Response(result, status=status.HTTP_200_OK)
+        return Response(
+            {'error': result.get('error', 'Erreur de certification avoir')},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    @action(detail=True, methods=['get'], url_path='einvoice-status')
+    def einvoice_status(self, request, pk=None):
+        """Retourne le statut e-invoicing d'une facture."""
+        invoice = self.get_object()
+        return Response(
+            {
+                'id': invoice.id,
+                'number': invoice.number,
+                'einvoice_status': invoice.einvoice_status,
+                'einvoice_reference': invoice.einvoice_reference,
+                'einvoice_verification_url': invoice.einvoice_verification_url,
+                'einvoice_certified_at': invoice.einvoice_certified_at,
+            }
+        )
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):

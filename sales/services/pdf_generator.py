@@ -104,6 +104,43 @@ class PDFGenerator:
         return pdf_path
 
     @staticmethod
+    def _get_einvoice_context(invoice):
+        """
+        Retourne le contexte e-invoicing pour le template PDF.
+        Génère un QR code base64 si la facture est certifiée ou simulée.
+        """
+        if invoice.einvoice_status not in ('certified', 'simulated'):
+            return {}
+        try:
+            import base64
+            import io
+
+            import qrcode
+
+            url = invoice.einvoice_verification_url or '#simulation'
+            qr = qrcode.make(url)
+            buffer = io.BytesIO()
+            qr.save(buffer, format='PNG')
+            qr_b64 = base64.b64encode(buffer.getvalue()).decode()
+
+            return {
+                'einvoice_data': {
+                    'qr_code_base64': qr_b64,
+                    'reference': invoice.einvoice_reference,
+                    'certified_at': invoice.einvoice_certified_at,
+                    'mode': 'simulation'
+                    if invoice.einvoice_status == 'simulated'
+                    else 'production',
+                    'verification_url': invoice.einvoice_verification_url,
+                }
+            }
+        except Exception as e:
+            import logging
+
+            logging.getLogger(__name__).warning(f'QR code génération échouée : {e}')
+            return {}
+
+    @staticmethod
     def generate_invoice_pdf(invoice):
         """Génère un PDF pour une facture"""
 
@@ -142,6 +179,9 @@ class PDFGenerator:
                     'discount_amount', Decimal('0')
                 )
                 context['subtotal_after_discount'] = subtotal_after_discount
+
+        # Contexte e-invoicing (QR code + filigrane simulation)
+        context.update(PDFGenerator._get_einvoice_context(invoice))
 
         html_string = render_to_string('sales/invoice_pdf.html', context)
 

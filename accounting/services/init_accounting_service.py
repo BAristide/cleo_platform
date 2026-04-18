@@ -13,6 +13,7 @@ from core.models import Currency
 
 from ..models import (
     Account,
+    AccountMapping,
     AccountType,
     AnalyticAccount,
     FiscalYear,
@@ -59,6 +60,7 @@ class InitAccountingService:
         self.create_fiscal_year()
         self.create_taxes()
         self.create_analytic_accounts()
+        self.create_account_mappings()
 
     def create_currencies(self, default_currency_code='MAD'):
         """Crée les devises depuis les fixtures du pack."""
@@ -248,3 +250,47 @@ class InitAccountingService:
             accounts[data['code']] = account
 
         logger.info(f'  {AnalyticAccount.objects.count()} comptes analytiques créés')
+
+    def create_account_mappings(self):
+        """
+        Charge les rôles comptables (AccountMapping) depuis le fichier fixture du pack.
+        Appelé automatiquement par init_all() — couvre les deux paths :
+        provisionnement headless (init_setup) et wizard web (SetupCreateView).
+        """
+        import json
+        import os
+
+        from django.conf import settings as django_settings
+
+        fixture_path = os.path.join(
+            django_settings.BASE_DIR,
+            'accounting',
+            'fixtures',
+            f'mappings_{self.locale_pack}.json',
+        )
+        if not os.path.exists(fixture_path):
+            logger.warning(
+                f'Aucun fichier de mappings trouvé pour le pack {self.locale_pack}: {fixture_path}'
+            )
+            return
+
+        with open(fixture_path, encoding='utf-8') as f:
+            mappings = json.load(f)
+
+        created = 0
+        for item in mappings:
+            account = Account.objects.filter(code=item['account_code']).first()
+            if account:
+                _, is_new = AccountMapping.objects.update_or_create(
+                    role=item['role'],
+                    defaults={
+                        'account': account,
+                        'description': item.get('description', ''),
+                    },
+                )
+                if is_new:
+                    created += 1
+
+        logger.info(
+            f'  {created} rôles AccountMapping créés pour le pack {self.locale_pack}'
+        )

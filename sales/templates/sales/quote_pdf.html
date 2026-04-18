@@ -1,4 +1,5 @@
 <!-- sales/templates/sales/quote_pdf.html — Clouder Design v3.39.3 -->
+{% load cleo_filters %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -124,9 +125,9 @@ body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9
       <td>{{ item.product.reference }}</td>
       <td><div class="product-name">{{ item.product.name }}</div>{% if item.description %}<div class="product-desc">{{ item.description }}</div>{% endif %}</td>
       <td style="text-align:right;">{{ item.quantity }}</td>
-      <td style="text-align:right;">{{ item.unit_price }} {{ quote.currency.code }}</td>
+      <td style="text-align:right;">{{ item.unit_price|format_amount_nosymbol:quote.currency }} {{ quote.currency.code }}</td>
       {% if not quote.is_tax_exempt %}<td style="text-align:right;">{{ item.tax_rate }}%</td>{% endif %}
-      <td style="text-align:right;">{{ item.subtotal|floatformat:2 }} {{ quote.currency.code }}</td>
+      <td style="text-align:right;">{{ item.subtotal|format_amount_nosymbol:quote.currency }} {{ quote.currency.code }}</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -134,15 +135,15 @@ body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9
 
 <div class="totals-wrap">
   <table class="totals-table">
-    <tr><td class="t-lbl">Sous-total HT :</td><td class="t-val">{{ quote.subtotal }} {{ quote.currency.code }}</td></tr>
+    <tr><td class="t-lbl">Sous-total HT :</td><td class="t-val">{{ quote.subtotal|format_amount_nosymbol:quote.currency }} {{ quote.currency.code }}</td></tr>
     {% if quote.discount_percentage > 0 %}
-    <tr><td class="t-lbl">Remise ({{ quote.discount_percentage }}%) :</td><td class="t-val">&minus;{{ quote.discount_amount }} {{ quote.currency.code }}</td></tr>
-    <tr><td class="t-lbl">Total apr&egrave;s remise :</td><td class="t-val">{{ quote.subtotal_after_discount }} {{ quote.currency.code }}</td></tr>
+    <tr><td class="t-lbl">Remise ({{ quote.discount_percentage }}%) :</td><td class="t-val">&minus;{{ quote.discount_amount|format_amount_nosymbol:quote.currency }} {{ quote.currency.code }}</td></tr>
+    <tr><td class="t-lbl">Total apr&egrave;s remise :</td><td class="t-val">{{ quote.subtotal_after_discount|format_amount_nosymbol:quote.currency }} {{ quote.currency.code }}</td></tr>
     {% endif %}
-    {% if not quote.is_tax_exempt %}<tr><td class="t-lbl">TVA :</td><td class="t-val">{{ quote.tax_amount }} {{ quote.currency.code }}</td></tr>{% endif %}
+    {% if not quote.is_tax_exempt %}<tr><td class="t-lbl">TVA :</td><td class="t-val">{{ quote.tax_amount|format_amount_nosymbol:quote.currency }} {{ quote.currency.code }}</td></tr>{% endif %}
     <tr class="t-total">
       <td class="t-lbl">Total {{ quote.is_tax_exempt|yesno:",TTC" }} :</td>
-      <td class="t-val">{{ quote.total }} {{ quote.currency.code }}</td>
+      <td class="t-val">{{ quote.total|format_amount_nosymbol:quote.currency }} {{ quote.currency.code }}</td>
     </tr>
   </table>
 </div>

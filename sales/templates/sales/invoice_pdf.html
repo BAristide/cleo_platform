@@ -1,4 +1,5 @@
 <!-- sales/templates/sales/invoice_pdf.html — Clouder Design v3.39.3 -->
+{% load cleo_filters %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -158,9 +159,9 @@ body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9
       <td>{{ item.product.reference }}</td>
       <td><div class="product-name">{{ item.product.name }}</div>{% if item.description %}<div class="product-desc">{{ item.description }}</div>{% endif %}</td>
       <td style="text-align:right;">{{ item.quantity }}</td>
-      <td style="text-align:right;">{{ item.unit_price }} {{ invoice.currency.code }}</td>
+      <td style="text-align:right;">{{ item.unit_price|format_amount_nosymbol:invoice.currency }} {{ invoice.currency.code }}</td>
       {% if not invoice.is_tax_exempt %}<td style="text-align:right;">{{ item.tax_rate }}%</td>{% endif %}
-      <td style="text-align:right;">{{ item.subtotal|floatformat:2 }} {{ invoice.currency.code }}</td>
+      <td style="text-align:right;">{{ item.subtotal|format_amount_nosymbol:invoice.currency }} {{ invoice.currency.code }}</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -168,21 +169,21 @@ body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9
 
 <div class="totals-wrap">
   <table class="totals-table">
-    <tr><td class="t-lbl">Sous-total HT :</td><td class="t-val">{{ invoice.subtotal }} {{ invoice.currency.code }}</td></tr>
+    <tr><td class="t-lbl">Sous-total HT :</td><td class="t-val">{{ invoice.subtotal|format_amount_nosymbol:invoice.currency }} {{ invoice.currency.code }}</td></tr>
     {% if invoice.discount_percentage > 0 %}
-    <tr><td class="t-lbl">Remise ({{ invoice.discount_percentage }}%) :</td><td class="t-val">&minus;{{ invoice.discount_amount }} {{ invoice.currency.code }}</td></tr>
-    <tr><td class="t-lbl">Total apr&egrave;s remise :</td><td class="t-val">{{ invoice.subtotal_after_discount }} {{ invoice.currency.code }}</td></tr>
+    <tr><td class="t-lbl">Remise ({{ invoice.discount_percentage }}%) :</td><td class="t-val">&minus;{{ invoice.discount_amount|format_amount_nosymbol:invoice.currency }} {{ invoice.currency.code }}</td></tr>
+    <tr><td class="t-lbl">Total apr&egrave;s remise :</td><td class="t-val">{{ invoice.subtotal_after_discount|format_amount_nosymbol:invoice.currency }} {{ invoice.currency.code }}</td></tr>
     {% endif %}
-    {% if not invoice.is_tax_exempt %}<tr><td class="t-lbl">TVA :</td><td class="t-val">{{ invoice.tax_amount }} {{ invoice.currency.code }}</td></tr>{% endif %}
+    {% if not invoice.is_tax_exempt %}<tr><td class="t-lbl">TVA :</td><td class="t-val">{{ invoice.tax_amount|format_amount_nosymbol:invoice.currency }} {{ invoice.currency.code }}</td></tr>{% endif %}
     <tr class="t-total">
       <td class="t-lbl">Total {{ invoice.is_tax_exempt|yesno:",TTC" }} :</td>
-      <td class="t-val">{{ invoice.total }} {{ invoice.currency.code }}</td>
+      <td class="t-val">{{ invoice.total|format_amount_nosymbol:invoice.currency }} {{ invoice.currency.code }}</td>
     </tr>
     {% if invoice.amount_paid > 0 %}
-    <tr class="t-paid"><td class="t-lbl">Montant pay&eacute; :</td><td class="t-val">{{ invoice.amount_paid }} {{ invoice.currency.code }}</td></tr>
+    <tr class="t-paid"><td class="t-lbl">Montant pay&eacute; :</td><td class="t-val">{{ invoice.amount_paid|format_amount_nosymbol:invoice.currency }} {{ invoice.currency.code }}</td></tr>
     <tr class="t-due">
       <td class="t-lbl">Reste &agrave; payer :</td>
-      <td class="t-val">{{ invoice.amount_due }} {{ invoice.currency.code }}</td>
+      <td class="t-val">{{ invoice.amount_due|format_amount_nosymbol:invoice.currency }} {{ invoice.currency.code }}</td>
     </tr>
     {% endif %}
   </table>

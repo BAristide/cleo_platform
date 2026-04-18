@@ -46,7 +46,11 @@ def format_amount_nosymbol(value, currency):
         quant = Decimal('1').scaleb(-int(currency.decimal_places))
         value = value.quantize(quant, rounding=ROUND_HALF_UP)
         amount_str = f'{value:.{currency.decimal_places}f}'
-        integer_part, decimal_part = amount_str.split('.')
+        # decimal_places=0 (XOF, XAF...) : pas de point decimal dans la chaine
+        if '.' in amount_str:
+            integer_part, decimal_part = amount_str.split('.')
+        else:
+            integer_part, decimal_part = amount_str, None
         if currency.thousand_separator:
             grouped = []
             s = integer_part
@@ -54,7 +58,9 @@ def format_amount_nosymbol(value, currency):
                 grouped.append(s[-3:])
                 s = s[:-3]
             integer_part = currency.thousand_separator.join(reversed(grouped))
-        dec_sep = currency.decimal_separator or '.'
-        return f'{integer_part}{dec_sep}{decimal_part}'
+        if decimal_part is not None:
+            dec_sep = currency.decimal_separator or '.'
+            return f'{integer_part}{dec_sep}{decimal_part}'
+        return integer_part
     except Exception:
         return value

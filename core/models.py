@@ -82,11 +82,15 @@ class Currency(models.Model):
         quant = Decimal('1').scaleb(-int(self.decimal_places))
         amount = amount.quantize(quant, rounding=ROUND_HALF_UP)
 
-        # Format canonique avec '.' comme séparateur décimal
+        # Format canonique avec '.' comme separateur decimal
         amount_str = f'{amount:.{self.decimal_places}f}'
-        integer_part, decimal_part = amount_str.split('.')
+        # decimal_places=0 (XOF, XAF...) : pas de point decimal dans la chaine
+        if '.' in amount_str:
+            integer_part, decimal_part = amount_str.split('.')
+        else:
+            integer_part, decimal_part = amount_str, None
 
-        # Séparateur de milliers
+        # Separateur de milliers
         if self.thousand_separator:
             grouped = []
             s = integer_part
@@ -95,9 +99,12 @@ class Currency(models.Model):
                 s = s[:-3]
             integer_part = self.thousand_separator.join(reversed(grouped))
 
-        # Appliquer séparateur décimal personnalisé
-        dec_sep = self.decimal_separator or '.'
-        amount_str = f'{integer_part}{dec_sep}{decimal_part}'
+        # Appliquer separateur decimal personnalise
+        if decimal_part is not None:
+            dec_sep = self.decimal_separator or '.'
+            amount_str = f'{integer_part}{dec_sep}{decimal_part}'
+        else:
+            amount_str = integer_part
 
         # Position du symbole
         sym = self.symbol or ''

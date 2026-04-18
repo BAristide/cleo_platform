@@ -1,341 +1,202 @@
-<!-- sales/templates/sales/quote_pdf.html -->
+<!-- sales/templates/sales/quote_pdf.html — Clouder Design v3.39.3 -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Devis {{ quote.number }}</title>
-    <style>
-        /* Styles de base optimisés pour le PDF */
-        body {
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-            font-size: 9pt; /* Taille réduite */
-            line-height: 1.3; /* Espacement réduit */
-            color: #333;
-            margin: 0;
-            padding: 0;
-        }
-        .container {
-            width: 100%;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .header {
-            margin-bottom: 15px; /* Réduit de 30px */
-            border-bottom: 1px solid #2c3e50; /* Plus fin */
-            padding-bottom: 10px; /* Réduit de 20px */
-        }
-        .header .logo {
-            font-size: 16pt; /* Réduit de 22pt */
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        .header-info {
-            display: flex;
-            justify-content: space-between;
-        }
-        .company-info {
-            width: 60%;
-        }
-        .document-info {
-            width: 40%;
-            text-align: right;
-        }
-        .company-info p, .document-info p {
-            margin: 2px 0; /* Réduit de 3px */
-            font-size: 8pt; /* Taille spécifique plus petite */
-        }
-        .document-title {
-            font-size: 14pt; /* Réduit de 18pt */
-            font-weight: bold;
-            color: #2c3e50;
-            margin-bottom: 15px; /* Réduit de 20px */
-            text-align: center;
-        }
-
-        /* Section client en format deux colonnes */
-        .client-info {
-            margin-bottom: 15px; /* Réduit de 30px */
-            border: 1px solid #eee;
-            padding: 10px; /* Réduit de 15px */
-            background-color: #f9f9f9;
-            display: flex; /* Affichage en flex pour deux colonnes */
-            flex-wrap: wrap;
-        }
-        .client-info h3 {
-            margin-top: 0;
-            color: #2c3e50;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 3px; /* Réduit de 5px */
-            font-size: 10pt; /* Plus petit */
-            width: 100%; /* Pour qu'il prenne toute la largeur */
-        }
-        .client-col {
-            width: 50%; /* Deux colonnes de taille égale */
-        }
-        .client-info p {
-            margin: 2px 0;
-            font-size: 8pt; /* Taille réduite */
-        }
-
-        /* Tableau des articles optimisé */
-        .items-table {
-            width: 100%;
-            margin-bottom: 15px; /* Réduit de 30px */
-            border-collapse: collapse;
-        }
-        .items-table th {
-            background-color: #2c3e50;
-            color: white;
-            padding: 4px 6px; /* Réduit de 8px */
-            text-align: left;
-            font-size: 8pt; /* Plus petit */
-        }
-        .items-table td {
-            padding: 4px 6px; /* Réduit de 8px */
-            border-bottom: 1px solid #ddd;
-            font-size: 8pt; /* Plus petit */
-            vertical-align: top; /* Aligner au sommet */
-        }
-        .items-table tfoot td {
-            border-top: 1px solid #2c3e50; /* Plus fin */
-            font-size: 8pt; /* Plus petit */
-            padding: 4px 6px; /* Réduit */
-        }
-        .product-name {
-            font-weight: bold;
-        }
-        .product-description {
-            font-size: 7pt; /* Encore plus petit */
-            color: #555;
-        }
-
-        /* Notes d'information optimisées */
-        .info-box {
-            margin: 8px 0; /* Réduit */
-            padding: 8px; /* Réduit */
-            font-size: 8pt; /* Plus petit */
-        }
-
-        /* Informations de paiement et bancaires */
-        .bank-info, .notes, .terms, .validity {
-            margin-top: 15px; /* Réduit */
-            border: 1px solid #eee;
-            padding: 8px; /* Réduit */
-            background-color: #f9f9f9;
-            font-size: 8pt; /* Plus petit */
-        }
-        .bank-info h3, .notes h3, .terms h3, .validity h3 {
-            margin-top: 0;
-            margin-bottom: 5px;
-            color: #2c3e50;
-            font-size: 9pt; /* Plus petit */
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 3px; /* Réduit */
-        }
-
-        /* Validité du devis */
-        .validity {
-            font-style: italic;
-            color: #555;
-        }
-
-        /* Pied de page */
-        .footer {
-            margin-top: 20px; /* Réduit de 50px */
-            font-size: 7pt; /* Réduit de 9pt */
-            color: #777;
-            text-align: center;
-            border-top: 1px solid #ddd;
-            padding-top: 10px; /* Réduit de 20px */
-            display: flex;
-            justify-content: space-between;
-        }
-        .footer-section {
-            width: 33%;
-        }
-        .text-center { text-align: center; }
-        .text-right { text-align: right; }
-    </style>
+<meta charset="UTF-8">
+<title>Devis {{ quote.number }}</title>
+<style>
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 9pt; line-height: 1.4; color: #1A202C; margin: 0; padding: 0; }
+.container { width: 100%; max-width: 800px; margin: 0 auto; }
+.header { padding-bottom: 12px; margin-bottom: 16px; border-bottom: 3px solid #10B981; }
+.header-table { width: 100%; border-collapse: collapse; }
+.company-logo { max-height: 52px; max-width: 160px; display: block; margin-bottom: 5px; }
+.company-name { font-size: 14pt; font-weight: bold; color: #0F172A; margin-bottom: 2px; }
+.company-detail { font-size: 7.5pt; color: #64748B; margin: 1px 0; }
+.doc-badge { background: #0F172A; color: white; font-size: 10pt; font-weight: bold; padding: 4px 14px; display: inline-block; margin-bottom: 8px; }
+.doc-info-table { border-collapse: collapse; margin-left: auto; }
+.doc-info-table td { font-size: 8pt; padding: 2px 3px; }
+.doc-label { color: #64748B; text-align: right; padding-right: 8px; white-space: nowrap; }
+.doc-value { font-weight: 600; color: #0F172A; text-align: right; }
+.section-title { font-size: 7.5pt; font-weight: 700; color: #10B981; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; padding-bottom: 3px; border-bottom: 1px solid #E5E7EB; }
+.client-box { background: #F8FAFC; border: 1px solid #E5E7EB; padding: 10px; margin-bottom: 16px; }
+.client-table { width: 100%; border-collapse: collapse; }
+.client-table td { vertical-align: top; font-size: 8pt; padding: 1px 0; }
+.client-name { font-size: 9pt; font-weight: bold; color: #0F172A; margin-bottom: 2px; }
+.lbl { color: #64748B; }
+.items-table { width: 100%; border-collapse: collapse; }
+.items-table th { background: #0F172A; color: white; padding: 5px 7px; font-size: 8pt; font-weight: 600; }
+.items-table td { padding: 5px 7px; border-bottom: 1px solid #E5E7EB; font-size: 8pt; vertical-align: top; }
+.items-table tbody tr:nth-child(even) td { background: #F8FAFC; }
+.product-name { font-weight: 600; color: #0F172A; }
+.product-desc { font-size: 7.5pt; color: #64748B; margin-top: 1px; }
+.totals-wrap { margin-bottom: 16px; }
+.totals-table { border-collapse: collapse; margin-left: auto; min-width: 220px; }
+.totals-table td { font-size: 8pt; padding: 3px 6px; }
+.t-lbl { color: #64748B; text-align: right; padding-right: 10px; white-space: nowrap; }
+.t-val { text-align: right; font-weight: 500; min-width: 110px; }
+.t-total td { background: #F0FDF4; border-top: 2px solid #10B981; padding: 5px 6px; }
+.t-total .t-lbl { color: #059669; font-weight: 700; font-size: 9pt; }
+.t-total .t-val { color: #059669; font-weight: 700; font-size: 10pt; }
+.bottom-row { width: 100%; border-collapse: collapse; margin-top: 14px; }
+.card { border: 1px solid #E5E7EB; padding: 8px 10px; background: #F8FAFC; font-size: 8pt; }
+.card-title { font-size: 8pt; font-weight: 700; color: #0F172A; margin-bottom: 5px; padding-bottom: 3px; border-bottom: 1px solid #E5E7EB; }
+.card p { margin: 2px 0; }
+.cond-box { margin-top: 12px; border: 1px solid #E5E7EB; padding: 8px 10px; background: #F8FAFC; font-size: 8pt; }
+.cond-box p { margin: 2px 0; color: #64748B; }
+.footer { margin-top: 18px; padding-top: 7px; border-top: 1px solid #E5E7EB; }
+.footer-table { width: 100%; border-collapse: collapse; }
+.footer-table td { font-size: 7pt; color: #94A3B8; padding: 0 2px; }
+.tr { text-align: right; }
+.tc { text-align: center; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="header-info">
-                <div class="company-info">
-                    <div class="logo">{{ company_info.name }}</div>
-                    <table style="border-collapse: collapse; margin-top: 5px; font-size: 8pt;">
-                        <tr>
-                            <td style="padding-right: 10px;">{{ company_info.address }}</td>
-                        </tr>
-                        <tr>
-                            <td>{{ company_info.city }} - {{ company_info.country }}</td>
-                        </tr>
-                        <tr>
-                            <td style="padding-top: 3px;"><strong>Email:</strong> {{ company_info.email }}</td>
-                            <td style="padding-left: 10px;"><strong>Tél:</strong> {{ company_info.phone }}</td>
-                        </tr>
-                        <tr>
-                            <td colspan="2">
-                                {% for lid in company_info.legal_ids %}
-                                    <strong>{{ lid.label }}:</strong> {{ lid.value }}{% if not forloop.last %} - {% endif %}
-                                {% endfor %}
-                            </td>
-                        </tr>
-                    </table>
-                </div>
-                <div class="document-info">
-                    <table style="border-collapse: collapse; margin-left: auto; font-size: 8pt;">
-                        <tr>
-                            <td style="text-align: right; padding: 2px;"><strong>Devis N°:</strong></td>
-                            <td style="text-align: right; padding: 2px;">{{ quote.number }}</td>
-                        </tr>
-                        <tr>
-                            <td style="text-align: right; padding: 2px;"><strong>Date:</strong></td>
-                            <td style="text-align: right; padding: 2px;">{{ quote.date|date:"d/m/Y" }}</td>
-                        </tr>
-                        <tr>
-                            <td style="text-align: right; padding: 2px;"><strong>Validité:</strong></td>
-                            <td style="text-align: right; padding: 2px;">{{ quote.expiration_date|date:"d/m/Y" }}</td>
-                        </tr>
-                        <tr>
-                            <td style="text-align: right; padding: 2px;"><strong>Référence:</strong></td>
-                            <td style="text-align: right; padding: 2px;">{% if quote.opportunity %}{{ quote.opportunity.name }}{% else %}---{% endif %}</td>
-                        </tr>
-                        <tr>
-                            <td style="text-align: right; padding: 2px;"><strong>Devise:</strong></td>
-                            <td style="text-align: right; padding: 2px;">{{ quote.currency.code }}</td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-        </div>
+<div class="container">
 
-        <div class="document-title">DEVIS</div>
-
-        <div class="client-info">
-            <h3>Informations Client</h3>
-            <div class="client-col">
-                <p><strong>{{ company.name }}</strong></p>
-                <p>{% if company.address_line1 %}{{ company.address_line1 }}{% endif %}
-                   {% if company.address_line2 %}<br>{{ company.address_line2 }}{% endif %}</p>
-                <p>{% if company.city %}{{ company.city }}{% endif %}{% if company.postal_code %}, {{ company.postal_code }}{% endif %}
-                   {% if company.country %} - {{ company.country }}{% endif %}</p>
-            </div>
-            <div class="client-col">
-                <p><strong>Contact:</strong> {{ contact.first_name }} {{ contact.last_name }}{% if contact.title %} ({{ contact.title }}){% endif %}</p>
-                <p>{% if contact.email %}<strong>Email:</strong> {{ contact.email }}{% endif %}</p>
-                <p>{% if contact.phone %}<strong>Tél:</strong> {{ contact.phone }}{% endif %}</p>
-            </div>
-        </div>
-
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th style="width: 12%;">Référence</th>
-                    <th style="width: 43%;">Description</th>
-                    <th style="width: 10%;" class="text-right">Qté</th>
-                    <th style="width: 15%;" class="text-right">Prix unitaire</th>
-                    {% if not quote.is_tax_exempt %}
-                    <th style="width: 8%;" class="text-right">TVA(%)</th>
-                    {% endif %}
-                    <th style="width: 12%;" class="text-right">Total HT</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for item in items %}
-                <tr>
-                    <td>{{ item.product.reference }}</td>
-                    <td>
-                        <div class="product-name">{{ item.product.name }}</div>
-                        {% if item.description %}<div class="product-description">{{ item.description }}</div>{% endif %}
-                    </td>
-                    <td class="text-right">{{ item.quantity }}</td>
-                    <td class="text-right">{{ item.unit_price }} {{ quote.currency.code }}</td>
-                    {% if not quote.is_tax_exempt %}
-                    <td class="text-right">{{ item.tax_rate }}%</td>
-                    {% endif %}
-                    <td class="text-right">{{ item.subtotal|floatformat:2 }} {{ quote.currency.code }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="{% if quote.is_tax_exempt %}3{% else %}4{% endif %}"></td>
-                    <td class="text-right">Sous-total HT:</td>
-                    <td class="text-right">{{ quote.subtotal }} {{ quote.currency.code }}</td>
-                </tr>
-                {% if quote.discount_percentage > 0 %}
-                <tr>
-                    <td colspan="{% if quote.is_tax_exempt %}3{% else %}4{% endif %}"></td>
-                    <td class="text-right">Remise ({{ quote.discount_percentage }}%):</td>
-                    <td class="text-right">-{{ quote.discount_amount }} {{ quote.currency.code }}</td>
-                </tr>
-                <tr>
-                    <td colspan="{% if quote.is_tax_exempt %}3{% else %}4{% endif %}"></td>
-                    <td class="text-right">Total après remise:</td>
-                    <td class="text-right">{{ quote.subtotal_after_discount }} {{ quote.currency.code }}</td>
-                </tr>
-                {% endif %}
-                {% if not quote.is_tax_exempt %}
-                <tr>
-                    <td colspan="4"></td>
-                    <td class="text-right">TVA:</td>
-                    <td class="text-right">{{ quote.tax_amount }} {{ quote.currency.code }}</td>
-                </tr>
-                {% endif %}
-                <tr>
-                    <td colspan="{% if quote.is_tax_exempt %}3{% else %}4{% endif %}"></td>
-                    <td class="text-right"><strong>Total {{ quote.is_tax_exempt|yesno:",TTC" }}:</strong></td>
-                    <td class="text-right"><strong>{{ quote.total }} {{ quote.currency.code }}</strong></td>
-                </tr>
-            </tfoot>
-        </table>
-
-        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-            <div style="width: 48%;">
-                {% if quote.bank_account %}
-                <div class="bank-info">
-                    <h3>Coordonnées bancaires</h3>
-                    <p><strong>Banque:</strong> {{ quote.bank_account.bank_name }}</p>
-                    <p><strong>RIB:</strong> {{ quote.bank_account.rib }}</p>
-                    {% if quote.bank_account.iban %}<p><strong>IBAN:</strong> {{ quote.bank_account.iban }}</p>{% endif %}
-                    {% if quote.bank_account.swift %}<p><strong>SWIFT:</strong> {{ quote.bank_account.swift }}</p>{% endif %}
-                </div>
-                {% endif %}
-            </div>
-
-            <div style="width: 48%;">
-                <div class="validity">
-                    <h3>Validité</h3>
-                    <p>Ce devis est valable jusqu'au {{ quote.expiration_date|date:"d/m/Y" }} (20 jours ouvrés).</p>
-                </div>
-            </div>
-        </div>
-
-        {% if quote.notes %}
-        <div class="notes">
-            <h3>Notes</h3>
-            <p>{{ quote.notes }}</p>
+<div class="header">
+  <table class="header-table">
+    <tr>
+      <td style="width:58%; vertical-align:top;">
+        {% if company_info.logo_path %}
+        <img src="file://{{ company_info.logo_path }}" alt="{{ company_info.name }}" class="company-logo">
+        {% endif %}
+        <div class="company-name">{{ company_info.name }}</div>
+        {% if company_info.address %}<div class="company-detail">{{ company_info.address }}</div>{% endif %}
+        <div class="company-detail">{{ company_info.city }}{% if company_info.country %} &mdash; {{ company_info.country }}{% endif %}</div>
+        {% if company_info.email or company_info.phone %}
+        <div class="company-detail">
+          {% if company_info.email %}<strong>Email :</strong> {{ company_info.email }}{% endif %}
+          {% if company_info.email and company_info.phone %} &nbsp;|&nbsp; {% endif %}
+          {% if company_info.phone %}<strong>T&eacute;l :</strong> {{ company_info.phone }}{% endif %}
         </div>
         {% endif %}
+        {% for lid in company_info.legal_ids %}
+        <div class="company-detail"><strong>{{ lid.label }} :</strong> {{ lid.value }}</div>
+        {% endfor %}
+      </td>
+      <td style="width:42%; vertical-align:top; text-align:right;">
+        <div><span class="doc-badge">DEVIS</span></div>
+        <table class="doc-info-table">
+          <tr><td class="doc-label">Devis N&deg; :</td><td class="doc-value">{{ quote.number }}</td></tr>
+          <tr><td class="doc-label">Date :</td><td class="doc-value">{{ quote.date|date:"d/m/Y" }}</td></tr>
+          <tr><td class="doc-label">Validit&eacute; :</td><td class="doc-value">{{ quote.expiration_date|date:"d/m/Y" }}</td></tr>
+          <tr><td class="doc-label">R&eacute;f&eacute;rence :</td><td class="doc-value">{% if quote.opportunity %}{{ quote.opportunity.name }}{% else %}&mdash;{% endif %}</td></tr>
+          <tr><td class="doc-label">Devise :</td><td class="doc-value">{{ quote.currency.code }}</td></tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</div>
 
-        <div class="terms">
-            <h3>Conditions</h3>
-            {% if quote.terms %}
-                <p>{{ quote.terms }}</p>
-            {% else %}
-                <p>- Ce devis est valable jusqu'au {{ quote.expiration_date|date:"d/m/Y" }} (20 jours ouvrés).</p>
-                <p>- Le paiement devra être effectué selon les conditions convenues.</p>
-                <p>- Toute modification de ce devis fera l'objet d'un nouveau document.</p>
-            {% endif %}
-        </div>
+<div class="client-box">
+  <div class="section-title">Informations Client</div>
+  <table class="client-table">
+    <tr>
+      <td style="width:50%; padding-right:12px;">
+        <div class="client-name">{{ company.name }}</div>
+        {% if company.address_line1 %}<div>{{ company.address_line1 }}</div>{% endif %}
+        {% if company.address_line2 %}<div>{{ company.address_line2 }}</div>{% endif %}
+        <div>{% if company.city %}{{ company.city }}{% endif %}{% if company.postal_code %}, {{ company.postal_code }}{% endif %}{% if company.country %} &mdash; {{ company.country }}{% endif %}</div>
+      </td>
+      <td style="width:50%;">
+        <div><span class="lbl">Contact : </span><strong>{{ contact.first_name }} {{ contact.last_name }}{% if contact.title %} ({{ contact.title }}){% endif %}</strong></div>
+        {% if contact.email %}<div><span class="lbl">Email : </span>{{ contact.email }}</div>{% endif %}
+        {% if contact.phone %}<div><span class="lbl">T&eacute;l : </span>{{ contact.phone }}</div>{% endif %}
+      </td>
+    </tr>
+  </table>
+</div>
 
-        <div class="footer">
-            <div class="footer-section">{{ company_info.name }}</div>
-            <div class="footer-section text-center">{{ company_info.address_line1 }}</div>
-            <div class="footer-section text-right">{{ generated_at|date:"d/m/Y" }}</div>
-        </div>
-    </div>
+<table class="items-table">
+  <thead>
+    <tr>
+      <th style="width:11%;">R&eacute;f&eacute;rence</th>
+      <th style="width:44%;">Description</th>
+      <th style="width:9%; text-align:right;">Qt&eacute;</th>
+      <th style="width:14%; text-align:right;">Prix unitaire</th>
+      {% if not quote.is_tax_exempt %}<th style="width:8%; text-align:right;">TVA</th>{% endif %}
+      <th style="width:14%; text-align:right;">Total HT</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.product.reference }}</td>
+      <td><div class="product-name">{{ item.product.name }}</div>{% if item.description %}<div class="product-desc">{{ item.description }}</div>{% endif %}</td>
+      <td style="text-align:right;">{{ item.quantity }}</td>
+      <td style="text-align:right;">{{ item.unit_price }} {{ quote.currency.code }}</td>
+      {% if not quote.is_tax_exempt %}<td style="text-align:right;">{{ item.tax_rate }}%</td>{% endif %}
+      <td style="text-align:right;">{{ item.subtotal|floatformat:2 }} {{ quote.currency.code }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="totals-wrap">
+  <table class="totals-table">
+    <tr><td class="t-lbl">Sous-total HT :</td><td class="t-val">{{ quote.subtotal }} {{ quote.currency.code }}</td></tr>
+    {% if quote.discount_percentage > 0 %}
+    <tr><td class="t-lbl">Remise ({{ quote.discount_percentage }}%) :</td><td class="t-val">&minus;{{ quote.discount_amount }} {{ quote.currency.code }}</td></tr>
+    <tr><td class="t-lbl">Total apr&egrave;s remise :</td><td class="t-val">{{ quote.subtotal_after_discount }} {{ quote.currency.code }}</td></tr>
+    {% endif %}
+    {% if not quote.is_tax_exempt %}<tr><td class="t-lbl">TVA :</td><td class="t-val">{{ quote.tax_amount }} {{ quote.currency.code }}</td></tr>{% endif %}
+    <tr class="t-total">
+      <td class="t-lbl">Total {{ quote.is_tax_exempt|yesno:",TTC" }} :</td>
+      <td class="t-val">{{ quote.total }} {{ quote.currency.code }}</td>
+    </tr>
+  </table>
+</div>
+
+<table class="bottom-row">
+  <tr>
+    <td style="width:49%; vertical-align:top; padding-right:8px;">
+      {% if quote.bank_account %}
+      <div class="card">
+        <div class="card-title">Coordonn&eacute;es bancaires</div>
+        <p><span class="lbl">Banque : </span>{{ quote.bank_account.bank_name }}</p>
+        <p><span class="lbl">RIB : </span>{{ quote.bank_account.rib }}</p>
+        {% if quote.bank_account.iban %}<p><span class="lbl">IBAN : </span>{{ quote.bank_account.iban }}</p>{% endif %}
+        {% if quote.bank_account.swift %}<p><span class="lbl">SWIFT : </span>{{ quote.bank_account.swift }}</p>{% endif %}
+      </div>
+      {% endif %}
+    </td>
+    <td style="width:49%; vertical-align:top; padding-left:8px;">
+      <div class="card">
+        <div class="card-title">Validit&eacute;</div>
+        <p>Ce devis est valable jusqu&apos;au <strong>{{ quote.expiration_date|date:"d/m/Y" }}</strong> (20 jours ouvr&eacute;s).</p>
+      </div>
+    </td>
+  </tr>
+</table>
+
+{% if quote.notes %}
+<div class="cond-box" style="margin-top:10px;">
+  <div class="card-title">Notes</div>
+  <p>{{ quote.notes }}</p>
+</div>
+{% endif %}
+
+<div class="cond-box">
+  <div class="card-title">Conditions</div>
+  {% if quote.terms %}
+    <p>{{ quote.terms }}</p>
+  {% else %}
+    <p>&mdash; Ce devis est valable jusqu&apos;au {{ quote.expiration_date|date:"d/m/Y" }} (20 jours ouvr&eacute;s).</p>
+    <p>&mdash; Le paiement devra &ecirc;tre effectu&eacute; selon les conditions convenues.</p>
+    <p>&mdash; Toute modification de ce devis fera l&apos;objet d&apos;un nouveau document.</p>
+  {% endif %}
+</div>
+
+<div class="footer">
+  <table class="footer-table">
+    <tr>
+      <td>{{ company_info.name }}</td>
+      <td class="tc">{{ company_info.address_line1 }}</td>
+      <td class="tr">G&eacute;n&eacute;r&eacute; le {{ generated_at|date:"d/m/Y" }}</td>
+    </tr>
+  </table>
+</div>
+
+</div>
 </body>
 </html>

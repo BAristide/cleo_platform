@@ -177,9 +177,9 @@ const MainDashboard = () => {
       // Recent Activities
       try {
         const activitiesResponse = await axios.get('/api/users/activity-logs/', {
-          params: { limit: 10, order: '-created_at' },
+          params: { ordering: '-timestamp', page_size: 10 },
         });
-        setRecentActivity(activitiesResponse.data?.results || []);
+        setRecentActivity((activitiesResponse.data?.results || []).slice(0, 10));
       } catch (err) {
         console.error('Error fetching Recent Activities:', err);
       }

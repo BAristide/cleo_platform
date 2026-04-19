@@ -42,10 +42,10 @@ const ExecutiveDashboard = () => {
     try {
       const [execRes, activityRes] = await Promise.all([
         axios.get(`/api/dashboard/executive/?period=${period}`),
-        axios.get('/api/users/activity-logs/', { params: { limit: 10, order: '-created_at' } }).catch(() => ({ data: { results: [] } })),
+        axios.get('/api/users/activity-logs/', { params: { ordering: '-timestamp', page_size: 10 } }).catch(() => ({ data: { results: [] } })),
       ]);
       setData(execRes.data);
-      setRecentActivity(activityRes.data?.results || []);
+      setRecentActivity((activityRes.data?.results || []).slice(0, 10));
     } catch (err) {
       console.error('Dashboard executive error:', err);
     }
